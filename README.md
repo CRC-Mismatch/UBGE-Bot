@@ -13,4 +13,5 @@ Bot feito na linguagem C#, utilizando a biblioteca [DSharpPlus](https://github.c
 - A UBGE é uma comunidade aberta, que foca em ajudar novatos e criar um grupo saudável de jogadores para os mais diversos jogos de computador. Em alguns jogos, porém, contamos com um grupo dedicado que opera de maneira mais semelhante à um "clã".
 
 - Link para entrar no Discord:
+
 [![UBGE Chat](https://discordapp.com/api/guilds/194925640888221698/embed.png?style=banner1)](https://discord.gg/F8Pjnj2)
