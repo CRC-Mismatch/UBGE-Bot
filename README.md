@@ -4,9 +4,13 @@
 Bot feito na linguagem C#, utilizando a biblioteca [DSharpPlus](https://github.com/DSharpPlus/DSharpPlus/), e desenvolvido para o servidor da UBGE.
 
 - Donos: **[UBGE] Luiz#8721** e **Paulo#4230** (Não é o dono atual/desenvolvedor)
-- Responsável e atual desenvolvedor: **[UBGE] Luiz#**
+- Responsável e atual desenvolvedor: **[UBGE] Luiz#8721**
 
 - O bot roda atualmente em **.NET Core 3.0**
 
-# Servidor da UBGE no Discord:
+# Afinal, o que é a UBGE?
+
+- A UBGE é uma comunidade aberta, que foca em ajudar novatos e criar um grupo saudável de jogadores para os mais diversos jogos de computador. Em alguns jogos, porém, contamos com um grupo dedicado que opera de maneira mais semelhante à um "clã".
+
+- Link para entrar no Discord:
 [![UBGE Chat](https://discordapp.com/api/guilds/194925640888221698/embed.png?style=banner1)](https://discord.gg/F8Pjnj2)
