@@ -32,18 +32,16 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                     if (membro == null)
                     {
                         embed.WithColor(new DiscordColor(0x32363c))
-                                .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
-                                .AddField("PC/Mobile", $"{ctx.Prefix}sala addmembro Membro[ID/Menção]")
-                                .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
-                                .WithTimestamp(DateTime.Now);
+                            .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
+                            .AddField("PC/Mobile", $"{ctx.Prefix}sala addmembro Membro[ID/Menção]")
+                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                            .WithTimestamp(DateTime.Now);
 
                         await ctx.RespondAsync(embed: embed.Build());
                         return;
                     }
 
-                    var client = Program.ubgeBot.mongoClient;
-
-                    var local = client.GetDatabase(Valores.Mongo.local);
+                    var local = Program.ubgeBot.localDB;
                     var salasCollection = local.GetCollection<Salas>(Valores.Mongo.salas);
 
                     var filtroSalas = Builders<Salas>.Filter.Eq(x => x.idDoDono, ctx.Member.Id);
@@ -57,7 +55,6 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                         embed.WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed());
 
                         await ctx.RespondAsync(embed: embed.Build());
-                        return;
                     }
                     else
                     {
@@ -111,18 +108,16 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                     if (membro == null)
                     {
                         embed.WithColor(new DiscordColor(0x32363c))
-                                .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
-                                .AddField("PC/Mobile", $"{ctx.Prefix}sala editar del Membro[ID/Menção]")
-                                .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
-                                .WithTimestamp(DateTime.Now);
+                            .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
+                            .AddField("PC/Mobile", $"{ctx.Prefix}sala editar del Membro[ID/Menção]")
+                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                            .WithTimestamp(DateTime.Now);
 
                         await ctx.RespondAsync(embed: embed.Build());
                         return;
                     }
 
-                    var client = Program.ubgeBot.mongoClient;
-
-                    var local = client.GetDatabase(Valores.Mongo.local);
+                    var local = Program.ubgeBot.localDB;
                     var salasCollection = local.GetCollection<Salas>(Valores.Mongo.salas);
 
                     var filtroSalas = Builders<Salas>.Filter.Eq(x => x.idDoDono, ctx.Member.Id);
@@ -160,7 +155,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                         else
                         {
                             embed.WithAuthor($"✅ - O usuário: \"{Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}\" não foi encontrado na lista branca!", null, Valores.logoUBGE);
-                            embed.WithColor(new UtilidadesGerais().CorAleatoriaEmbed());
+                            embed.WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed());
 
                             await ctx.RespondAsync(embed: embed.Build());
                         }
@@ -185,9 +180,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                 {
                     DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
 
-                    var client = Program.ubgeBot.mongoClient;
-
-                    var local = client.GetDatabase(Valores.Mongo.local);
+                    var local = Program.ubgeBot.localDB;
                     var salasCollection = local.GetCollection<Salas>(Valores.Mongo.salas);
 
                     var filtroSalas = Builders<Salas>.Filter.Eq(x => x.idDoDono, ctx.Member.Id);
@@ -201,7 +194,6 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                         embed.WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed());
 
                         await ctx.RespondAsync(embed: embed.Build());
-                        return;
                     }
                     else
                     {
@@ -269,8 +261,6 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
 
                             await ctx.RespondAsync(embed: embed.Build());
                         }
-
-                        return;
                     }
                 }
                 catch (Exception exception)
@@ -292,9 +282,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                 {
                     DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
 
-                    var client = Program.ubgeBot.mongoClient;
-
-                    var local = client.GetDatabase(Valores.Mongo.local);
+                    var local = Program.ubgeBot.localDB;
                     var salasCollection = local.GetCollection<Salas>(Valores.Mongo.salas);
 
                     var filtroSalas = Builders<Salas>.Filter.Eq(x => x.idDoDono, ctx.Member.Id);
@@ -303,10 +291,10 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                     DiscordChannel voiceChannel = null;
                     DiscordMember m = null;
 
-                    DiscordRole ajudantesCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAjudante);
-                    DiscordRole ademirCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAdemir);
-                    DiscordRole diretorCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAdemir);
-                    DiscordRole acessoGeralCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAcessoGeral);
+                    DiscordRole ajudantesCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAjudante),
+                    ademirCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAdemir),
+                    diretorCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAdemir),
+                    acessoGeralCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAcessoGeral);
 
                     if (resultadoSalas.Count != 0)
                     {
@@ -369,9 +357,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                 {
                     DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
 
-                    var client = Program.ubgeBot.mongoClient;
-
-                    var local = client.GetDatabase(Valores.Mongo.local);
+                    var local = Program.ubgeBot.localDB;
                     var salasCollection = local.GetCollection<Salas>(Valores.Mongo.salas);
 
                     var filtroSalas = Builders<Salas>.Filter.Eq(x => x.idDoDono, ctx.Member.Id);
@@ -379,10 +365,10 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
 
                     DiscordChannel voiceChannel = null;
 
-                    DiscordRole ajudantesCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAjudante);
-                    DiscordRole ademirCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAdemir);
-                    DiscordRole diretorCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAdemir);
-                    DiscordRole acessoGeralCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAcessoGeral);
+                    DiscordRole ajudantesCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAjudante),
+                    ademirCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAdemir),
+                    diretorCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAdemir),
+                    acessoGeralCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAcessoGeral);
 
                     if (resultadoSalas.Count != 0)
                     {
@@ -442,24 +428,22 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                     if (string.IsNullOrWhiteSpace(nome))
                     {
                         embed.WithColor(new DiscordColor(0x32363c))
-                                .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
-                                .AddField("PC/Mobile", $"{ctx.Prefix}sala nome Nome[Novo nome da sala]")
-                                .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
-                                .WithTimestamp(DateTime.Now);
+                            .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
+                            .AddField("PC/Mobile", $"{ctx.Prefix}sala nome Nome[Novo nome da sala]")
+                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                            .WithTimestamp(DateTime.Now);
 
                         await ctx.RespondAsync(embed: embed.Build());
                         return;
                     }
 
-                    var client = Program.ubgeBot.mongoClient;
-
-                    var local = client.GetDatabase(Valores.Mongo.local);
+                    var local = Program.ubgeBot.localDB;
                     var salasCollection = local.GetCollection<Salas>(Valores.Mongo.salas);
 
                     var filtroSalas = Builders<Salas>.Filter.Eq(x => x.idDoDono, ctx.Member.Id);
                     var resultadoSalas = await (await salasCollection.FindAsync(filtroSalas)).ToListAsync();
 
-                    DiscordChannel voiceChannel;
+                    DiscordChannel voiceChannel = null;
 
                     if (resultadoSalas.Count != 0)
                     {

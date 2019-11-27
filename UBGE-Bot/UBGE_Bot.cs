@@ -3,6 +3,7 @@ using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Interactivity;
 using MongoDB.Driver;
+using MongoDB.Bson;
 using Microsoft.Extensions.DependencyInjection;
 using MySql.Data.MySqlClient;
 using System;
@@ -24,13 +25,16 @@ namespace UBGE_Bot.Carregamento
         public InteractivityExtension interactivityExtension { get; private set; }
 
         public MongoClient mongoClient { get; private set; }
+        public IMongoDatabase localDB { get; private set; }
         public MySqlConnection mySqlConnection { get; private set; }
 
-        public IContainer servicesIContainer { get; private set; }
+        public IContainer servicesIContainer { get; set; }
 
         public UtilidadesGerais utilidadesGerais { get; private set; }
 
         private string PrefixoMensagens = "[Config]";
+
+        public bool botConectadoAoMongo { get; set; } = true;
 
         public UBGEBot_()
         {
@@ -39,7 +43,23 @@ namespace UBGE_Bot.Carregamento
                 ubgeBotConfig = new UBGEBotConfig_();
                 logExceptionsToDiscord = new LogExceptionsToDiscord();
 
-                mongoClient = new MongoClient($"mongodb://{ubgeBotConfig.ubgeBotDatabasesConfig.mongoDBIP}:{ubgeBotConfig.ubgeBotDatabasesConfig.mongoDBPorta}");
+                try
+                {
+                    mongoClient = new MongoClient($"mongodb://{ubgeBotConfig.ubgeBotDatabasesConfig.mongoDBIP}:{ubgeBotConfig.ubgeBotDatabasesConfig.mongoDBPorta}");
+                    localDB = mongoClient.GetDatabase(Valores.Mongo.local);
+
+                    localDB.RunCommand<BsonDocument>(new BsonDocument("ping", 1));
+                }
+                catch (TimeoutException)
+                {
+                    botConectadoAoMongo = false;
+
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.BackgroundColor = ConsoleColor.White;
+                    Console.WriteLine($"{Valores.prefixoBot} {PrefixoMensagens} Não foi possível conectar ao MongoDB! Alguns comandos podem estar indisponíveis.");
+                    Console.ResetColor();
+                }
+                
                 mySqlConnection = new MySqlConnection($"Server={ubgeBotConfig.ubgeBotDatabasesConfig.mySQLIP};Database={ubgeBotConfig.ubgeBotDatabasesConfig.mySQLDatabase};Uid={ubgeBotConfig.ubgeBotDatabasesConfig.mySQLUsuario};Pwd={ubgeBotConfig.ubgeBotDatabasesConfig.mySQLSenha}");
 
                 try
@@ -49,6 +69,7 @@ namespace UBGE_Bot.Carregamento
                 catch (Exception)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
+                    Console.BackgroundColor = ConsoleColor.White;
                     Console.WriteLine($"{Valores.prefixoBot} {PrefixoMensagens} Não foi possível conectar ao MySQL para pegar dados do rank dos jogadores de Counter-Strike 1.6.");
                     Console.ResetColor();
                 }
@@ -65,7 +86,7 @@ namespace UBGE_Bot.Carregamento
 
                 commandsNext.RegisterCommands(Assembly.GetEntryAssembly());
 
-                Console.Title = $"UBGE-Bot online! v{Valores.versao_Bot}-beta1";
+                Console.Title = $"UBGE-Bot online! v{Valores.versao_Bot}-beta2";
             }
             catch (Exception exception)
             {

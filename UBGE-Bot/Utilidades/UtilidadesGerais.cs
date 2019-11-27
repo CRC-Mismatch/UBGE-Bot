@@ -78,30 +78,32 @@ namespace UBGE_Bot.Utilidades
         /// <returns></returns>
         public async Task<DiscordEmoji> ProcuraEmoji(CommandContext commandContext, string nomeDoEmoji)
         {
-            DiscordEmoji De = null;
+            DiscordEmoji de = null;
 
             if (commandContext.Guild.Emojis.Values.ToList().Find(x => x.Name.ToLower() == nomeDoEmoji.ToLower()) == null)
             {
-                foreach (ulong u in commandContext.Client.Guilds.Keys)
+                foreach (var servidor in commandContext.Client.Guilds.Values)
                 {
-                    DiscordGuild server = await commandContext.Client.GetGuildAsync(u);
-                    De = server.Emojis.Values.ToList().Find(x => x.Name.ToLower() == nomeDoEmoji.ToLower());
+                    await Task.Delay(200);
 
-                    if (De != null)
-                        return De;
+                    de = servidor.Emojis.Values.ToList().Find(x => x.Name.ToLower() == nomeDoEmoji.ToLower());
+
+                    if (de != null)
+                        return de;
                 }
             }
+
             if (commandContext.Guild.Emojis.Values.ToList().Find(x => x.Name.ToLower() == nomeDoEmoji.ToLower()) != null)
                 return commandContext.Guild.Emojis.Values.ToList().Find(x => x.Name.ToLower() == nomeDoEmoji.ToLower());
             else
             {
                 if (nomeDoEmoji.StartsWith(":") && nomeDoEmoji.EndsWith(":"))
-                    De = DiscordEmoji.FromName(commandContext.Client, nomeDoEmoji);
+                    de = DiscordEmoji.FromName(commandContext.Client, nomeDoEmoji);
                 else
-                    De = DiscordEmoji.FromName(commandContext.Client, $":{nomeDoEmoji}:");
+                    de = DiscordEmoji.FromName(commandContext.Client, $":{nomeDoEmoji}:");
             }
 
-            return De;
+            return de;
         }
 
         /// <summary>
@@ -112,31 +114,32 @@ namespace UBGE_Bot.Utilidades
         /// <returns></returns>
         public async Task<DiscordEmoji> ProcuraEmoji(DiscordClient discordClient, string nomeDoEmoji)
         {
-            DiscordEmoji De = null;
+            DiscordEmoji de = null;
 
-            foreach (var Servidor in discordClient.Guilds.Values)
+            foreach (var servidor in discordClient.Guilds.Values)
             {
-                if (Servidor.Emojis.Values.ToList().Find(x => x.Name.ToLower() == nomeDoEmoji.ToLower()) == null)
+                if (servidor.Emojis.Values.ToList().Find(x => x.Name.ToLower() == nomeDoEmoji.ToLower()) == null)
                 {
-                    DiscordGuild server = await discordClient.GetGuildAsync(Valores.Guilds.UBGE);
-                    De = server.Emojis.Values.ToList().Find(x => x.Name.ToLower() == nomeDoEmoji.ToLower());
+                    await Task.Delay(200);
 
-                    if (De != null)
-                        return De;
+                    de = servidor.Emojis.Values.ToList().Find(x => x.Name.ToLower() == nomeDoEmoji.ToLower());
+
+                    if (de != null)
+                        return de;
                 }
 
-                if (Servidor.Emojis.Values.ToList().Find(x => x.Name.ToLower() == nomeDoEmoji.ToLower()) != null)
-                    return Servidor.Emojis.Values.ToList().Find(x => x.Name.ToLower() == nomeDoEmoji.ToLower());
+                if (servidor.Emojis.Values.ToList().Find(x => x.Name.ToLower() == nomeDoEmoji.ToLower()) != null)
+                    return servidor.Emojis.Values.ToList().Find(x => x.Name.ToLower() == nomeDoEmoji.ToLower());
                 else
                 {
-                    if (nomeDoEmoji.StartsWith(":") && nomeDoEmoji.EndsWith(":"))
-                        De = DiscordEmoji.FromName(discordClient, nomeDoEmoji);
-                    else
-                        De = DiscordEmoji.FromName(discordClient, $":{nomeDoEmoji}:");
+                        if (nomeDoEmoji.StartsWith(":") && nomeDoEmoji.EndsWith(":"))
+                            de = DiscordEmoji.FromName(discordClient, nomeDoEmoji);
+                        else
+                            de = DiscordEmoji.FromName(discordClient, $":{nomeDoEmoji}:");
                 }
             }
 
-            return De;
+            return de;
         }
 
         /// <summary>
@@ -254,7 +257,7 @@ namespace UBGE_Bot.Utilidades
             else if (membro.Presence.Status == UserStatus.Online)
                 return "Online";
             else if (membro.Presence.Status == UserStatus.DoNotDisturb)
-                return "Ocupado";
+                return "Não pertube";
             else if (membro.Presence.Status == UserStatus.Offline)
                 return "Offline";
             else if (membro.Presence.Status == UserStatus.Invisible)
@@ -282,6 +285,86 @@ namespace UBGE_Bot.Utilidades
         /// <returns></returns>
         public string RetornaNomeDiscord(DiscordMember membro)
             => $"{(string.IsNullOrWhiteSpace(membro.Nickname) ? membro.Username : membro.Nickname)}";
+
+        public async Task<List<DiscordEmoji>> RetornaEmojis(CommandContext commandContext, List<string> emojisParaBuscar) 
+        {
+            List<DiscordEmoji> emojis = new List<DiscordEmoji>();
+
+            foreach (var nomeEmoji in emojisParaBuscar)
+                    emojis.Add(await ProcuraEmoji(commandContext, nomeEmoji));
+
+            return emojis;
+        }
+
+        public async Task<List<DiscordEmoji>> RetornaEmojis(DiscordClient discordClient, List<string> emojisParaBuscar) 
+        {
+            List<DiscordEmoji> emojis = new List<DiscordEmoji>();
+
+            foreach (var nomeEmoji in emojisParaBuscar)
+                    emojis.Add(await ProcuraEmoji(discordClient, nomeEmoji));
+
+            return emojis;
+        }
+
+        public string RetornaEstado(string siglaEstado)
+        {
+            if (siglaEstado.ToUpper() == "AM")
+                return "Amazonas";
+            else if (siglaEstado.ToUpper() == "RR")
+                return "Roraima";
+            else if (siglaEstado.ToUpper() == "AP")
+                return "Amapá";
+            else if (siglaEstado.ToUpper() == "PA")
+                return "Pará";
+            else if (siglaEstado.ToUpper() == "TO")
+                return "Tocantins";
+            else if (siglaEstado.ToUpper() == "RO")
+                return "Rondônia";
+            else if (siglaEstado.ToUpper() == "AC")
+                return "Acre";
+            else if (siglaEstado.ToUpper() == "MA")
+                return "Maranhão";
+            else if (siglaEstado.ToUpper() == "PI")
+                return "Piauí";
+            else if (siglaEstado.ToUpper() == "CE")
+                return "Ceará";
+            else if (siglaEstado.ToUpper() == "RN")
+                return "Rio Grande do Norte";
+            else if (siglaEstado.ToUpper() == "PE")
+                return "Pernambuco";
+            else if (siglaEstado.ToUpper() == "PB")
+                return "Paraíba";
+            else if (siglaEstado.ToUpper() == "SE")
+                return "Sergipe";
+            else if (siglaEstado.ToUpper() == "AL")
+                return "Alagoas";
+            else if (siglaEstado.ToUpper() == "BA")
+                return "Bahia";
+            else if (siglaEstado.ToUpper() == "MT")
+                return "Mato Grosso";
+            else if (siglaEstado.ToUpper() == "MS")
+                return "Mato Grosso do Sul";
+            else if (siglaEstado.ToUpper() == "GO")
+                return "Goiás";
+            else if (siglaEstado.ToUpper() == "DF")
+                return "Distrito Federal";
+            else if (siglaEstado.ToUpper() == "SP")
+                return "São Paulo";
+            else if (siglaEstado.ToUpper() == "RJ")
+                return "Rio de Janeiro";
+            else if (siglaEstado.ToUpper() == "ES")
+                return "Espírito Santo";
+            else if (siglaEstado.ToUpper() == "MG")
+                return "Minas Gerais";
+            else if (siglaEstado.ToUpper() == "PR")
+                return "Paraná";
+            else if (siglaEstado.ToUpper() == "RS")
+                return "Rio Grande do Sul";
+            else if (siglaEstado.ToUpper() == "SC")
+                return "Santa Catarina";
+            else
+                return "Não especificado.";
+        }
     }
 
     public sealed class UBGE_E_EtcAttribute : CheckBaseAttribute

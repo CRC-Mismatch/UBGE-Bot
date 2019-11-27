@@ -8,7 +8,6 @@ using MongoDB.Bson;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +16,7 @@ using System.IO;
 using System.Text;
 using System.Net.Http;
 using Timer = System.Timers.Timer;
+using UBGE_Bot.APIs;
 using UBGE_Bot.Carregamento;
 using UBGE_Bot.Utilidades;
 using UBGE_Bot.MongoDB.Modelos;
@@ -31,30 +31,37 @@ namespace UBGE_Bot.Main
 
         public static HttpClient httpClientMain { get; private set; } = new HttpClient();
 
+        private static string prefixoMetodoServidores = "//";
+
+        public static List<DiscordEmoji> emojisCache = new List<DiscordEmoji>();
+
         private static async Task Main(string[] args)
         {
             try 
             {
-                //ContainerBuilder containerBuilder = new ContainerBuilder
-                //{
-
-                //};
-
-                //bot.services = containerBuilder.Build();
+                ContainerBuilder containerBuilder = new ContainerBuilder();
+                {
+                    containerBuilder.RegisterType<Google_Sheets.Read>().SingleInstance();
+                    containerBuilder.RegisterType<Google_Sheets.Write>().SingleInstance();
+                }
+                ubgeBot.servicesIContainer = containerBuilder.Build();
 
                 Timer timerServidores = new Timer()
                 {
-                    Interval = 5000,
+                    Interval = 15000,
                 };
                 timerServidores.Elapsed += async delegate
                 {
-                    await BuscaServidoresPR(ubgeBot, httpClientMain, "//");
-                    await BuscaServidoresConanExiles(ubgeBot, httpClientMain, "//");
-                    await BuscaServidoresCounterStrike(ubgeBot, httpClientMain, "//");
-                    await BuscaServidoresDayZ(ubgeBot, httpClientMain, "//");
-                    await BuscaServidoresMordhau(ubgeBot, httpClientMain, "//");
-                    await BuscaServidoresOpenSpades(ubgeBot, httpClientMain, "//");
-                    await BuscaServidoresUnturned(ubgeBot, httpClientMain, "//");
+                    if (ubgeBot.botConectadoAoMongo)
+                    {
+                        await BuscaServidoresPR(ubgeBot, httpClientMain, prefixoMetodoServidores);
+                        await BuscaServidoresConanExiles(ubgeBot, httpClientMain, prefixoMetodoServidores);
+                        await BuscaServidoresCounterStrike(ubgeBot, httpClientMain, prefixoMetodoServidores);
+                        await BuscaServidoresDayZ(ubgeBot, httpClientMain, prefixoMetodoServidores);
+                        await BuscaServidoresMordhau(ubgeBot, httpClientMain, prefixoMetodoServidores);
+                        await BuscaServidoresOpenSpades(ubgeBot, httpClientMain, prefixoMetodoServidores);
+                        await BuscaServidoresUnturned(ubgeBot, httpClientMain, prefixoMetodoServidores);
+                    }
                 };
                 timerServidores.Start();
 
@@ -64,7 +71,8 @@ namespace UBGE_Bot.Main
                 };
                 timerComandos.Elapsed += async delegate
                 {
-                    //await ExecutaList(ubgeBot, "Executando o **//list** automaticamente...");
+                    if (ubgeBot.botConectadoAoMongo)
+                        await ExecutaList(ubgeBot, "Executando o **//list** automaticamente...");
                 };
                 timerComandos.Start();
 
@@ -74,7 +82,7 @@ namespace UBGE_Bot.Main
                 };
                 timerVoiceState.Elapsed += async delegate
                 {
-                    //await ChecaCanaisAutoCreate(ubgeBot);
+                    await ChecaCanaisAutoCreate(ubgeBot);
                 };
                 timerVoiceState.Start();
 
@@ -84,11 +92,13 @@ namespace UBGE_Bot.Main
                 };
                 timerModuloChecarBotAberto.Elapsed += async delegate
                 {
-                    //await ModuloBotAberto(ubgeBot);
+                    if (ubgeBot.botConectadoAoMongo)
+                        await ModuloBotAberto(ubgeBot);
                 };
                 timerModuloChecarBotAberto.Start();
 
-                //await EnviaDadosDiarios(ubgeBot);
+                if (ubgeBot.botConectadoAoMongo)
+                    await EnviaDadosDiarios(ubgeBot);
 
                 instanciaMain = new Program(ubgeBot);
                 await instanciaMain.ConectarEReconectarBotAoDiscordAsync(ubgeBot, false);
@@ -104,27 +114,41 @@ namespace UBGE_Bot.Main
         {
             try
             {
-                //ubgeBotClient.discordClient.Ready += DiscordIniciado;
-                //ubgeBotClient.discordClient.MessageReactionAdded += ReacaoAdicionadaReactRole;
-                //ubgeBotClient.discordClient.MessageReactionRemoved += ReacaoRemovidaReactRole;
-                //ubgeBotClient.discordClient.MessageCreated += MensagemCriada;
-                //ubgeBotClient.discordClient.VoiceStateUpdated += CanalDeVozPersonalizado;
-                //ubgeBotClient.discordClient.GuildBanAdded += NovoBan;
-                //ubgeBotClient.discordClient.GuildBanRemoved += BanRetirado;
-                //ubgeBotClient.discordClient.SocketClosed += BotCaiu;
-                //ubgeBotClient.discordClient.SocketErrored += BotCaiuEErroNoSocket;
-                //ubgeBotClient.discordClient.GuildMemberAdded += MembroEntra;
-                //ubgeBotClient.discordClient.GuildDownloadCompleted += DownloadsDosServidoresFoiConcluido;
+                ubgeBotClient.discordClient.Ready += DiscordIniciado;
+                ubgeBotClient.discordClient.GuildBanAdded += NovoBan;
+                ubgeBotClient.discordClient.GuildBanRemoved += BanRetirado;
+                ubgeBotClient.discordClient.SocketClosed += BotCaiu;
+                ubgeBotClient.discordClient.SocketErrored += BotCaiuEErroNoSocket;
+
+                if (ubgeBotClient.botConectadoAoMongo)
+                {
+                    ubgeBotClient.discordClient.MessageReactionAdded += ReacaoAdicionadaReactRole;
+                    ubgeBotClient.discordClient.MessageReactionRemoved += ReacaoRemovidaReactRole;
+                    ubgeBotClient.discordClient.MessageCreated += MensagemCriada;
+                    ubgeBotClient.discordClient.VoiceStateUpdated += CanalDeVozPersonalizado;
+                    ubgeBotClient.discordClient.GuildMemberAdded += MembroEntra;
+                    ubgeBotClient.discordClient.GuildDownloadCompleted += DownloadsDosServidoresFoiConcluido;
+                }
             }
             catch (Exception exception)
             {
-                ubgeBot.logExceptionsToDiscord.ExceptionToTxt(exception);
+                ubgeBotClient.logExceptionsToDiscord.ExceptionToTxt(exception);
                 ShutdownBot();
             }
         }
 
-        public async Task DiscordIniciado(ReadyEventArgs readyEventArgs) 
-            => await readyEventArgs.Client.UpdateStatusAsync(new DiscordActivity { Name = "Bem-Vindo a UBGE!", ActivityType = ActivityType.Playing });
+        public async Task DiscordIniciado(ReadyEventArgs readyEventArgs)
+        {
+            await readyEventArgs.Client.UpdateStatusAsync(new DiscordActivity { Name = "Bem-Vindo a UBGE!", ActivityType = ActivityType.Playing });
+        
+            if (!ubgeBot.botConectadoAoMongo)
+            {
+                DiscordChannel botUBGE = await readyEventArgs.Client.GetChannelAsync(Valores.ChatsUBGE.ubgeBot);
+
+                if (!(await botUBGE.GetMessagesAsync(1)).LastOrDefault().Content.Contains("Não foi possível conectar ao MongoDB!"))
+                    await botUBGE.SendMessageAsync("Não foi possível conectar ao MongoDB! Alguns comandos podem estar indisponíveis. :cry:");
+            }
+        }
 
         public async Task BotCaiu(SocketCloseEventArgs socketCloseEventArgs) 
             => await ConectarEReconectarBotAoDiscordAsync(ubgeBot, true);
@@ -136,6 +160,7 @@ namespace UBGE_Bot.Main
         {
             await ConfiguracaoDiscord(ubgeBot);
             await CheckReacoesMarcadasQuandoOBotEstavaOfflineNoReactRole(ubgeBot);
+            await FazOCacheDosEmojis(ubgeBot);
         }
         
         public async Task ReacaoAdicionadaReactRole(MessageReactionAddEventArgs messageReactionAddEventArgs)
@@ -148,9 +173,8 @@ namespace UBGE_Bot.Main
                 {
                     if (!messageReactionAddEventArgs.Channel.IsPrivate && messageReactionAddEventArgs.Guild.Id == Valores.Guilds.UBGE)
                     {
-                        var client = ubgeBot.mongoClient;
-                        var db = client.GetDatabase(Valores.Mongo.local);
-                        
+                        var db = ubgeBot.localDB;
+
                         var msgs = db.GetCollection<Reacts>(Valores.Mongo.reacts);
                         var dbContar = db.GetCollection<ContaMembrosQuePegaramCargos>(Valores.Mongo.contaMembrosQuePegaramCargos);
                         
@@ -159,11 +183,11 @@ namespace UBGE_Bot.Main
                         DiscordMember member = await messageReactionAddEventArgs.Channel.Guild.GetMemberAsync(messageReactionAddEventArgs.User.Id);
                         DiscordRole acessoGeral = messageReactionAddEventArgs.Channel.Guild.GetRole(Valores.Cargos.cargoAcessoGeral);
 
-                        ConcurrentDictionary<ulong, string> dict = new ConcurrentDictionary<ulong, string>();
-                        ConcurrentDictionary<ulong, ulong> e2r = new ConcurrentDictionary<ulong, ulong>();
+                        Dictionary<ulong, string> dict = new Dictionary<ulong, string>();
+                        Dictionary<ulong, ulong> e2r = new Dictionary<ulong, ulong>();
 
                         foreach (var x in resultadosMensagens)
-                            dict.TryAdd(x.idDaMensagem, x.categoria);
+                            dict.Add(x.idDaMensagem, x.categoria);
 
                         if (dict.Keys.Contains(messageReactionAddEventArgs.Message.Id))
                         {
@@ -174,7 +198,7 @@ namespace UBGE_Bot.Main
                                 var resultados = await (await jogos.FindAsync(filtro)).ToListAsync();
 
                                 foreach (var y in resultados)
-                                    e2r.TryAdd(y.idDoEmoji, y.idDoCargo);
+                                    e2r.Add(y.idDoEmoji, y.idDoCargo);
 
                                 if (e2r.ContainsKey(messageReactionAddEventArgs.Emoji.Id))
                                 {
@@ -268,9 +292,8 @@ namespace UBGE_Bot.Main
                 {
                     if (!messageReactionRemoveEventArgs.Channel.IsPrivate && messageReactionRemoveEventArgs.Channel.Guild.Id == Valores.Guilds.UBGE)
                     {
-                        var client = ubgeBot.mongoClient;
-                        var db = client.GetDatabase(Valores.Mongo.local);
-                        
+                        var db = ubgeBot.localDB;
+
                         var msgs = db.GetCollection<Reacts>(Valores.Mongo.reacts);
                         var dbContar = db.GetCollection<ContaMembrosQuePegaramCargos>(Valores.Mongo.contaMembrosQuePegaramCargos);
                         
@@ -279,11 +302,11 @@ namespace UBGE_Bot.Main
                         DiscordMember member = await messageReactionRemoveEventArgs.Channel.Guild.GetMemberAsync(messageReactionRemoveEventArgs.User.Id);
                         DiscordRole acessoGeral = messageReactionRemoveEventArgs.Channel.Guild.GetRole(Valores.Cargos.cargoAcessoGeral);
 
-                        ConcurrentDictionary<ulong, string> dict = new ConcurrentDictionary<ulong, string>();
-                        ConcurrentDictionary<ulong, ulong> e2r = new ConcurrentDictionary<ulong, ulong>();
+                        Dictionary<ulong, string> dict = new Dictionary<ulong, string>();
+                        Dictionary<ulong, ulong> e2r = new Dictionary<ulong, ulong>();
 
                         foreach (var x in resultadosMensagens)
-                            dict.TryAdd(x.idDaMensagem, x.categoria);
+                            dict.Add(x.idDaMensagem, x.categoria);
 
                         if (dict.Keys.Contains(messageReactionRemoveEventArgs.Message.Id))
                         {
@@ -294,7 +317,7 @@ namespace UBGE_Bot.Main
                                 var resultados = await (await jogos.FindAsync(filtro)).ToListAsync();
 
                                 foreach (var y in resultados)
-                                    e2r.TryAdd(y.idDoEmoji, y.idDoCargo);
+                                    e2r.Add(y.idDoEmoji, y.idDoCargo);
 
                                 if (e2r.ContainsKey(messageReactionRemoveEventArgs.Emoji.Id))
                                 {
@@ -359,8 +382,7 @@ namespace UBGE_Bot.Main
                 {
                     if (messageCreateEventArgs.Guild.Id == Valores.Guilds.UBGE)
                     {
-                        var mongo = ubgeBot.mongoClient;
-                        var db = mongo.GetDatabase(Valores.Mongo.local);
+                        var db = ubgeBot.localDB;
 
                         if (messageCreateEventArgs.Channel.Id == Valores.ChatsUBGE.canalSugestoes)
                         {
@@ -468,8 +490,7 @@ namespace UBGE_Bot.Main
                 {
                     try
                     {
-                        var client = ubgeBot.mongoClient;
-                        var local = client.GetDatabase(Valores.Mongo.local);
+                        var local = ubgeBot.localDB;
 
                         DiscordMember membro = await voiceStateUpdateEventArgs.Guild.GetMemberAsync(voiceStateUpdateEventArgs.User.Id);
 
@@ -517,8 +538,8 @@ namespace UBGE_Bot.Main
                                     else
                                         vc = await voiceStateUpdateEventArgs.Guild.CreateChannelAsync($"Sala do: {(membro.Nickname != null ? membro.Nickname : membro.Username)}", ChannelType.Voice, categoria);
 
-                                    await vc.AddOverwriteAsync(membro, Permissions.AccessChannels | Permissions.Speak | Permissions.UseVoice);
-                                    await vc.AddOverwriteAsync(botsMusicaisCargo, Permissions.AccessChannels | Permissions.Speak | Permissions.UseVoice);
+                                    await vc.AddOverwriteAsync(membro, Permissions.AccessChannels | Permissions.Speak | Permissions.UseVoice | Permissions.UseVoiceDetection);
+                                    await vc.AddOverwriteAsync(botsMusicaisCargo, Permissions.AccessChannels | Permissions.Speak | Permissions.UseVoice | Permissions.UseVoiceDetection);
 
                                     await salas.InsertOneAsync(new Salas
                                     {
@@ -541,13 +562,13 @@ namespace UBGE_Bot.Main
 
                                     if (resultadoSalas[0].salaTrancada)
                                     {
-                                        await vc.AddOverwriteAsync(voiceStateUpdateEventArgs.Guild.EveryoneRole, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak);
-                                        await vc.AddOverwriteAsync(ajudantesComunitariosCargo, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak);
-                                        await vc.AddOverwriteAsync(administradoresCargo, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak);
-                                        await vc.AddOverwriteAsync(diretoresCargo, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak);
-                                        await vc.AddOverwriteAsync(membro, Permissions.AccessChannels | Permissions.Speak | Permissions.UseVoice);
-                                        await vc.AddOverwriteAsync(botsMusicaisCargo, Permissions.AccessChannels | Permissions.Speak | Permissions.UseVoice);
-                                        await vc.AddOverwriteAsync(acessoGeralCargo, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak);
+                                        await vc.AddOverwriteAsync(voiceStateUpdateEventArgs.Guild.EveryoneRole, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection);
+                                        await vc.AddOverwriteAsync(ajudantesComunitariosCargo, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection);
+                                        await vc.AddOverwriteAsync(administradoresCargo, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection);
+                                        await vc.AddOverwriteAsync(diretoresCargo, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection);
+                                        await vc.AddOverwriteAsync(membro, Permissions.AccessChannels | Permissions.Speak | Permissions.UseVoice | Permissions.UseVoiceDetection);
+                                        await vc.AddOverwriteAsync(botsMusicaisCargo, Permissions.AccessChannels | Permissions.Speak | Permissions.UseVoice | Permissions.UseVoiceDetection);
+                                        await vc.AddOverwriteAsync(acessoGeralCargo, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection);
 
                                         await salas.UpdateOneAsync(filtroSalas, Builders<Salas>.Update.Set(u => u.salaTrancada, true));
 
@@ -555,13 +576,13 @@ namespace UBGE_Bot.Main
                                         {
                                             m = await voiceStateUpdateEventArgs.Guild.GetMemberAsync(u);
 
-                                            await vc.AddOverwriteAsync(m, Permissions.AccessChannels | Permissions.Speak | Permissions.UseVoice);
+                                            await vc.AddOverwriteAsync(m, Permissions.AccessChannels | Permissions.Speak | Permissions.UseVoice | Permissions.UseVoiceDetection);
                                         }
                                     }
                                     else
                                     {
-                                        await vc.AddOverwriteAsync(voiceStateUpdateEventArgs.Guild.EveryoneRole, Permissions.AccessChannels | Permissions.UseVoice | Permissions.Speak);
-                                        await vc.AddOverwriteAsync(botsMusicaisCargo, Permissions.AccessChannels | Permissions.Speak | Permissions.UseVoice);
+                                        await vc.AddOverwriteAsync(voiceStateUpdateEventArgs.Guild.EveryoneRole, Permissions.AccessChannels | Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection);
+                                        await vc.AddOverwriteAsync(botsMusicaisCargo, Permissions.AccessChannels | Permissions.Speak | Permissions.UseVoice | Permissions.UseVoiceDetection);
 
                                         await salas.UpdateOneAsync(filtroSalas, Builders<Salas>.Update.Set(u => u.salaTrancada, false));
                                     }
@@ -677,7 +698,7 @@ namespace UBGE_Bot.Main
 
                         DiscordEmbedBuilder embed = new DiscordEmbedBuilder
                         {
-                            Color = new UtilidadesGerais().CorAleatoriaEmbed(),
+                            Color = ubgeBot.utilidadesGerais.CorAleatoriaEmbed(),
                             Author = new DiscordEmbedBuilder.EmbedAuthor { Name = $"O membro: \"{(string.IsNullOrWhiteSpace(guildBanRemoveEventArgs.Member.Nickname) ? guildBanRemoveEventArgs.Member.Username : guildBanRemoveEventArgs.Member.Nickname)}#{guildBanRemoveEventArgs.Member.Discriminator}\" foi desbanido.", IconUrl = Valores.logoUBGE },
                             Description = $"Dia e Hora: {DateTime.Now.ToString()}\n\n" +
                                 $"ID do Membro: {guildBanRemoveEventArgs.Member.Id}",
@@ -705,8 +726,7 @@ namespace UBGE_Bot.Main
                 {
                     try
                     {
-                        var client = ubgeBot.mongoClient;
-                        var local = client.GetDatabase(Valores.Mongo.local);
+                        var local = ubgeBot.localDB;
                         var prisao = local.GetCollection<Infracao>(Valores.Mongo.infracoes);
                         var listaPrisao = await (await prisao.FindAsync(Builders<Infracao>.Filter.Eq(x => x.idInfrator, guildMemberAddEventArgs.Member.Id))).ToListAsync();
 
@@ -715,7 +735,7 @@ namespace UBGE_Bot.Main
 
                         DiscordChannel ubgeBotCanal = guildMemberAddEventArgs.Guild.GetChannel(Valores.ChatsUBGE.ubgeBot);
 
-                        if (listaPrisao.Count != 0 && (DateTime.Now.Add(new UtilidadesGerais().ConverterTempo(listaPrisao.LastOrDefault().dadosPrisao.tempoDoMembroNaPrisao)) < Convert.ToDateTime(listaPrisao.LastOrDefault().dataInfracao.ToString())))
+                        if (listaPrisao.Count != 0 && (DateTime.Now.Add(ubgeBot.utilidadesGerais.ConverterTempo(listaPrisao.LastOrDefault().dadosPrisao.tempoDoMembroNaPrisao)) < Convert.ToDateTime(listaPrisao.LastOrDefault().dataInfracao.ToString())))
                         {
                             foreach (DiscordRole cargo in guildMemberAddEventArgs.Guild.Roles.Values)
                                 await guildMemberAddEventArgs.Member.RevokeRoleAsync(cargo);
@@ -728,7 +748,7 @@ namespace UBGE_Bot.Main
                             {
                                 Author = new DiscordEmbedBuilder.EmbedAuthor { Name = $"O membro: {(string.IsNullOrWhiteSpace(guildMemberAddEventArgs.Member.Nickname) ? guildMemberAddEventArgs.Member.Username : guildMemberAddEventArgs.Member.Nickname)} tentou escapar da punição.", IconUrl = Valores.logoUBGE },
                                 Description = ":smile:",
-                                Color = new UtilidadesGerais().CorAleatoriaEmbed(),
+                                Color = ubgeBot.utilidadesGerais.CorAleatoriaEmbed(),
                                 ThumbnailUrl = guildMemberAddEventArgs.Member.AvatarUrl,
                                 Footer = new DiscordEmbedBuilder.EmbedFooter { Text = $"Comando requisitado pelo: {guildMemberAddEventArgs.Member.Username}" },
                             };
@@ -790,8 +810,7 @@ namespace UBGE_Bot.Main
             {
                 try
                 {
-                    var client = ubgeBotClient.mongoClient;
-                    var db = client.GetDatabase(Valores.Mongo.local);
+                    var db = ubgeBotClient.localDB;
 
                     var reacts = db.GetCollection<Reacts>(Valores.Mongo.reacts);
                     var roles = db.GetCollection<Jogos>(Valores.Mongo.jogos);
@@ -811,9 +830,9 @@ namespace UBGE_Bot.Main
                     DiscordGuild servidorMembro = null;
                     int N = 0;
 
-                    ConcurrentDictionary<string, string> categorias = new ConcurrentDictionary<string, string>();
+                    Dictionary<string, string> categorias = new Dictionary<string, string>();
                     foreach (var React in resultadoReacts)
-                        categorias.TryAdd($"{React.servidor} {N++} {React.idDoCanal}", $"{React.categoria}@ {React.idDaMensagem}");
+                        categorias.Add($"{React.servidor} {N++} {React.idDoCanal}", $"{React.categoria}@ {React.idDaMensagem}");
 
                     await Task.Delay(200);
 
@@ -833,15 +852,15 @@ namespace UBGE_Bot.Main
 
                         var Cargos = await (await roles.FindAsync(Builders<Jogos>.Filter.Eq(x => x.nomeDaCategoria, categoria.Value.Split('@')[0]))).ToListAsync();
 
-                        ConcurrentDictionary<ulong, ulong> EmojiRole = new ConcurrentDictionary<ulong, ulong>();
+                        Dictionary<ulong, ulong> EmojiRole = new Dictionary<ulong, ulong>();
                         foreach (var r in Cargos)
                             if (!string.IsNullOrEmpty(r.nomeDaCategoria))
-                                EmojiRole.TryAdd(r.idDoEmoji, r.idDoCargo);
+                                EmojiRole.Add(r.idDoEmoji, r.idDoCargo);
 
-                        ConcurrentDictionary<DiscordEmoji, IReadOnlyList<DiscordUser>> Usuarios = new ConcurrentDictionary<DiscordEmoji, IReadOnlyList<DiscordUser>>();
+                        Dictionary<DiscordEmoji, IReadOnlyList<DiscordUser>> Usuarios = new Dictionary<DiscordEmoji, IReadOnlyList<DiscordUser>>();
                         foreach (DiscordReaction discordReaction in mensagem.Reactions)
                         {
-                            Usuarios.TryAdd(discordReaction.Emoji, await mensagem.GetReactionsAsync(discordReaction.Emoji));
+                            Usuarios.Add(discordReaction.Emoji, await mensagem.GetReactionsAsync(discordReaction.Emoji));
                             
                             await Task.Delay(200);
                         }
@@ -928,8 +947,7 @@ namespace UBGE_Bot.Main
             {
                 try
                 {
-                    var clientMongo = ubgeBotClient.mongoClient;
-                    var local = clientMongo.GetDatabase(Valores.Mongo.local);
+                    var local = ubgeBotClient.localDB;
                     var reacts = local.GetCollection<Reacts>(Valores.Mongo.reacts);
                     var filtro = Builders<Reacts>.Filter.Empty;
                     var listaReacts = await (await reacts.FindAsync(filtro)).ToListAsync();
@@ -1002,8 +1020,7 @@ namespace UBGE_Bot.Main
 
                         if (DateTime.Now.Hour == 23 && DateTime.Now.Minute == 59 && DateTime.Now.Second == 55)
                         {
-                            var mongo = ubgeBotClient.mongoClient;
-                            var db = mongo.GetDatabase(Valores.Mongo.local);
+                            var db = ubgeBotClient.localDB;
                             var dbMembros = db.GetCollection<ContaMembrosQuePegaramCargos>(Valores.Mongo.contaMembrosQuePegaramCargos);
                             var dbMembrosRegistrados = db.GetCollection<MembrosQuePegaramOCargoDeMembroRegistrado>(Valores.Mongo.membrosQuePegaramOCargoDeMembroRegistrado);
 
@@ -1021,10 +1038,10 @@ namespace UBGE_Bot.Main
                             if (resultadosDBMembros.Count == 0 && resultadosDBMembrosRegistrados.Count == 0)
                             {
                                 embed.WithAuthor("Não tenho dados para apresentar :/", null, Valores.logoUBGE)
-                                    .WithColor(new UtilidadesGerais().CorAleatoriaEmbed())
+                                    .WithColor(ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
                                     .WithDescription(":pensive:")
                                     .WithFooter($"Nada há declarar. Às: {DateTime.Now.ToString()}")
-                                    .WithThumbnailUrl((await new UtilidadesGerais().ProcuraEmoji(ubgeBot.discordClient, "gatu")).Url);
+                                    .WithThumbnailUrl((await ubgeBot.utilidadesGerais.ProcuraEmoji(ubgeBot.discordClient, "gatu")).Url);
 
                                 await BotUBGE.SendMessageAsync(embed: embed.Build());
                             }
@@ -1069,9 +1086,9 @@ namespace UBGE_Bot.Main
                                 }
 
                                 embed.WithAuthor("Dados do React Role e dos Membros Registrados:", null, Valores.logoUBGE)
-                                    .WithColor(new UtilidadesGerais().CorAleatoriaEmbed())
-                                    .WithDescription($":smile: {await new UtilidadesGerais().ProcuraEmoji(ubgeBotClient.discordClient, "ubge")}")
-                                    .WithThumbnailUrl((await new UtilidadesGerais().ProcuraEmoji(ubgeBotClient.discordClient, "uhu")).Url)
+                                    .WithColor(ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                                    .WithDescription($":smile: {await ubgeBot.utilidadesGerais.ProcuraEmoji(ubgeBotClient.discordClient, "ubge")}")
+                                    .WithThumbnailUrl((await ubgeBot.utilidadesGerais.ProcuraEmoji(ubgeBotClient.discordClient, "uhu")).Url)
                                     .WithFooter($"Esses dados são enviados automaticamente pelo bot para fins de estatísticas da UBGE.");
 
                                 await BotUBGE.SendMessageAsync(embed: embed.Build());
@@ -1102,8 +1119,7 @@ namespace UBGE_Bot.Main
             {
                 try
                 {
-                    var mongo = ubgeBotClient.mongoClient;
-                    var db = mongo.GetDatabase(Valores.Mongo.local);
+                    var db = ubgeBotClient.localDB;
                     var collectionCheckBotAberto = db.GetCollection<CheckBotAberto>(Valores.Mongo.checkBotAberto);
 
                     var filtro = Builders<CheckBotAberto>.Filter.Empty;
@@ -1131,24 +1147,23 @@ namespace UBGE_Bot.Main
                 try
                 {
                     DiscordGuild UBGE = await ubgeBotClient.discordClient.GetGuildAsync(Valores.Guilds.UBGE);
-                    await Task.Delay(200);
-                    DiscordChannel cliqueAquiVoz = UBGE.GetChannel(Valores.ChatsUBGE.cliqueAqui);
-                    await Task.Delay(200);
-                    DiscordChannel batePapo = UBGE.GetChannel(Valores.ChatsUBGE.batePapoVozUBGE);
-                    await Task.Delay(200);
-                    DiscordChannel radioCanal = UBGE.GetChannel(Valores.ChatsUBGE.radio);
 
                     var CanaisVozJogosGerais = UBGE.Channels.Values.ToList().FindAll(x => x.Parent != null && x.Parent.Name.ToUpper().Contains("UBGE") && x.Type == ChannelType.Voice && x.Parent.Position <= 7);
+                    
+                    DiscordChannel cliqueAquiVoz = CanaisVozJogosGerais.Find(x => x.Name.ToUpper().Contains("CLIQUE"));
+                    DiscordChannel batePapo = CanaisVozJogosGerais.Find(x => x.Name.ToUpper().Contains("PAPO"));
+                    
                     CanaisVozJogosGerais.Remove(cliqueAquiVoz);
                     CanaisVozJogosGerais.Remove(batePapo);
-                    CanaisVozJogosGerais.Remove(radioCanal);
+                    CanaisVozJogosGerais.Remove(CanaisVozJogosGerais.Find(x => x.Name.ToUpper().Contains("RÁDIO")));
 
                     if (cliqueAquiVoz.Users.Count() != 0)
                     {
                         foreach (var Membro in cliqueAquiVoz.Users)
                         {
-                            await Membro.PlaceInAsync(batePapo);
                             await Task.Delay(200);
+
+                            await Membro.PlaceInAsync(batePapo);
                         }
                     }
 
@@ -1158,8 +1173,9 @@ namespace UBGE_Bot.Main
                         {
                             if (Canal.Users.Count() == 0)
                             { 
-                                await Canal.DeleteAsync();
                                 await Task.Delay(200);
+
+                                await Canal.DeleteAsync();
                             }
                         }
                     }
@@ -1171,10 +1187,42 @@ namespace UBGE_Bot.Main
             }).Start();
         }
 
+        private static async Task FazOCacheDosEmojis(UBGEBot_ ubgeBotClient)
+        {
+            await Task.Delay(200);
+
+            new Thread(async () =>
+            {
+                try
+                {
+                    List<string> nomesEmojis = new List<string>
+                    {
+                        "YoutubeLogo", "DiscordLogo", "SiteLogo", "RedeSociaisLogo", "SteamLogo", "AmigosLogo",
+                        "GooglePlayLogo", "parceiros", "nossos_servidores", "PR", "Foxhole", "BF", "Os", "Squad",
+                        "Minecraft", "Unturned", "Gmod", "WarThunder", "PUBG", "Lol", "Rust", "csgo", "Paladins",
+                        "WildTerra", "BattleRush", "HG", "RTS", "Lif", "AlbionOnline", "regiao_norte", "bandeira_amazonas",
+                        "bandeira_roraima", "bandeira_amapa", "bandeira_para", "bandeira_tocantins", "bandeira_rondonia",
+                        "bandeira_acre", "regiao_nordeste", "regiao_nordeste", "bandeira_maranhao", "bandeira_piaui",
+                        "bandeira_ceara", "bandeira_rio_grande_do_norte", "bandeira_pernambuco", "bandeira_paraiba",
+                        "bandeira_sergipe", "bandeira_alagoas", "bandeira_bahia", "regiao_centro_oeste", "bandeira_mato_grosso",
+                        "bandeira_mato_grosso_do_sul", "bandeira_goias", "bandeira_distrito_federal", "regiao_sudeste",
+                        "bandeira_sao_paulo", "bandeira_rio_de_janeiro", "bandeira_espirito_santo", "bandeira_minas_gerais",
+                        "regiao_sul", "bandeira_parana", "bandeira_rio_grande_do_sul", "bandeira_santa_catarina", "exterior"
+                    };
+
+                    emojisCache.AddRange(await ubgeBot.utilidadesGerais.RetornaEmojis(ubgeBotClient.discordClient, nomesEmojis));
+                }
+                catch (Exception exception)
+                {
+                    await ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Sistemas, exception);
+                }
+            }).Start();
+        }
+
 
         private static async Task BuscaServidoresPR(UBGEBot_ ubgeBotClient, HttpClient httpClient, string prefixoUtilizado)
         {
-            await Task.Delay(200);
+            await Task.Delay(0);
 
             new Thread(async () =>
             {
@@ -1184,8 +1232,7 @@ namespace UBGE_Bot.Main
                     var resposta = (JObject)JsonConvert.DeserializeObject(linkPRSpy);
                     var listaResposta = (JArray)resposta.SelectToken("Data");
 
-                    var client = ubgeBotClient.mongoClient;
-                    var db = client.GetDatabase(Valores.Mongo.local);
+                    var db = ubgeBotClient.localDB;
                     var servidoresDB = db.GetCollection<ServidoresUBGE>(Valores.Mongo.servidoresUBGE);
 
                     var Filtro = Builders<ServidoresUBGE>.Filter.Eq(x => x.jogo, "pr");
@@ -1246,7 +1293,7 @@ namespace UBGE_Bot.Main
 
         private static async Task BuscaServidoresConanExiles(UBGEBot_ ubgeBotClient, HttpClient httpClient, string prefixoUtilizado)
         {
-            await Task.Delay(200);
+            await Task.Delay(0);
 
             new Thread(async () =>
             {
@@ -1256,8 +1303,7 @@ namespace UBGE_Bot.Main
                     var respostaJson = (JObject)JsonConvert.DeserializeObject(linkBattleMetrics);
                     var listaResposta = (JArray)respostaJson.SelectToken("data");
 
-                    var client = ubgeBotClient.mongoClient;
-                    var db = client.GetDatabase(Valores.Mongo.local);
+                    var db = ubgeBotClient.localDB;
                     var servidoresUBGE = db.GetCollection<ServidoresUBGE>(Valores.Mongo.servidoresUBGE);
                     var Filtro = Builders<ServidoresUBGE>.Filter.Eq(x => x.jogo, "ce");
                     var resultados = await (await servidoresUBGE.FindAsync(Filtro)).ToListAsync();
@@ -1265,8 +1311,9 @@ namespace UBGE_Bot.Main
                     if (resultados.Count > 0)
                         await servidoresUBGE.DeleteManyAsync(Filtro);
 
-                    foreach (var propServidor in listaResposta)
+                    foreach (var servidor in listaResposta)
                     {
+                        var propServidor = servidor.SelectToken("attributes"); 
                         var nomeServidor = propServidor.SelectToken("name").ToString();
                         var ipServidor = propServidor.SelectToken("ip").ToString();
                         var portaServidor = propServidor.SelectToken("port").ToString();
@@ -1303,8 +1350,9 @@ namespace UBGE_Bot.Main
                         }
                     }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    Console.WriteLine(ex.ToString());
                     ubgeBotClient.logExceptionsToDiscord.Aviso(LogExceptionsToDiscord.TipoAviso.Sistemas, "[ConanExiles-Servidores] A busca dos servidores Conan Exiles gerou um erro! Tudo normal, ainda continuo procurando...");
                 }
             }).Start();
@@ -1312,7 +1360,7 @@ namespace UBGE_Bot.Main
 
         private static async Task BuscaServidoresDayZ(UBGEBot_ ubgeBotClient, HttpClient httpClient, string prefixoUtilizado)
         {
-            await Task.Delay(200);
+            await Task.Delay(0);
 
             new Thread(async () =>
             {
@@ -1322,8 +1370,7 @@ namespace UBGE_Bot.Main
                     var resposta = (JObject)JsonConvert.DeserializeObject(linkBattleMetrics);
                     var listaResposta = (JArray)resposta.SelectToken("data");
 
-                    var client = ubgeBotClient.mongoClient;
-                    var db = client.GetDatabase(Valores.Mongo.local);
+                    var db = ubgeBotClient.localDB;
                     var servidoresUBGE = db.GetCollection<ServidoresUBGE>(Valores.Mongo.servidoresUBGE);
                     var Filtro = Builders<ServidoresUBGE>.Filter.Eq(x => x.jogo, "dyz");
                     var resultados = await (await servidoresUBGE.FindAsync(Filtro)).ToListAsync();
@@ -1331,8 +1378,9 @@ namespace UBGE_Bot.Main
                     if (resultados.Count > 0)
                         await servidoresUBGE.DeleteManyAsync(Filtro);
 
-                    foreach (var propServidor in listaResposta)
+                    foreach (var servidor in listaResposta)
                     {
+                        var propServidor = servidor.SelectToken("attributes");
                         var nomeServidor = propServidor.SelectToken("name").ToString();
                         var ipServidor = propServidor.SelectToken("ip").ToString();
                         var portaServidor = propServidor.SelectToken("port").ToString();
@@ -1380,7 +1428,7 @@ namespace UBGE_Bot.Main
 
         private static async Task BuscaServidoresOpenSpades(UBGEBot_ ubgeBotClient, HttpClient httpClient, string prefixoUtilizado)
         {
-            await Task.Delay(200);
+            await Task.Delay(0);
 
             new Thread(async () =>
             {
@@ -1389,8 +1437,7 @@ namespace UBGE_Bot.Main
                     var respostaBuildAndShoot = ubgeBotClient.utilidadesGerais.ByteParaString(await (await httpClient.GetAsync($"http://services.buildandshoot.com/serverlist.json")).Content.ReadAsByteArrayAsync());
                     var jArray = (JArray)JsonConvert.DeserializeObject(respostaBuildAndShoot);
 
-                    var client = ubgeBotClient.mongoClient;
-                    var db = client.GetDatabase(Valores.Mongo.local);
+                    var db = ubgeBotClient.localDB;
                     var servidoresUBGE = db.GetCollection<ServidoresUBGE>(Valores.Mongo.servidoresUBGE);
                     var filtro = Builders<ServidoresUBGE>.Filter.Eq(x => x.jogo, "os");
                     var resultados = await (await servidoresUBGE.FindAsync(filtro)).ToListAsync();
@@ -1445,7 +1492,7 @@ namespace UBGE_Bot.Main
 
         private static async Task BuscaServidoresCounterStrike(UBGEBot_ ubgeBotClient, HttpClient httpClient, string prefixoUtilizado)
         {
-            await Task.Delay(200);
+            await Task.Delay(0);
 
             new Thread(async () =>
             {
@@ -1455,8 +1502,7 @@ namespace UBGE_Bot.Main
                     var deserializeJson = (JObject)JsonConvert.DeserializeObject(respostaBattleMetrics);
                     var listaServidores = (JArray)deserializeJson.SelectToken("data");
 
-                    var client = ubgeBotClient.mongoClient;
-                    var db = client.GetDatabase(Valores.Mongo.local);
+                    var db = ubgeBotClient.localDB;
                     var servidoresUBGE = db.GetCollection<ServidoresUBGE>(Valores.Mongo.servidoresUBGE);
                     var filtro = Builders<ServidoresUBGE>.Filter.Eq(x => x.jogo, "cs");
                     var resultados = await (await servidoresUBGE.FindAsync(filtro)).ToListAsync();
@@ -1514,7 +1560,7 @@ namespace UBGE_Bot.Main
 
         private static async Task BuscaServidoresUnturned(UBGEBot_ ubgeBotClient, HttpClient httpClient, string prefixoUtilizado)
         {
-            await Task.Delay(200);
+            await Task.Delay(0);
 
             new Thread(async () =>
             {
@@ -1524,8 +1570,7 @@ namespace UBGE_Bot.Main
                     var deserializeJson = (JObject)JsonConvert.DeserializeObject(respostaBattleMetrics);
                     var listaServidores = (JArray)deserializeJson.SelectToken("data");
 
-                    var client = ubgeBotClient.mongoClient;
-                    var db = client.GetDatabase(Valores.Mongo.local);
+                    var db = ubgeBotClient.localDB;
                     var servidoresUBGE = db.GetCollection<ServidoresUBGE>(Valores.Mongo.servidoresUBGE);
                     var filtro = Builders<ServidoresUBGE>.Filter.Eq(x => x.jogo, "unturned");
                     var resultados = await (await servidoresUBGE.FindAsync(filtro)).ToListAsync();
@@ -1585,7 +1630,7 @@ namespace UBGE_Bot.Main
 
         private static async Task BuscaServidoresMordhau(UBGEBot_ ubgeBotClient, HttpClient httpClient, string prefixoUtilizado)
         {
-            await Task.Delay(200);
+            await Task.Delay(0);
 
             new Thread(async () =>
             {
@@ -1595,8 +1640,7 @@ namespace UBGE_Bot.Main
                     var deserializeJson = (JObject)JsonConvert.DeserializeObject(respostaBattleMetrics);
                     var listaServidores = (JArray)deserializeJson.SelectToken("data");
 
-                    var client = ubgeBotClient.mongoClient;
-                    var db = client.GetDatabase(Valores.Mongo.local);
+                    var db = ubgeBotClient.localDB;
                     var servidoresUBGE = db.GetCollection<ServidoresUBGE>(Valores.Mongo.servidoresUBGE);
                     var filtro = Builders<ServidoresUBGE>.Filter.Eq(x => x.jogo, "mordhau");
                     var resultados = await (await servidoresUBGE.FindAsync(filtro)).ToListAsync();
@@ -1616,7 +1660,6 @@ namespace UBGE_Bot.Main
                         var portaQuery = propServidor.SelectToken("portQuery").ToString();
                         var paisServidor = propServidor.SelectToken("country").ToString();
                         var detalhesServidor = propServidor.SelectToken("details");
-                        var versaoServidor = detalhesServidor.SelectToken("version").ToString();
                         var mapaServidor = detalhesServidor.SelectToken("map").ToString();
                         var modoDeJogo = detalhesServidor.SelectToken("gameMode").ToString();
 

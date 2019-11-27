@@ -50,9 +50,9 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                         return;
                     }
 
-                    DiscordEmoji addMembroRegistrado = DiscordEmoji.FromName(ctx.Client, ":large_blue_circle:");
-                    DiscordEmoji cancelaEmbed = DiscordEmoji.FromName(ctx.Client, ":red_circle:");
-                    DiscordEmoji removerMembroRegistrado = DiscordEmoji.FromName(ctx.Client, ":x:");
+                    DiscordEmoji addMembroRegistrado = DiscordEmoji.FromName(ctx.Client, ":large_blue_circle:"),
+                    cancelaEmbed = DiscordEmoji.FromName(ctx.Client, ":red_circle:"),
+                    removerMembroRegistrado = DiscordEmoji.FromName(ctx.Client, ":x:");
 
                     InteractivityExtension interact = ctx.Client.GetInteractivity();
 
@@ -64,9 +64,8 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
 
                     int nForeach = 0;
 
-                    var client = Program.ubgeBot.mongoClient;
-                    var local = client.GetDatabase(Valores.Mongo.local);
-                    
+                    var local = Program.ubgeBot.localDB;
+
                     var collectionInfracao = local.GetCollection<Infracao>(Valores.Mongo.infracoes);
                     var collectionCenso = local.GetCollection<Censo>(Valores.Mongo.censo);
                     var collectionMembrosQuePegaramCargos = local.GetCollection<MembrosQuePegaramOCargoDeMembroRegistrado>(Valores.Mongo.membrosQuePegaramOCargoDeMembroRegistrado);
@@ -84,7 +83,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
 
                     int index = 0;
                     
-                    StringBuilder str = new StringBuilder();
+                    StringBuilder str = new StringBuilder(), strCargos = new StringBuilder(), strServidores = new StringBuilder();
 
                     if (listaInfracao.Count == 0)
                         str.Append("Este membro não possui nenhuma infração.");
@@ -135,8 +134,6 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                     else
                         diasContaCriada = $"{(int)(DateTime.Now - membro.CreationTimestamp.DateTime).TotalDays} dias";
 
-                    StringBuilder strCargos = new StringBuilder();
-
                     foreach (var Cargo in membro.Roles.OrderByDescending(x => x.Position))
                         strCargos.Append($"{Cargo.Mention} | ");
 
@@ -149,8 +146,6 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                     }
 
                     statusMembro = Program.ubgeBot.utilidadesGerais.ConverteStatusPraNome(membro);
-
-                    StringBuilder strServidores = new StringBuilder();
 
                     foreach (var servidoresBot in ctx.Client.Guilds.Values)
                     {
@@ -177,7 +172,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                             .AddField("Fez o Censo Comunitário?:", builderFezCenso, false)
                             .AddField("Membro Registrado?:", membro.Roles.Contains(membroRegistrado) ? "Sim" : "Não", false)
                             .AddField("Cargos:", $"{(str.ToString() == "Os cargos excederam o limite de 1024 caracteres." ? $"{str.ToString()} Mas o membro tem {membro.Roles.Count()} cargos." : str.ToString())}")
-                            .AddField("Status:", $"{(membro.IsBot ? await new UtilidadesGerais().ProcuraEmoji(ctx, "Bot") : "")}{(membro.IsOwner ? ":crown:" : "")}{await new UtilidadesGerais().ConverteStatusParaEmoji(ctx, membro)}- {statusMembro}")
+                            .AddField("Status:", $"{(membro.IsBot ? await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(ctx, "Bot") : "")}{(membro.IsOwner ? ":crown:" : "")}{await Program.ubgeBot.utilidadesGerais.ConverteStatusParaEmoji(ctx, membro)}- {statusMembro}")
                             .AddField("Está em mais algum outro servidor?:", $"{(strServidores.ToString().EndsWith(", ") ? strServidores.ToString().Remove(strServidores.ToString().Length - 2) : strServidores.ToString())}")
                             .AddField("Respostas do Censo:", $"Estado: `{estado}`\n\n" +
                             $"Idade: `{idade}`\n\n" +
@@ -194,8 +189,8 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                             return;
 
                         await msgEmbed.CreateReactionAsync(removerMembroRegistrado);
+                        await Task.Delay(200);
                         await msgEmbed.CreateReactionAsync(cancelaEmbed);
-
                     }
                     else
                     {
@@ -210,7 +205,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                             .AddField("Fez o Censo Comunitário?:", builderFezCenso, false)
                             .AddField("Membro Registrado?:", membro.Roles.Contains(membroRegistrado) ? "Sim" : "Não", false)
                             .AddField("Cargos:", $"{(strCargos.ToString() == "Os cargos excederam o limite de 1024 caracteres." ? $"{str.ToString()} Mas o membro tem {membro.Roles.Count()} cargos." : str.ToString())}")
-                            .AddField("Status:", $"{(membro.IsBot ? await new UtilidadesGerais().ProcuraEmoji(ctx, "Bot") : "")}{(membro.IsOwner ? ":crown:" : "")}{await new UtilidadesGerais().ConverteStatusParaEmoji(ctx, membro)}- {statusMembro}")
+                            .AddField("Status:", $"{(membro.IsBot ? await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(ctx, "Bot") : "")}{(membro.IsOwner ? ":crown:" : "")}{await Program.ubgeBot.utilidadesGerais.ConverteStatusParaEmoji(ctx, membro)}- {statusMembro}")
                             .AddField("Está em mais algum outro servidor?:", $"{(strServidores.ToString().EndsWith(", ") ? strServidores.ToString().Remove(strServidores.ToString().Length - 2) : strServidores.ToString())}")
                             .AddField("Respostas do Censo:", $"Estado: `{estado}`\n\n" +
                             $"Idade: `{idade}`\n\n" +
@@ -230,6 +225,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                             await msgEmbed.CreateReactionAsync(addMembroRegistrado);
 
                         await msgEmbed.CreateReactionAsync(removerMembroRegistrado);
+                        await Task.Delay(200);
                         await msgEmbed.CreateReactionAsync(cancelaEmbed);
 
                     }
@@ -267,13 +263,9 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                         }
 
                         await msgEmbed.ModifyAsync(embed: embed.Build());
-                        return;
                     }
                     else if (emojo == cancelaEmbed)
-                    {
                         await msgEmbed.DeleteAllReactionsAsync();
-                        return;
-                    }
                     else if (emojo == removerMembroRegistrado)
                     {
                         Program.ubgeBot.utilidadesGerais.LimpaEmbed(embed);
@@ -307,7 +299,6 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                         }
 
                         await msgEmbed.ModifyAsync(embed: embed.Build());
-                        return;
                     }
                 }
                 catch (DSharpPlus.Exceptions.NotFoundException)
@@ -365,14 +356,19 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
 
                     var emojo = await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(ctx, "leofsjal");
 
-                    DiscordChannel centroReabilitacao = ctx.Guild.GetChannel(Valores.ChatsUBGE.centroDeReabilitacao);
+                    DiscordChannel centroReabilitacao = ctx.Guild.GetChannel(Valores.ChatsUBGE.centroDeReabilitacao),
+                    logChat = ctx.Guild.GetChannel(Valores.ChatsUBGE.canalLog);
 
-                    DiscordChannel logChat = ctx.Guild.GetChannel(Valores.ChatsUBGE.canalLog);
+                    DiscordEmoji marcarSim = DiscordEmoji.FromName(ctx.Client, ":white_check_mark:"),
+                    marcarNao = DiscordEmoji.FromName(ctx.Client, ":negative_squared_cross_mark:"),
+                    pastaDeArquivo = DiscordEmoji.FromName(ctx.Client, ":file_folder:");
+
+                    List<ulong> cargosLista = new List<ulong>();
+
+                    var local = Program.ubgeBot.localDB;
 
                     if (addtive.ToLowerInvariant() == "add")
                     {
-                        var client = Program.ubgeBot.mongoClient;
-                        var local = client.GetDatabase(Valores.Mongo.local);
                         var infracoesCollection = local.GetCollection<Infracao>(Valores.Mongo.infracoes);
 
                         Infracao ni = new Infracao
@@ -393,13 +389,15 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                             .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
 
                         DiscordMessage msgEmbed = await ctx.RespondAsync(embed: embed.Build());
-                        await msgEmbed.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":white_check_mark:"));
-                        await msgEmbed.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":negative_squared_cross_mark:"));
-                        await msgEmbed.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":file_folder:"));
+                        await msgEmbed.CreateReactionAsync(marcarSim);
+                        await Task.Delay(200);
+                        await msgEmbed.CreateReactionAsync(marcarNao);
+                        await Task.Delay(200);
+                        await msgEmbed.CreateReactionAsync(pastaDeArquivo);
 
                         var emoji = (await interact.WaitForReactionAsync(msgEmbed, ctx.User)).Result.Emoji;
 
-                        if (emoji == DiscordEmoji.FromName(ctx.Client, ":white_check_mark:"))
+                        if (emoji == marcarSim)
                         {
                             ni.dataInfracao = DateTime.Now.ToString();
                             ni.oMembroFoiPreso = true;
@@ -414,8 +412,6 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                                 .WithThumbnailUrl(membro.AvatarUrl)
                                 .WithDescription(emojo)
                                 .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
-
-                            List<ulong> cargosLista = new List<ulong>();
 
                             foreach (var cargo in cargosMembro)
                             {
@@ -461,7 +457,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
 
                             await logChat.SendMessageAsync(embed: embed.Build());
                         }
-                        else if (emoji == DiscordEmoji.FromName(ctx.Client, ":negative_squared_cross_mark:"))
+                        else if (emoji == marcarNao)
                         {
                             await msgEmbed.DeleteAllReactionsAsync();
 
@@ -475,9 +471,8 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                                 .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
 
                             await msgEmbed.ModifyAsync(embed: embed.Build());
-                            return;
                         }
-                        else if (emoji == DiscordEmoji.FromName(ctx.Client, ":file_folder:"))
+                        else if (emoji == pastaDeArquivo)
                         {
                             ni.dataInfracao = DateTime.Now.ToString();
                             ni.oMembroFoiPreso = false;
@@ -492,8 +487,6 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                                 .WithThumbnailUrl(membro.AvatarUrl)
                                 .WithDescription($"Membro: {membro.Mention}\n\nInfração: {infracao}\n\n{emojo}")
                                 .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
-
-                            List<ulong> cargosLista = new List<ulong>();
 
                             foreach (var cargo in cargosMembro)
                                 cargosLista.Add(cargo.Id);
@@ -512,8 +505,6 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                     }
                     else if (addtive.ToLowerInvariant() == "log")
                     {
-                        var client = Program.ubgeBot.mongoClient;
-                        var local = client.GetDatabase(Valores.Mongo.local);
                         var infracaoDB = local.GetCollection<Infracao>(Valores.Mongo.infracoes);
                         var lista = await (await infracaoDB.FindAsync(Builders<Infracao>.Filter.Eq(x => x.idInfrator, membro.Id))).ToListAsync();
 
@@ -527,7 +518,6 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                                 .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
 
                             await ctx.RespondAsync(embed: embed.Build());
-                            return;
                         }
                         else
                         {
@@ -592,7 +582,6 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                             .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
 
                         await ctx.RespondAsync(embed: embed.Build());
-                        return;
                     }
                 }
                 catch (DSharpPlus.Exceptions.NotFoundException)
@@ -669,8 +658,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                         return;
                     }
 
-                    var mongoClient = Program.ubgeBot.mongoClient;
-                    var db = mongoClient.GetDatabase(Valores.Mongo.local);
+                    var db = Program.ubgeBot.localDB;
                     var infracaoDB = db.GetCollection<Infracao>(Valores.Mongo.infracoes);
 
                     var filtro = Builders<Infracao>.Filter.Eq(x => x.motivoInfracao, infracao);
@@ -687,7 +675,6 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                             .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
 
                         await ctx.RespondAsync(embed: embed.Build());
-                        return;
                     }
                     else
                     {
@@ -728,16 +715,15 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                 {
                     DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
 
-                    var client = Program.ubgeBot.mongoClient;
-                    var local = client.GetDatabase(Valores.Mongo.local);
+                    var local = Program.ubgeBot.localDB;
                     var collectionCenso = local.GetCollection<Censo>(Valores.Mongo.censo);
 
                     await msgAguarde.ModifyAsync($"Aguarde... 30% {await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(ctx, "leofsjal")}");
 
                     var listaCenso = await (await collectionCenso.FindAsync(Builders<Censo>.Filter.Empty)).ToListAsync();
 
-                    DiscordRole cargoMembroRegistrado = ctx.Guild.GetRole(Valores.Cargos.cargoMembroRegistrado);
-                    DiscordRole prisioneiroCargo = ctx.Guild.GetRole(Valores.Cargos.cargoPrisioneiro);
+                    DiscordRole cargoMembroRegistrado = ctx.Guild.GetRole(Valores.Cargos.cargoMembroRegistrado),
+                    prisioneiroCargo = ctx.Guild.GetRole(Valores.Cargos.cargoPrisioneiro);
 
                     var membrosTotaisUBGE = (await ctx.Guild.GetAllMembersAsync()).ToList();
 
@@ -853,8 +839,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
 
                     DiscordRole prisioneiroCargo = ctx.Guild.GetRole(Valores.Cargos.cargoPrisioneiro);
 
-                    var client = Program.ubgeBot.mongoClient;
-                    var db = client.GetDatabase(Valores.Mongo.local);
+                    var db = Program.ubgeBot.localDB;
                     var collectionInfracoes = db.GetCollection<Infracao>(Valores.Mongo.infracoes);
 
                     var filtro = Builders<Infracao>.Filter.Eq(x => x.idInfrator, membro.Id);
@@ -882,8 +867,8 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                     var horaAtual = DateTime.Now;
                     var horarioDeSaida = horaAtual.Add(tempoDaPrisao).ToString();
 
-                    DiscordChannel centroReabilitacao = ctx.Guild.GetChannel(Valores.ChatsUBGE.centroDeReabilitacao);
-                    DiscordChannel logChat = ctx.Guild.GetChannel(Valores.ChatsUBGE.canalLog);
+                    DiscordChannel centroReabilitacao = ctx.Guild.GetChannel(Valores.ChatsUBGE.centroDeReabilitacao),
+                    logChat = ctx.Guild.GetChannel(Valores.ChatsUBGE.canalLog);
 
                     List<ulong> cargos = new List<ulong>();
 
@@ -1028,14 +1013,13 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                         return;
                     }
 
-                    var mongoClient = Program.ubgeBot.mongoClient;
-                    var local = mongoClient.GetDatabase(Valores.Mongo.local);
+                    var local = Program.ubgeBot.localDB;
                     var collectionInfracoes = local.GetCollection<Infracao>(Valores.Mongo.infracoes);
 
                     var filtro = Builders<Infracao>.Filter.Eq(x => x.idInfrator, membro.Id);
                     var listaInfracoes = await (await collectionInfracoes.FindAsync(filtro)).ToListAsync();
 
-                    DiscordRole prisioneiroCargo = ctx.Guild.GetRole(Valores.Cargos.cargoPrisioneiro);
+                    DiscordRole prisioneiroCargo = ctx.Guild.GetRole(Valores.Cargos.cargoPrisioneiro), cargo = null;
 
                     if (listaInfracoes.Count == 0)
                     {
@@ -1046,27 +1030,25 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                             .WithTimestamp(DateTime.Now);
 
                         await ctx.RespondAsync(embed: embed.Build());
-                        return;
                     }
                     else
                     {
                         if (membro.Roles.Contains(prisioneiroCargo))
                             await membro.RevokeRoleAsync(prisioneiroCargo);
 
-                        DiscordRole Cargo = null;
                         ulong cargoUlong = 0;
                         StringBuilder strCargos = new StringBuilder();
 
                         foreach (var cargoForeach in listaInfracoes.LastOrDefault().dadosPrisao.cargosDoMembro)
                         {
                             cargoUlong = Convert.ToUInt64(cargoForeach);
-                            Cargo = ctx.Guild.GetRole(cargoUlong);
+                            cargo = ctx.Guild.GetRole(cargoUlong);
 
                             await Task.Delay(200);
 
-                            await membro.GrantRoleAsync(Cargo);
+                            await membro.GrantRoleAsync(cargo);
 
-                            strCargos.Append($"{Cargo.Mention} | ");
+                            strCargos.Append($"{cargo.Mention} | ");
                         }
 
                         embed.WithColor(DiscordColor.Green)
@@ -1186,8 +1168,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                         return;
                     }
 
-                    var mongoClient = Program.ubgeBot.mongoClient;
-                    var local = mongoClient.GetDatabase(Valores.Mongo.local);
+                    var local = Program.ubgeBot.localDB;
                     var collectionInfracao = local.GetCollection<Infracao>(Valores.Mongo.infracoes);
 
                     var filtro = Builders<Infracao>.Filter.Eq(m => m.idInfrator, membro.Id);
@@ -1203,7 +1184,6 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                             .WithTimestamp(DateTime.Now);
 
                         await ctx.RespondAsync(embed: embed.Build());
-                        return;
                     }
                     else
                     {
@@ -1256,8 +1236,6 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                         await ctx.RespondAsync(embed: embed.Build());
 
                         cancellationTokenSource.Dispose();
-
-                        return;
                     }
                 }
                 catch (DSharpPlus.Exceptions.NotFoundException)
@@ -1297,7 +1275,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                         Author = new DiscordEmbedBuilder.EmbedAuthor { Name = "Membros que estão na prisão:", IconUrl = Valores.logoUBGE },
                         Description = strPrisioneiros.ToString(),
                         Footer = new DiscordEmbedBuilder.EmbedFooter { IconUrl = ctx.Member.AvatarUrl, Text = $"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}" },
-                        Color = new UtilidadesGerais().CorAleatoriaEmbed(),
+                        Color = Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed(),
                     };
 
                     await ctx.RespondAsync(embed: Embed.Build());
