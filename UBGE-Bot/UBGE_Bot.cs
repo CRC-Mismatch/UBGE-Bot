@@ -31,10 +31,12 @@ namespace UBGE_Bot.Carregamento
         public IContainer servicesIContainer { get; set; }
 
         public UtilidadesGerais utilidadesGerais { get; private set; }
-
-        private string PrefixoMensagens = "[Config]";
-
+        
         public bool botConectadoAoMongo { get; set; } = true;
+
+        public string prefixoMensagens { get; private set; } = "[Config]";
+        public string prefixoBotConsole { get; private set; } = "[UBGE-Bot]";
+        public string versaoBot { get; private set; } = $"v{Assembly.GetEntryAssembly().GetName().Version.ToString()}-beta3";
 
         public UBGEBot_()
         {
@@ -45,18 +47,23 @@ namespace UBGE_Bot.Carregamento
 
                 try
                 {
-                    mongoClient = new MongoClient($"mongodb://{ubgeBotConfig.ubgeBotDatabasesConfig.mongoDBIP}:{ubgeBotConfig.ubgeBotDatabasesConfig.mongoDBPorta}");
+                    mongoClient = new MongoClient(new MongoClientSettings 
+                    { 
+                        Server = new MongoServerAddress(ubgeBotConfig.ubgeBotDatabasesConfig.mongoDBIP, int.Parse(ubgeBotConfig.ubgeBotDatabasesConfig.mongoDBPorta)),
+                        ConnectTimeout = TimeSpan.FromSeconds(5),
+                    });
+                    
                     localDB = mongoClient.GetDatabase(Valores.Mongo.local);
-
+                    
                     localDB.RunCommand<BsonDocument>(new BsonDocument("ping", 1));
                 }
                 catch (TimeoutException)
                 {
                     botConectadoAoMongo = false;
 
-                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.BackgroundColor = ConsoleColor.White;
-                    Console.WriteLine($"{Valores.prefixoBot} {PrefixoMensagens} Não foi possível conectar ao MongoDB! Alguns comandos podem estar indisponíveis.");
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"{logExceptionsToDiscord.RetornaDataAtualParecidoComODSharpPlus()} {prefixoBotConsole} [Erro] {prefixoMensagens} Não foi possível conectar ao MongoDB! Alguns comandos podem estar indisponíveis.");
                     Console.ResetColor();
                 }
                 
@@ -68,9 +75,9 @@ namespace UBGE_Bot.Carregamento
                 }
                 catch (Exception)
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.BackgroundColor = ConsoleColor.White;
-                    Console.WriteLine($"{Valores.prefixoBot} {PrefixoMensagens} Não foi possível conectar ao MySQL para pegar dados do rank dos jogadores de Counter-Strike 1.6.");
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"{logExceptionsToDiscord.RetornaDataAtualParecidoComODSharpPlus()} {prefixoBotConsole} [Erro] {prefixoMensagens} Não foi possível conectar ao MySQL para pegar dados do rank dos jogadores de Counter-Strike 1.6.");
                     Console.ResetColor();
                 }
             
@@ -86,7 +93,7 @@ namespace UBGE_Bot.Carregamento
 
                 commandsNext.RegisterCommands(Assembly.GetEntryAssembly());
 
-                Console.Title = $"UBGE-Bot online! v{Valores.versao_Bot}-beta2";
+                Console.Title = $"UBGE-Bot online! {versaoBot}";
             }
             catch (Exception exception)
             {

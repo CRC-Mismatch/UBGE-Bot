@@ -14,6 +14,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -88,7 +89,27 @@ namespace UBGE_Bot.Comandos.Gerais
         public async Task MeuIDAsync(CommandContext ctx)
             => await ctx.RespondAsync($"{ctx.Member.Mention}, seu ID é: {ctx.Member.Id}.");
 
-        [Command("fazercenso")]
+        [Command("uptime"), Aliases("tempobotligado")]
+
+        public async Task UptimeBotAsync(CommandContext ctx)
+        {
+            try
+            {
+                await ctx.TriggerTypingAsync();
+
+                Process p = Process.GetCurrentProcess();
+
+                var dataFinal = DateTime.Now - p.StartTime;
+
+                await ctx.RespondAsync($"Estou ligado há: {(dataFinal.Days == 0 ? string.Empty : $"{(dataFinal.Days > 1 ? $"**{dataFinal.Days} dias**, " : $"**{dataFinal.Days} dia**, ")}")}{(dataFinal.Hours == 0 ? string.Empty : $"{(dataFinal.Hours > 1 ? $"**{dataFinal.Hours} horas**, " : $"**{dataFinal.Hours} hora**, ")}")}{(dataFinal.Minutes == 0 ? string.Empty : $"{(dataFinal.Minutes > 1 ? $"**{dataFinal.Minutes} minutos**" : $"**{dataFinal.Minutes} minuto**")}")}{(dataFinal.Seconds == 0 ? string.Empty : $"{(dataFinal.Seconds > 1 ? $" e **{dataFinal.Seconds} segundos**" : $" e **{dataFinal.Seconds} segundo**")}")}.");
+            }
+            catch (Exception exception)
+            {
+                await Program.ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Comandos, exception);
+            }
+        }
+
+        //[Command("fazercenso")]
 
         public async Task FazerCensoAsync(CommandContext ctx)
         {
@@ -103,11 +124,28 @@ namespace UBGE_Bot.Comandos.Gerais
                     var local = Program.ubgeBot.localDB;
                     var collectionCenso = local.GetCollection<Censo>(Valores.Mongo.censo);
 
+                    DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
                     DiscordDmChannel pvMembro = await ctx.Member.CreateDmChannelAsync();
+
+                    if (!await PossoEnviarMensagensDoPrivadoDoMembro(pvMembro))
+                    {
+                        embed.WithAuthor("Erro!", null, Valores.logoUBGE)
+                            .WithDescription($"Não consigo mandar o questionário no seu privado! Ative as mensagens diretas.")
+                            .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                            .WithTimestamp(DateTime.Now);
+
+                        await ctx.RespondAsync(embed: embed.Build(), content: ctx.Member.Mention);
+
+                        return;
+                    }
+
                     var interact = ctx.Client.GetInteractivity();
                     string logoUBGEFoto = Directory.GetCurrentDirectory() + @"\Logos\LogoUBGE.png";
-                    DiscordChannel log = ctx.Guild.GetChannel(Valores.ChatsUBGE.canalLog), ubgeBot = ctx.Guild.GetChannel(Valores.ChatsUBGE.ubgeBot);
-                    DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+
+                    List<DiscordChannel> canaisUBGE = ctx.Guild.Channels.Values.ToList();
+
+                    DiscordChannel log = ctx.Guild.GetChannel(canaisUBGE.Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalLog)).Id);//, ubgeBot = ctx.Guild.GetChannel(canaisUBGE.Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalUBGEBot)).Id);
                     DiscordMember luiz = await ctx.Guild.GetMemberAsync(Valores.Guilds.Membros.luiz);
 
                     string respostaFinalComoChegouAUBGE = string.Empty,
@@ -127,6 +165,8 @@ namespace UBGE_Bot.Comandos.Gerais
 
                     bool censoDenovo = false;
 
+                    DiscordMessage msgEmbed = null;
+
                     if (listaFezOCenso.Count != 0)
                     {
                         censoDenovo = true;
@@ -143,12 +183,12 @@ namespace UBGE_Bot.Comandos.Gerais
                              .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
                              .WithTimestamp(DateTime.Now);
 
-                        DiscordMessage msgEmbed = await ctx.RespondAsync(embed: embed.Build());
+                        msgEmbed = await ctx.RespondAsync(embed: embed.Build());
                         await msgEmbed.CreateReactionAsync(marcarSim);
                         await Task.Delay(200);
                         await msgEmbed.CreateReactionAsync(marcarNao);
 
-                        var respostaEmoji = (await interact.WaitForReactionAsync(msgEmbed, ctx.User)).Result.Emoji;
+                        var respostaEmoji = (await interact.WaitForReactionAsync(msgEmbed, ctx.User, TimeSpan.FromMinutes(1))).Result.Emoji;
 
                         if (respostaEmoji == marcarSim)
                         {
@@ -156,8 +196,23 @@ namespace UBGE_Bot.Comandos.Gerais
                             await msgEmbed.DeleteAsync();
                         }
                         else if (respostaEmoji == marcarNao)
+                        {
+                            await msgEmbed.ModifyAsync(embed: embed.WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                                .WithAuthor("Certo! Quando quiser refazer seu censo, só executar este comando novamente.", null, Valores.logoUBGE)
+                                .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                                .WithDescription(":thumbsup:")
+                                .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                                .WithTimestamp(DateTime.Now)
+                                .Build());
+
+                            await msgEmbed.DeleteAllReactionsAsync();
+
                             return;
+                        }
                     }
+
+                    if (ctx.Message != null)
+                        await ctx.Message.DeleteAsync();
 
                     Program.ubgeBot.utilidadesGerais.LimpaEmbed(embed);
 
@@ -541,7 +596,7 @@ namespace UBGE_Bot.Comandos.Gerais
                             .WithAuthor($"Digite o país em que você mora.", null, Valores.logoUBGE);
 
                         DiscordMessage perguntaPaisExterior = await pvMembro.SendMessageAsync(embed: embed.Build());
-                        DiscordMessage inputPaisExterior = await new UtilidadesGerais().PegaRespostaPrivado(interact, ctx);
+                        DiscordMessage inputPaisExterior = await Program.ubgeBot.utilidadesGerais.PegaRespostaPrivado(interact, ctx);
 
                         respostaFinalEstadoOndeOMembroMora = inputPaisExterior.Content;
                     }
@@ -552,7 +607,7 @@ namespace UBGE_Bot.Comandos.Gerais
                         .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed());
 
                     DiscordMessage perguntaEmail = await pvMembro.SendMessageAsync(embed: embed.Build());
-                    DiscordMessage inputEmail = await new UtilidadesGerais().PegaRespostaPrivado(interact, ctx), inputEmail_ = null;
+                    DiscordMessage inputEmail = await Program.ubgeBot.utilidadesGerais.PegaRespostaPrivado(interact, ctx), inputEmail_ = null;
 
                     if (!inputEmail.Content.Contains("@"))
                     {
@@ -582,7 +637,7 @@ namespace UBGE_Bot.Comandos.Gerais
                         "Pode ser vários idiomas.", null, Valores.logoUBGE);
 
                     DiscordMessage perguntaIdiomas = await pvMembro.SendMessageAsync(embed: embed.Build());
-                    DiscordMessage inputIdiomas = await new UtilidadesGerais().PegaRespostaPrivado(interact, ctx);
+                    DiscordMessage inputIdiomas = await Program.ubgeBot.utilidadesGerais.PegaRespostaPrivado(interact, ctx);
 
                     Program.ubgeBot.utilidadesGerais.LimpaEmbed(embed);
 
@@ -814,12 +869,12 @@ namespace UBGE_Bot.Comandos.Gerais
                             fezOCenso = true,
                         });
 
-                        await Program.ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.Aviso, $"O membro: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)} acabou de fazer o censo e foi inserido no Mongo!", ":warning:", ctx.Member.AvatarUrl, ctx.User);
+                        await Program.ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.Aviso, $"O membro: \"{Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}\" acabou de fazer o censo e foi inserido no Mongo!", ":warning:", ctx.Member.AvatarUrl, ctx.User);
 
                         await apiGoogle.EscrevePlanilhaDoCenso(Program.ubgeBot.ubgeBotConfig.ubgeBotGoogleAPIConfig.censoID, Program.ubgeBot.ubgeBotConfig.ubgeBotGoogleAPIConfig.censoRange, horaDiaCensoFeito.ToOADate(),
                         ctx.Member.Id.ToString(), respostaIdadeFinal, respostaFinalEstadoOndeOMembroMora, respostaFinalEmail, inputIdiomas.Content, respostaFinalComoChegouAUBGE, respostaFinalJogosMaisJogados);
 
-                        await Program.ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.Aviso, $"O membro: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)} acabou de fazer o censo e também foi inserido na planilha do Google!", ":warning:", ctx.Member.AvatarUrl, ctx.User);
+                        await Program.ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.Aviso, $"O membro: \"{Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}\" acabou de fazer o censo e também foi inserido na planilha do Google!", ":warning:", ctx.Member.AvatarUrl, ctx.User);
 
                         return;
                     }
@@ -837,12 +892,12 @@ namespace UBGE_Bot.Comandos.Gerais
                         fezOCenso = true,
                     });
 
-                    await Program.ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.Aviso, $"O membro: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)} acabou de fazer o censo e foi inserido no Mongo!", ":warning:", ctx.Member.AvatarUrl, ctx.User);
+                    await Program.ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.Aviso, $"O membro: \"{Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}#{ctx.Member.Discriminator}\" acabou de fazer o censo e foi inserido no Mongo!", ":warning:", ctx.Member.AvatarUrl, ctx.User);
 
                     await apiGoogle.EscrevePlanilhaDoCenso(Program.ubgeBot.ubgeBotConfig.ubgeBotGoogleAPIConfig.censoID, Program.ubgeBot.ubgeBotConfig.ubgeBotGoogleAPIConfig.censoRange, horaDiaCensoFeito.ToOADate(),
                         ctx.Member.Id.ToString(), respostaIdadeFinal, respostaFinalEstadoOndeOMembroMora, respostaFinalEmail, inputIdiomas.Content, respostaFinalComoChegouAUBGE, respostaFinalJogosMaisJogados);
 
-                    await Program.ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.Aviso, $"O membro: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)} acabou de fazer o censo e também foi inserido na planilha do Google!", ":warning:", ctx.Member.AvatarUrl, ctx.User);
+                    await Program.ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.Aviso, $"O membro: \"{Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}#{ctx.Member.Discriminator}\" acabou de fazer o censo e também foi inserido na planilha do Google!", ":warning:", ctx.Member.AvatarUrl, ctx.User);
                 }
                 catch (Exception exception)
                 {
@@ -893,6 +948,22 @@ namespace UBGE_Bot.Comandos.Gerais
                 return "Albion Online";
             else
                 return "Não especificado.";
+        }
+
+        public async Task<bool> PossoEnviarMensagensDoPrivadoDoMembro(DiscordDmChannel discordDmChannel)
+        {
+            try
+            {
+                DiscordMessage msgTeste = await discordDmChannel.SendMessageAsync("Carregando...");
+
+                await msgTeste.DeleteAsync();
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         [Command("avatar"), Aliases("foto")]
@@ -949,7 +1020,7 @@ namespace UBGE_Bot.Comandos.Gerais
                 {
 
                     DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-                    DiscordRole cargoMembroRegistrado = ctx.Guild.GetRole(Valores.Cargos.cargoMembroRegistrado);
+                    DiscordRole cargoMembroRegistrado = ctx.Guild.GetRole(ctx.Guild.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoMembroRegistrado)).Id);
                     
                     string status = string.Empty, statusDiscord = string.Empty, statusFinal = string.Empty;
                     
@@ -1332,7 +1403,7 @@ namespace UBGE_Bot.Comandos.Gerais
             {
                 try
                 {
-                    DiscordRole botsMusicais = ctx.Guild.GetRole(Valores.Cargos.botsMusicais);
+                    DiscordRole botsMusicais = ctx.Guild.GetRole(ctx.Guild.Roles.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargosBotsMusicais)).Id);
 
                     StringBuilder str = new StringBuilder();
 
@@ -1370,7 +1441,9 @@ namespace UBGE_Bot.Comandos.Gerais
             {
                 try
                 {
-                    DiscordRole bots = ctx.Guild.GetRole(Valores.Cargos.bots), botsMusicais = ctx.Guild.GetRole(Valores.Cargos.botsMusicais);
+                    List<DiscordRole> cargosUBGE = ctx.Guild.Roles.Values.ToList();
+
+                    DiscordRole bots = ctx.Guild.GetRole(cargosUBGE.Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoBots)).Id), botsMusicais = ctx.Guild.GetRole(cargosUBGE.Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargosBotsMusicais)).Id);
 
                     StringBuilder primeiroSTR = new StringBuilder(), segundoSTR = new StringBuilder();
 

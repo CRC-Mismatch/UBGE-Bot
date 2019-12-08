@@ -71,6 +71,17 @@ namespace UBGE_Bot.Utilidades
         }
 
         /// <summary>
+        /// Pega a resposta digitada no privado de um membro do Discord.
+        /// </summary>
+        /// <param name="Interactivity"></param>
+        /// <param name="CommandContext"></param>
+        /// <returns></returns>
+        public async Task<DiscordMessage> PegaRespostaPrivado(InteractivityExtension interactivityExtension, DiscordUser membro, DiscordChannel canal)
+        {
+            return (await interactivityExtension.WaitForMessageAsync(m => m.Author == membro && m.Channel == canal, TimeSpan.FromMinutes(30))).Result;
+        }
+
+        /// <summary>
         /// Procura o emoji que foi especificado na Task. O bot procurará em todos os servidores que ele está.
         /// </summary>
         /// <param name="CommandContext"></param>
@@ -184,7 +195,7 @@ namespace UBGE_Bot.Utilidades
         }
 
         /// <summary>
-        /// Menciona o membro de acordo com o nickname do mesmo, assim as menções não ficaram bugadas.
+        /// Menciona o membro de acordo com o nickname do mesmo, assim as menções não ficarão bugadas.
         /// </summary>
         /// <param name="Membro"></param>
         /// <returns></returns>
@@ -286,6 +297,12 @@ namespace UBGE_Bot.Utilidades
         public string RetornaNomeDiscord(DiscordMember membro)
             => $"{(string.IsNullOrWhiteSpace(membro.Nickname) ? membro.Username : membro.Nickname)}";
 
+        /// <summary>
+        /// Retorna uma lista de emoji a partir de uma lista de string com os nomes dos mesmos.
+        /// </summary>
+        /// <param name="commandContext"></param>
+        /// <param name="emojisParaBuscar"></param>
+        /// <returns></returns>
         public async Task<List<DiscordEmoji>> RetornaEmojis(CommandContext commandContext, List<string> emojisParaBuscar) 
         {
             List<DiscordEmoji> emojis = new List<DiscordEmoji>();
@@ -296,6 +313,12 @@ namespace UBGE_Bot.Utilidades
             return emojis;
         }
 
+        /// <summary>
+        /// Retorna uma lista de emoji a partir de uma lista de string com os nomes dos mesmos.
+        /// </summary>
+        /// <param name="discordClient"></param>
+        /// <param name="emojisParaBuscar"></param>
+        /// <returns></returns>
         public async Task<List<DiscordEmoji>> RetornaEmojis(DiscordClient discordClient, List<string> emojisParaBuscar) 
         {
             List<DiscordEmoji> emojis = new List<DiscordEmoji>();
@@ -306,6 +329,11 @@ namespace UBGE_Bot.Utilidades
             return emojis;
         }
 
+        /// <summary>
+        /// Retorna o nome do Estado quando é enviado a sigla do mesmo.
+        /// </summary>
+        /// <param name="siglaEstado"></param>
+        /// <returns></returns>
         public string RetornaEstado(string siglaEstado)
         {
             if (siglaEstado.ToUpper() == "AM")
@@ -365,6 +393,20 @@ namespace UBGE_Bot.Utilidades
             else
                 return "Não especificado.";
         }
+
+        public async Task ExcluiReacoesDeUmaListaDeMembros(DiscordMessage mensagemEmbedReact, DiscordEmoji emoji, IReadOnlyList<DiscordUser> membrosQueReagiram)
+        {
+            foreach (var membroDaReacao in membrosQueReagiram)
+            {
+                try
+                {
+                    await Task.Delay(200);
+
+                    await mensagemEmbedReact.DeleteReactionAsync(emoji, membroDaReacao);
+                }
+                catch (Exception) { }
+            }
+        }
     }
 
     public sealed class UBGE_E_EtcAttribute : CheckBaseAttribute
@@ -381,6 +423,14 @@ namespace UBGE_Bot.Utilidades
         public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
         {
             return Task.FromResult(ctx.Guild.Id == Valores.Guilds.UBGE);
+        }
+    }
+
+    public sealed class UBGE_StaffAttribute : CheckBaseAttribute
+    {
+        public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
+        {
+            return Task.FromResult(ctx.Guild.Id == Valores.Guilds.UBGE && ctx.Member.Roles.ToList().FindAll(x => x.Permissions.HasFlag(Permissions.KickMembers)).Count != 0);
         }
     }
 

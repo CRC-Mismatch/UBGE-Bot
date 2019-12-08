@@ -4,6 +4,7 @@ using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using MongoDB.Driver;
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UBGE_Bot.Main;
@@ -58,7 +59,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                     }
                     else
                     {
-                        DiscordRole registrado = ctx.Guild.GetRole(Valores.Cargos.cargoMembroRegistrado);
+                        DiscordRole registrado = ctx.Guild.GetRole(ctx.Guild.Roles.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoMembroRegistrado)).Id);
                         voiceChannel = ctx.Guild.GetChannel(resultadoSalas[0].idDaSala);
                         
                         var lista = resultadoSalas[0].idsPermitidos;
@@ -134,7 +135,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                     }
                     else
                     {
-                        DiscordRole registrado = ctx.Guild.GetRole(Valores.Cargos.cargoMembroRegistrado);
+                        DiscordRole registrado = ctx.Guild.GetRole(ctx.Guild.Roles.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoMembroRegistrado)).Id);
                         voiceChannel = ctx.Guild.GetChannel(resultadoSalas[0].idDaSala);
 
                         var lista = resultadoSalas[0].idsPermitidos;
@@ -197,7 +198,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                     }
                     else
                     {
-                        DiscordRole registrado = ctx.Guild.GetRole(Valores.Cargos.cargoMembroRegistrado);
+                        DiscordRole registrado = ctx.Guild.GetRole(ctx.Guild.Roles.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoMembroRegistrado)).Id);
                         voiceChannel = ctx.Guild.GetChannel(resultadoSalas[0].idDaSala);
 
                         var oldmaxJoin = resultadoSalas[0].limiteDeUsuarios;
@@ -291,10 +292,8 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                     DiscordChannel voiceChannel = null;
                     DiscordMember m = null;
 
-                    DiscordRole ajudantesCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAjudante),
-                    ademirCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAdemir),
-                    diretorCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAdemir),
-                    acessoGeralCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAcessoGeral);
+                    DiscordRole moderadorDiscordCargo = ctx.Guild.GetRole(ctx.Guild.Roles.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoModeradorDiscord)).Id),
+                    acessoGeralCargo = ctx.Guild.GetRole(ctx.Guild.Roles.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoAcessoGeral)).Id);
 
                     if (resultadoSalas.Count != 0)
                     {
@@ -319,9 +318,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                             }
 
                             await voiceChannel.AddOverwriteAsync(ctx.Guild.EveryoneRole, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak);
-                            await voiceChannel.AddOverwriteAsync(ajudantesCargo, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak);
-                            await voiceChannel.AddOverwriteAsync(ademirCargo, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak);
-                            await voiceChannel.AddOverwriteAsync(diretorCargo, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak);
+                            await voiceChannel.AddOverwriteAsync(moderadorDiscordCargo, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak);
                             await voiceChannel.AddOverwriteAsync(acessoGeralCargo, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak);
 
                             embed.WithAuthor($"✅ - Sala travada!", null, Valores.logoUBGE);
@@ -365,10 +362,8 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
 
                     DiscordChannel voiceChannel = null;
 
-                    DiscordRole ajudantesCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAjudante),
-                    ademirCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAdemir),
-                    diretorCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAdemir),
-                    acessoGeralCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAcessoGeral);
+                    DiscordRole moderadorDiscordCargo = ctx.Guild.GetRole(ctx.Guild.Roles.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoModeradorDiscord)).Id),
+                    acessoGeralCargo = ctx.Guild.GetRole(ctx.Guild.Roles.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoAcessoGeral)).Id);
 
                     if (resultadoSalas.Count != 0)
                     {
@@ -379,9 +374,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                             await salasCollection.UpdateOneAsync(filtroSalas, Builders<Salas>.Update.Set(s => s.salaTrancada, false));
 
                             await voiceChannel.AddOverwriteAsync(ctx.Guild.EveryoneRole, Permissions.AccessChannels | Permissions.UseVoice | Permissions.Speak);
-                            await voiceChannel.AddOverwriteAsync(ajudantesCargo, Permissions.AccessChannels | Permissions.UseVoice | Permissions.Speak);
-                            await voiceChannel.AddOverwriteAsync(ademirCargo, Permissions.AccessChannels | Permissions.UseVoice | Permissions.Speak);
-                            await voiceChannel.AddOverwriteAsync(diretorCargo, Permissions.AccessChannels | Permissions.UseVoice | Permissions.Speak);
+                            await voiceChannel.AddOverwriteAsync(moderadorDiscordCargo, Permissions.AccessChannels | Permissions.UseVoice | Permissions.Speak);
                             await voiceChannel.AddOverwriteAsync(acessoGeralCargo, Permissions.AccessChannels | Permissions.UseVoice | Permissions.Speak);
 
                             embed.WithAuthor($"✅ - Sala destravada!", null, Valores.logoUBGE);
@@ -487,7 +480,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
             {
                 try
                 {
-                    DiscordChannel CrieSuaSalaAq = ctx.Guild.GetChannel(Valores.ChatsUBGE.cliqueAqui);
+                    DiscordChannel CrieSuaSalaAq = ctx.Guild.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains("CLIQUE AQUI!"));
 
                     await dm.SendMessageAsync($"{ctx.Member.Mention}, entre no canal de voz: `{CrieSuaSalaAq.Name}` nesta categoria para criar um canal de voz personalizado!");
                 }

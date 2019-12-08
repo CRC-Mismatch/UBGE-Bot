@@ -19,7 +19,7 @@ namespace UBGE_Bot.UBGEBotConfig
         public string mySQLPorta { get; private set; }
 
         [JsonProperty("MySQLDatabase")]
-        public string mySQLDatabase { get; private set; }
+        public string mySQLDatabase { get; private set; } 
 
         [JsonProperty("MySQLTabela")]
         public string mySQLTabela { get; private set; }
