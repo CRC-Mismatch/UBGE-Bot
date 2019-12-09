@@ -3,8 +3,8 @@
 # UBGE-Bot
 Bot feito na linguagem C#, utilizando a biblioteca [DSharpPlus](https://github.com/DSharpPlus/DSharpPlus/), e desenvolvido para o servidor da UBGE.
 
-- Donos: **[UBGE] Luiz#8721** e **Paulo#4230** (Não é o dono atual/desenvolvedor)
-- Responsável e atual desenvolvedor: **[UBGE] Luiz#8721**
+- Donos: **Luiz Fernando#8721**, **Paulo#4230** e **Mismatch#0666** (Não é o dono atual/desenvolvedor)
+- Responsável e atual desenvolvedor: **[UBGE] Luiz#8721** e **Mismatch#0666**
 
 - O bot roda atualmente em **.NET Core 3.0**
 
