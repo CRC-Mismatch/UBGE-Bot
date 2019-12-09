@@ -179,25 +179,19 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
 
                         var MembrosReacoes = await mensagem.GetReactionsAsync(emoji);
 
-                        if (embedMensagemReactRole.Description.Contains($"{emoji.ToString()} - {cargoJogoEmbed.Name}"))
+						string linhaMensagemEmbed = $"{emoji.ToString()} - {cargoJogoEmbed.Name}";
+
+                        if (embedMensagemReactRole.Description.Contains(linhaMensagemEmbed))
                         {
                             var descricaoEmbed = embedMensagemReactRole.Description;
 
                             var lista = descricaoEmbed.Split('\n').ToList();
-
+							lista.RemoveAt(linhaMensagemEmbed)
+							
                             StringBuilder strEmbedFinal = new StringBuilder();
 
-                            for (int linha = 0; linha < lista.Count(); linha++)
-                            {
-                                if (lista[linha].Contains(emoji.ToString()))
-                                {
-                                    lista.RemoveAt(linha);
-
-                                    continue;
-                                }
-
-                                strEmbedFinal.Append($"{lista[linha]}\n");
-                            }
+                            for (var linha in lista)                           
+                                strEmbedFinal.Append($"{linha}\n");                      
 
                             builder.WithDescription(strEmbedFinal.ToString());
                             builder.WithAuthor(embedMensagemReactRole.Author.Name, null, Valores.logoUBGE);
