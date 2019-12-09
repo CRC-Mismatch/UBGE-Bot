@@ -32,7 +32,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
 
                     if (membro == null)
                     {
-                        embed.WithColor(new DiscordColor(0x32363c))
+                        embed.WithColor(Program.ubgeBot.utilidadesGerais.CorHelpComandos())
                             .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
                             .AddField("PC/Mobile", $"{ctx.Prefix}sala addmembro Membro[ID/Menção]")
                             .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
@@ -108,7 +108,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
 
                     if (membro == null)
                     {
-                        embed.WithColor(new DiscordColor(0x32363c))
+                        embed.WithColor(Program.ubgeBot.utilidadesGerais.CorHelpComandos())
                             .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
                             .AddField("PC/Mobile", $"{ctx.Prefix}sala editar del Membro[ID/Menção]")
                             .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
@@ -420,7 +420,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
 
                     if (string.IsNullOrWhiteSpace(nome))
                     {
-                        embed.WithColor(new DiscordColor(0x32363c))
+                        embed.WithColor(Program.ubgeBot.utilidadesGerais.CorHelpComandos())
                             .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
                             .AddField("PC/Mobile", $"{ctx.Prefix}sala nome Nome[Novo nome da sala]")
                             .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)

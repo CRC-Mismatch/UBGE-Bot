@@ -40,7 +40,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
 
                     if (membro == null)
                     {
-                        embed.WithColor(new DiscordColor(0x32363c))
+                        embed.WithColor(Program.ubgeBot.utilidadesGerais.CorHelpComandos())
                             .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
                             .AddField("PC/Mobile", $"{ctx.Prefix}s c Membro[ID/Menção]")
                             .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
@@ -56,7 +56,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
 
                     InteractivityExtension interact = ctx.Client.GetInteractivity();
 
-                    DiscordRole membroRegistrado = ctx.Guild.GetRole(ctx.Guild.Channels.Values.ToList().Find(x=> x.Name.ToUpper().Contains(Valores.Cargos.cargoMembroRegistrado)).Id);
+                    DiscordRole membroRegistrado = ctx.Guild.Roles.Values.ToList().Find(x=> x.Name.ToUpper().Contains(Valores.Cargos.cargoMembroRegistrado));
 
                     string estado = string.Empty,comoChegouAUBGE = string.Empty, idade = string.Empty, idiomas = string.Empty,
                         jogosMaisJogados = string.Empty, builderFezCenso = string.Empty, diasMembroEntrou = string.Empty, 
@@ -175,7 +175,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                             .AddField($"Entrou na {ctx.Guild.Name} em:", $"{membro.JoinedAt.ToString("dd/MM/yyyy HH:mm:ss tt")} - **{diasMembroEntrou}**", false)
                             .AddField("Conta criada em:", $"{membro.CreationTimestamp.ToString("dd/MM/yyyy HH:mm:ss tt")} - **{diasContaCriada}**", false)
                             //.AddField("Fez o censo comunitário?:", $"**{builderFezCenso}**", false)
-                            .AddField("Membro registrado?:", membro.Roles.Contains(membroRegistrado) ? "**Sim**" : "**Não**", false)
+                            .AddField("Membro registrado?:", "**Sim**", false)
                             .AddField("Infrações:", str.ToString(), false)
                             .AddField("Status:", $"{(membro.IsBot ? await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(ctx, "Bot") : "")}{(membro.IsOwner ? ":crown:" : "")}{await Program.ubgeBot.utilidadesGerais.ConverteStatusParaEmoji(ctx, membro)}- {statusMembro}", false)
                             .AddField("Está em mais algum outro servidor?:", $"{(strServidores.ToString().EndsWith(", ") ? strServidores.ToString().Remove(strServidores.ToString().Length - 2) : strServidores.ToString())}", false)
@@ -208,7 +208,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                             .AddField($"Entrou na {ctx.Guild.Name} em:", $"{membro.JoinedAt.ToString("dd/MM/yyyy HH:mm:ss tt")} - **{diasMembroEntrou}**", false)
                             .AddField("Conta criada em:", $"{membro.CreationTimestamp.ToString("dd/MM/yyyy HH:mm:ss tt")} - **{diasContaCriada}**", false)
                             //.AddField("Fez o censo comunitário?:", $"**{builderFezCenso}**", false)
-                            .AddField("Membro registrado?:", membro.Roles.Contains(membroRegistrado) ? "**Sim**" : "**Não**", false)
+                            .AddField("Membro registrado?:","**Não**", false)
                             .AddField("Infrações:", str.ToString(), false)
                             .AddField("Status:", $"{(membro.IsBot ? await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(ctx, "Bot") : "")}{(membro.IsOwner ? ":crown:" : "")}{await Program.ubgeBot.utilidadesGerais.ConverteStatusParaEmoji(ctx, membro)}- {statusMembro}", false)
                             .AddField("Está em mais algum outro servidor?:", $"{(strServidores.ToString().EndsWith(", ") ? strServidores.ToString().Remove(strServidores.ToString().Length - 2) : strServidores.ToString())}", false)
@@ -329,7 +329,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
 
                     if (membro == null)
                     {
-                        embed.WithColor(new DiscordColor(0x32363c))
+                        embed.WithColor(Program.ubgeBot.utilidadesGerais.CorHelpComandos())
                             .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
                             .AddField("PC/Mobile", $"{ctx.Prefix}s i Membro[ID/Menção) add[Infração] ou log[Ver infrações]")
                             .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
@@ -341,7 +341,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                     
                     if (string.IsNullOrWhiteSpace(addtive))
                     {
-                        embed.WithColor(new DiscordColor(0x32363c))
+                        embed.WithColor(Program.ubgeBot.utilidadesGerais.CorHelpComandos())
                             .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
                             .AddField("PC/Mobile", $"{ctx.Prefix}s i Membro[ID/Menção] add[Infração] ou log[Ver infrações]")
                             .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
@@ -614,7 +614,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
 
                     if (membro == null)
                     {
-                        for (int i = 1; i < numeroMensagens + 1; i++)
+                        for (int i = 1; i < numeroMensagens + 2; i++)
                         {
                             await Task.Delay(200);
 
@@ -653,7 +653,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
 
                     if (membro == null)
                     {
-                        embed.WithColor(new DiscordColor(0x32363c))
+                        embed.WithColor(Program.ubgeBot.utilidadesGerais.CorHelpComandos())
                                 .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
                                 .AddField("PC/Mobile", $"{ctx.Prefix}s ai Membro[Menção/ID] Infração[Motivo]")
                                 .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
@@ -810,7 +810,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
 
                     if (string.IsNullOrWhiteSpace(tempo))
                     {
-                        embed.WithColor(new DiscordColor(0x32363c))
+                        embed.WithColor(Program.ubgeBot.utilidadesGerais.CorHelpComandos())
                             .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
                             .AddField("PC/Mobile", $"{ctx.Prefix}s m Tempo[Xs/Xm/Xh/Xd] Membro[ID/Menção] Infração[Motivo]")
                             .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
@@ -822,7 +822,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
 
                     if (!(tempo.Contains("s") || tempo.Contains("m") || tempo.Contains("h") || tempo.Contains("d")))
                     {
-                        embed.WithColor(new DiscordColor(0x32363c))
+                        embed.WithColor(Program.ubgeBot.utilidadesGerais.CorHelpComandos())
                             .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
                             .AddField("PC/Mobile", $"{ctx.Prefix}s m Tempo[Xs/Xm/Xh/Xd] Membro[ID/Menção] Infração[Motivo]")
                             .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
@@ -834,7 +834,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
 
                     if (string.IsNullOrWhiteSpace(infracao))
                     {
-                        embed.WithColor(new DiscordColor(0x32363c))
+                        embed.WithColor(Program.ubgeBot.utilidadesGerais.CorHelpComandos())
                             .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
                             .AddField("PC/Mobile", $"{ctx.Prefix}s m Tempo[Xs/Xm/Xh/Xd] Membro[ID/Menção] Infração[Motivo]")
                             .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
@@ -1011,7 +1011,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
 
                     if (membro == null)
                     {
-                        embed.WithColor(new DiscordColor(0x32363c))
+                        embed.WithColor(Program.ubgeBot.utilidadesGerais.CorHelpComandos())
                             .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
                             .AddField("PC/Mobile", $"{ctx.Prefix}s dc Membro[ID/Menção]")
                             .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
@@ -1080,7 +1080,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
             }).Start();
         }
 
-        [Command("análisecenso"), Aliases("dadoscenso", "analisecenso", "gráficosdoléo", "graficosdoleo"), Description("`\nMostra os dados do censo, como os jogos mais jogados.\n\n")]
+        //[Command("análisecenso"), Aliases("dadoscenso", "analisecenso", "gráficosdoléo", "graficosdoleo"), Description("`\nMostra os dados do censo, como os jogos mais jogados.\n\n")]
 
         public async Task GraficoCensoAsync(CommandContext ctx)
         {
@@ -1150,7 +1150,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
 
                     if (membro == null)
                     {
-                        embed.WithColor(new DiscordColor(0x32363c))
+                        embed.WithColor(Program.ubgeBot.utilidadesGerais.CorHelpComandos())
                             .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
                             .AddField("PC/Mobile", $"{ctx.Prefix}s unmute Membro[ID/Menção]")
                             .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
@@ -1281,7 +1281,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                     DiscordEmbedBuilder Embed = new DiscordEmbedBuilder()
                     {
                         Author = new DiscordEmbedBuilder.EmbedAuthor { Name = "Membros que estão na prisão:", IconUrl = Valores.logoUBGE },
-                        Description = strPrisioneiros.ToString(),
+                        Description = string.IsNullOrWhiteSpace(strPrisioneiros.ToString()) ? "Não há membros na prisão." : strPrisioneiros.ToString(),
                         Footer = new DiscordEmbedBuilder.EmbedFooter { IconUrl = ctx.Member.AvatarUrl, Text = $"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}" },
                         Color = Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed(),
                     };
@@ -1290,7 +1290,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                 }
                 catch (Exception exception)
                 {
-                    await Program.ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Comandos, exception); ;
+                    await Program.ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Comandos, exception); 
                 }
             }).Start();
         }

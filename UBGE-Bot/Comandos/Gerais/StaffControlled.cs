@@ -5,6 +5,7 @@ using DSharpPlus.Entities;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -53,7 +54,6 @@ namespace UBGE_Bot.Comandos.Gerais
             {
                 try
                 {
-
                     DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
 
                     if (cargo == null)
@@ -100,53 +100,56 @@ namespace UBGE_Bot.Comandos.Gerais
 
         public async Task BotStatusAsync(CommandContext ctx)
         {
-            try
+            var watch = Stopwatch.StartNew();
+            await ctx.TriggerTypingAsync();
+            watch.Stop();
+
+            new Thread(async () =>
             {
-                var watch = Stopwatch.StartNew();
-                await ctx.TriggerTypingAsync();
-                watch.Stop();
+                try
+                {
+                    DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
 
-                DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+                    Process p = Process.GetCurrentProcess();
+                    ManagementObjectSearcher mos = new ManagementObjectSearcher("root\\CIMV2", "SELECT * FROM Win32_Processor");
+                    ManagementObjectSearcher mram = new ManagementObjectSearcher("root\\CIMV2", "SELECT * FROM Win32_PhysicalMemory");
 
-                Process p = Process.GetCurrentProcess();
-                ManagementObjectSearcher mos = new ManagementObjectSearcher("root\\CIMV2", "SELECT * FROM Win32_Processor");
-                ManagementObjectSearcher mram = new ManagementObjectSearcher("root\\CIMV2", "SELECT * FROM Win32_PhysicalMemory");
+                    p.Refresh();
 
-                p.Refresh();
+                    embed.WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                        .WithAuthor("Status do Bot:", null, Program.ubgeBot.discordClient.CurrentUser.AvatarUrl)
+                        .AddField("Status Gerais:", $"**Ping:** {ctx.Client.Ping.ToString()}ms\n" +
+                        $"**Rest:** {watch.ElapsedMilliseconds}ms\n" +
+                        $"**PID:** {p.Id}\n" +
+                        $"**Prioridade do processo:** {p.PriorityClass.ToString()}\n" +
+                        $"**Threads do bot:** {p.Threads.Count.ToString()}\n" +
+                        $"**O processo está respondendo?:** {(p.Responding ? "Sim" : "Não")}\n" +
+                        $"**Nome do processo:** {p.ProcessName}.exe\n" +
+                        $"**Interação com o usuário?:** {(Environment.UserInteractive ? "Sim" : "Não")}\n" +
+                        $"**Uptime (Ligado desde quando):** {p.StartTime.ToString()}\n" +
+                        $"**Dia e hora neste computador:** {DateTime.Now.ToString()}\n" +
+                        $"**Versão:** {Valores.versao_Bot}")
+                        .AddField("Especificações do computador onde estou hospedado:", $"**Nome:** {Environment.UserName}\n" +
+                        $"**Nome do computador:** {Environment.MachineName}\n" +
+                        $"**Versão do windows:** {Environment.OSVersion.VersionString} - ()\n" +
+                        $"**Sistema operacional de 64 bits?:** {(Environment.Is64BitOperatingSystem ? "Sim" : "Não").ToString()}\n" +
+                        $"**Processador:** {NomeDoProcessador(mos)}\n" +
+                        $"**Número de Núcleos:** {Environment.ProcessorCount.ToString()}\n" +
+                        $"**Este é um processo 64 bits?:** {(Environment.Is64BitProcess ? "Sim" : "Não")}\n" +
+                        $"**Memória ram do computador:** {MemoriaRamDoPC(mram)}\n")
+                        .AddField("Biblioteca(s):", $"**Versão do DSharpPlus:** {ctx.Client.VersionString}\n")
+                        .WithThumbnailUrl(Valores.csharpLogo)
+                        .WithTimestamp(DateTime.Now)
+                        .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                        .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed());
 
-                embed.WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
-                    .WithAuthor("Status do Bot:", null, Program.ubgeBot.discordClient.CurrentUser.AvatarUrl)
-                    .AddField("Status Gerais:", $"**Ping:** {ctx.Client.Ping.ToString()}ms\n" +
-                    $"**Rest:** {watch.ElapsedMilliseconds}ms\n" +
-                    $"**PID:** {p.Id}\n" +
-                    $"**Prioridade do processo:** {p.PriorityClass.ToString()}\n" +
-                    $"**Threads do bot:** {p.Threads.Count.ToString()}\n" +
-                    $"**O processo está respondendo?:** {(p.Responding ? "Sim" : "Não")}\n" +
-                    $"**Nome do processo:** {p.ProcessName}.exe\n" +
-                    $"**Interação com o usuário?:** {(Environment.UserInteractive ? "Sim" : "Não")}\n" +
-                    $"**Uptime (Ligado desde quando):** {p.StartTime.ToString()}\n" +
-                    $"**Dia e hora neste computador:** {DateTime.Now.ToString()}\n" +
-                    $"**Versão:** {Valores.versao_Bot}")
-                    .AddField("Especificações do computador onde estou hospedado:", $"**Nome:** {Environment.UserName}\n" +
-                    $"**Nome do computador:** {Environment.MachineName}\n" +
-                    $"**Versão do windows:** {Environment.OSVersion.VersionString} - ()\n" +
-                    $"**Sistema operacional de 64 bits?:** {(Environment.Is64BitOperatingSystem ? "Sim" : "Não").ToString()}\n" +
-                    $"**Processador:** {NomeDoProcessador(mos)}\n" +
-                    $"**Número de Núcleos:** {Environment.ProcessorCount.ToString()}\n" +
-                    $"**Este é um processo 64 bits?:** {(Environment.Is64BitProcess ? "Sim" : "Não")}\n" +
-                    $"**Memória ram do computador:** {MemoriaRamDoPC(mram)}\n")
-                    .AddField("Biblioteca(s):", $"**Versão do DSharpPlus:** {ctx.Client.VersionString}\n")
-                    .WithThumbnailUrl(Valores.csharpLogo)
-                    .WithTimestamp(DateTime.Now)
-                    .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
-                    .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed());
-
-                await ctx.RespondAsync(embed: embed.Build());
-            }
-            catch (Exception exception)
-            {
-                await Program.ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Comandos, exception);
-            }
+                    await ctx.RespondAsync(embed: embed.Build());
+                }
+                catch (Exception exception)
+                {
+                    await Program.ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Comandos, exception);
+                }
+            }).Start();
         }
 
         private string MemoriaRamDoPC(ManagementObjectSearcher managementObjectSearcher)
@@ -173,6 +176,103 @@ namespace UBGE_Bot.Comandos.Gerais
                 return objeto["Name"].ToString();
 
             return "";
+        }
+
+        [Command("reiniciar"), Aliases("reboot", "restart"), RequireOwner]
+
+        public async Task ReiniciarAsync(CommandContext ctx)
+        {
+            await ctx.TriggerTypingAsync();
+
+            new Thread(async () =>
+            {
+                try
+                {
+                    await ctx.RespondAsync($"Já se foi o disco voadooooorrr");
+
+                    string caminhoBot = Directory.GetCurrentDirectory() + @"\UBGE-Bot.exe";
+
+                    Process.Start(caminhoBot);
+
+                    Environment.Exit(1);
+                }
+                catch (Exception exception)
+                {
+                    await Program.ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Comandos, exception);
+                }
+            }).Start();
+        }
+
+        [Command("shutdown"), Aliases("off", "desligar"), RequireOwner]
+
+        public async Task DesligarAsync(CommandContext ctx, string tempo = null)
+        {
+            await ctx.TriggerTypingAsync();
+
+            new Thread(async () =>
+            {
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(tempo))
+                    {
+                        await ctx.RespondAsync($"Adiós Muchacho! :wave:");
+
+                        Environment.Exit(1);
+                    }
+                    else
+                    {
+
+                        var tempoConvert = Program.ubgeBot.utilidadesGerais.ConverterTempo(tempo);
+
+                        await ctx.Client.DisconnectAsync();
+
+                        await Task.Delay(tempoConvert);
+
+                        await ctx.Client.ConnectAsync();
+
+                        await ctx.RespondAsync($"I'm back!");
+                    }
+                }
+                catch (Exception exception)
+                {
+                    await Program.ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Comandos, exception);
+                }
+            }).Start();
+        }
+
+        [Command("listarservidores"), Aliases("listarservidor")]
+
+        public async Task ListarServidorAsync(CommandContext ctx)
+        {
+            await ctx.TriggerTypingAsync();
+
+            new Thread(async () =>
+            {
+                try
+                {
+
+                    StringBuilder strServidores = new StringBuilder();
+
+                    foreach (var guilds in ctx.Client.Guilds.Values)
+                        strServidores.Append($"**{guilds.Name}** - `{guilds.Id}`\n");
+
+                    DiscordEmbedBuilder embed = new DiscordEmbedBuilder
+                    {
+                        Author = new DiscordEmbedBuilder.EmbedAuthor { Name = "Servidores em que estou:", IconUrl = Valores.logoUBGE },
+                        Color = Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed(),
+                        Description = strServidores.ToString(),
+                        ThumbnailUrl = ctx.Member.AvatarUrl,
+                        Timestamp = DateTime.Now,
+                        Footer = new DiscordEmbedBuilder.EmbedFooter { Text = $"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", IconUrl = ctx.Member.AvatarUrl }
+                    };
+
+                    await ctx.RespondAsync(embed: embed.Build());
+                }
+                catch (Exception exception)
+                {
+                    await Program.ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Comandos, exception);
+                }
+            }).Start();
         }
     }
 }

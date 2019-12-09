@@ -140,8 +140,8 @@ namespace UBGE_Bot.Main
                 
                 if (ubgeBotClient.botConectadoAoMongo)
                 {
-                    //ubgeBotClient.discordClient.MessageReactionAdded += ReacaoAdicionadaReactRole;
-                    //ubgeBotClient.discordClient.MessageReactionRemoved += ReacaoRemovidaReactRole;
+                    ubgeBotClient.discordClient.MessageReactionAdded += ReacaoAdicionadaReactRole;
+                    ubgeBotClient.discordClient.MessageReactionRemoved += ReacaoRemovidaReactRole;
                     ubgeBotClient.discordClient.MessageCreated += MensagemCriada;
                     //ubgeBotClient.discordClient.VoiceStateUpdated += CanalDeVozPersonalizado;
                     //ubgeBotClient.discordClient.GuildMemberAdded += MembroEntra;
@@ -182,10 +182,10 @@ namespace UBGE_Bot.Main
             if (messageReactionAddEventArgs == null || 
                 messageReactionAddEventArgs.Channel.IsPrivate || 
                 messageReactionAddEventArgs.User.IsBot || 
-                !messageReactionAddEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalSelecioneSeusCargos) ||
-                !messageReactionAddEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalListaSecretarias) ||
-                !messageReactionAddEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalListaPioneiros) ||
-                !messageReactionAddEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalOrganogramaECargosDoAlbion))
+                !(messageReactionAddEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalSelecioneSeusCargos) ||
+                messageReactionAddEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalListaSecretarias) ||
+                messageReactionAddEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalListaPioneiros) ||
+                messageReactionAddEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalOrganogramaECargosDoAlbion)))
                 return;
 
             await Task.Delay(200);
@@ -324,10 +324,10 @@ namespace UBGE_Bot.Main
             if (messageReactionRemoveEventArgs == null || 
                 messageReactionRemoveEventArgs.Channel.IsPrivate || 
                 messageReactionRemoveEventArgs.User.IsBot ||
-                !messageReactionRemoveEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalSelecioneSeusCargos) ||
-                !messageReactionRemoveEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalListaSecretarias) ||
-                !messageReactionRemoveEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalListaPioneiros) ||
-                !messageReactionRemoveEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalOrganogramaECargosDoAlbion))
+                !(messageReactionRemoveEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalSelecioneSeusCargos) ||
+                messageReactionRemoveEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalListaSecretarias) ||
+                messageReactionRemoveEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalListaPioneiros) ||
+                messageReactionRemoveEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalOrganogramaECargosDoAlbion)))
                 return;
 
             await Task.Delay(200);
@@ -446,12 +446,12 @@ namespace UBGE_Bot.Main
 
                     await membro.RevokeRoleAsync(cargo);
 
-                    ubgeBot.logExceptionsToDiscord.Aviso(LogExceptionsToDiscord.TipoAviso.Discord, $"O membro: \"{ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}\" pegou o cargo de: \"{cargo.Name}\".");
+                    ubgeBot.logExceptionsToDiscord.Aviso(LogExceptionsToDiscord.TipoAviso.Discord, $"O membro: \"{ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}\" removeu o cargo de: \"{cargo.Name}\".");
 
                     if (guildReaction.Id == Valores.Guilds.UBGE)
-                        await ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.ReactRoleUBGE, "Cargo Adicionado!", $"{emojiReacao} | O membro: \"{ubgeBot.utilidadesGerais.MencaoMembro(membro)}\" pegou o cargo de: {cargo.Mention}.\n\nOu:\n- `@{ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}`\n- `@{cargo.Name}`", ubgeBot.discordClient.CurrentUser.AvatarUrl, membro);
+                        await ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.ReactRoleUBGE, "Cargo removido!", $"{emojiReacao} | O membro: \"{ubgeBot.utilidadesGerais.MencaoMembro(membro)}\" removeu o cargo de: {cargo.Mention}.\n\nOu:\n- `@{ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}`\n- `@{cargo.Name}`", ubgeBot.discordClient.CurrentUser.AvatarUrl, membro);
                     else
-                        await ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.ReactRoleForaDaUBGE, "Cargo Adicionado!", $"{emojiReacao} | O membro: **{ubgeBot.utilidadesGerais.MencaoMembro(membro)}** pegou o cargo de: **{cargo.Name}**.", guildReaction.IconUrl, membro);
+                        await ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.ReactRoleForaDaUBGE, "Cargo removido!", $"{emojiReacao} | O membro: **{ubgeBot.utilidadesGerais.MencaoMembro(membro)}** removeu o cargo de: **{cargo.Name}**.", guildReaction.IconUrl, membro);
                 }
                 catch (NullReferenceException) { }
                 catch (Exception exception)
@@ -777,7 +777,7 @@ namespace UBGE_Bot.Main
 
                                 await canalMensagem.SendMessageAsync(embed: embed.Build());
                             }
-                            else if (emojiDenuncia == emojiSugestao)
+                            else if (emojiResposta == emojiSugestao)
                             {
                                 ubgeBot.utilidadesGerais.LimpaEmbed(embed);
 
@@ -815,7 +815,7 @@ namespace UBGE_Bot.Main
 
                                 embed.WithAuthor("Sua sugestão foi enviada para a staff da UBGE!", null, Valores.logoUBGE)
                                     .WithColor(ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
-                                    .WithDescription(await ubgeBot.utilidadesGerais.ProcuraEmoji(clientDiscord, ":UBGE:"))
+                                    .WithDescription($"Obrigado por fazer um servidor agradável a todos os membros! {await ubgeBot.utilidadesGerais.ProcuraEmoji(clientDiscord, ":UBGE:")}")
                                     .WithThumbnailUrl(donoMensagem_.AvatarUrl)
                                     .WithTimestamp(DateTime.Now);
 
@@ -838,6 +838,7 @@ namespace UBGE_Bot.Main
                                 await canalMembroContato.AddOverwriteAsync(cargoModeradorDiscord, Permissions.None, Permissions.AccessChannels | Permissions.SendMessages);
                                 await canalMembroContato.AddOverwriteAsync(cargoConselheiro, Permissions.None, Permissions.AccessChannels | Permissions.SendMessages);
 
+                                modMail.idDoCanal = canalMembroContato.Id;
                                 modMail.contato = new Contato
                                 {
                                     diaHoraContato = diaHoraContatoDoMembro,

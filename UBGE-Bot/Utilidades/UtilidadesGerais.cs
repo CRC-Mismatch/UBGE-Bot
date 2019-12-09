@@ -407,6 +407,9 @@ namespace UBGE_Bot.Utilidades
                 catch (Exception) { }
             }
         }
+
+        public DiscordColor CorHelpComandos()
+            => new DiscordColor(54, 57, 64);
     }
 
     public sealed class UBGE_E_EtcAttribute : CheckBaseAttribute

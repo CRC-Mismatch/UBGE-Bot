@@ -24,7 +24,7 @@ namespace UBGE_Bot.LogExceptions
 
         public void Aviso(TipoAviso tipo, string mensagem)
         {
-            Console.BackgroundColor = ConsoleColor.Blue;
+            Console.BackgroundColor = ConsoleColor.DarkBlue;
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine($"{RetornaDataAtualParecidoComODSharpPlus()} {Valores.prefixoBot} [Aviso] [{tipo}] {mensagem}");
             Console.ResetColor();
