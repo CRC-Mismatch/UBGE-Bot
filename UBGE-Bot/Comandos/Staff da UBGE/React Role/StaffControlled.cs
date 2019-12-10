@@ -186,11 +186,11 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
                             var descricaoEmbed = embedMensagemReactRole.Description;
 
                             var lista = descricaoEmbed.Split('\n').ToList();
-							lista.RemoveAt(linhaMensagemEmbed)
+							lista.RemoveAt(lista.FindIndex(linha => linha.Contains(linhaMensagemEmbed)));
 							
                             StringBuilder strEmbedFinal = new StringBuilder();
 
-                            for (var linha in lista)                           
+                            foreach (var linha in lista)                           
                                 strEmbedFinal.Append($"{linha}\n");                      
 
                             builder.WithDescription(strEmbedFinal.ToString());
