@@ -1,0 +1,17 @@
+version: '3.4'
+
+services:
+    ubge-bot:
+        image: ${DOCKER_REGISTRY-}ubgebot
+        build:
+            context: .
+            dockerfile: Dockerfile
+        links:
+            - ubge-mongo:mongodb
+        volumes:
+            - .\JsonUBGE_Bot:/root/JsonUBGE_Bot
+        tty: true
+    ubge-mongo:
+        image: mongo:4.0-xenial
+        volumes:
+            - .\Mongo\UBGE_Data:/data/db

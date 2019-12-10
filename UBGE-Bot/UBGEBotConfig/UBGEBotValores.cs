@@ -133,7 +133,7 @@ namespace UBGE_Bot.UBGEBotConfig
 
         public UBGEBotValores Build()
         {
-            var jsonConfig = JsonConvert.DeserializeObject<UBGEBotValores>(File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\JsonUBGE_Bot\ValoresConfig.json"));
+            var jsonConfig = JsonConvert.DeserializeObject<UBGEBotValores>(File.ReadAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "JsonUBGE_Bot", "ValoresConfig.json")));
 
             return new UBGEBotValores
             {

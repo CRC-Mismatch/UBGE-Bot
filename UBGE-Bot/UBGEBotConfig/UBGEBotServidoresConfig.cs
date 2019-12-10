@@ -30,7 +30,7 @@ namespace UBGE_Bot.UBGEBotConfig
 
         public UBGEBotServidoresConfig Build()
         {
-            var jsonConfig = JsonConvert.DeserializeObject<UBGEBotServidoresConfig>(File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\JsonUBGE_Bot\ServidoresConfig.json"));
+            var jsonConfig = JsonConvert.DeserializeObject<UBGEBotServidoresConfig>(File.ReadAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "JsonUBGE_Bot", "ServidoresConfig.json")));
 
             return new UBGEBotServidoresConfig
             {

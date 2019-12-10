@@ -32,7 +32,7 @@ namespace UBGE_Bot.UBGEBotConfig
 
         public UBGEBotDatabasesConfig Build()
         {
-            var jsonConfig = JsonConvert.DeserializeObject<UBGEBotDatabasesConfig>(File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\JsonUBGE_Bot\DBConnection.json"));
+            var jsonConfig = JsonConvert.DeserializeObject<UBGEBotDatabasesConfig>(File.ReadAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "JsonUBGE_Bot", "DBConnection.json")));
 
             return new UBGEBotDatabasesConfig
             {

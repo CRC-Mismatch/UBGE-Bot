@@ -18,7 +18,7 @@ namespace UBGE_Bot.LogExceptions
 
         public void ExceptionToTxt(Exception exception)
         {
-            using (StreamWriter streamWriter = new StreamWriter(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + $@"\Exceção-{DateTime.Now.Day}-{DateTime.Now.Month}-{DateTime.Now.Year}_{DateTime.Now.Hour}-{DateTime.Now.Minute}.txt", false, Encoding.UTF8))
+            using (StreamWriter streamWriter = new StreamWriter(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"Exceção-{DateTime.Now.Day}-{DateTime.Now.Month}-{DateTime.Now.Year}_{DateTime.Now.Hour}-{DateTime.Now.Minute}.txt"), false, Encoding.UTF8))
                 streamWriter.WriteLine(exception.ToString());
         }
 

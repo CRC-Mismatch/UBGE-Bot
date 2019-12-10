@@ -26,7 +26,7 @@ namespace UBGE_Bot.UBGEBotConfig
 
         public UBGEBotGoogleAPIConfig Build()
         {
-            var jsonConfig = JsonConvert.DeserializeObject<UBGEBotGoogleAPIConfig>(File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\JsonUBGE_Bot\GoogleSheetsConfig.json"));
+            var jsonConfig = JsonConvert.DeserializeObject<UBGEBotGoogleAPIConfig>(File.ReadAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "JsonUBGE_Bot", "GoogleSheetsConfig.json")));
 
             return new UBGEBotGoogleAPIConfig
             {

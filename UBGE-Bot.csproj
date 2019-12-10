@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <RootNamespace></RootNamespace>
+    <ApplicationIcon></ApplicationIcon>
+    <Company>Luiz Studios</Company>
+    <Description>Bot para a plataforma do Discord e para o servidor UBGE.</Description>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.0</FileVersion>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileContext>.</DockerfileContext>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="UBGE-Bot\Comandos\Staff da UBGE\ModMail\StaffControlled.cs~RF20a6834.TMP" />
+    <None Remove="UBGE-Bot\Program.cs~RFbc6cc1.TMP" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Autofac" Version="4.9.4" />
+    <PackageReference Include="DSharpPlus" Version="4.0.0-nightly-00635" />
+    <PackageReference Include="DSharpPlus.CommandsNext" Version="4.0.0-nightly-00635" />
+    <PackageReference Include="DSharpPlus.Interactivity" Version="4.0.0-nightly-00635" />
+    <PackageReference Include="DSharpPlus.WebSocket.WebSocket4NetCore" Version="4.0.0-nightly-00635" />
+    <PackageReference Include="Emzi0767.Microsoft.DependencyInjection" Version="2.0.0" />
+    <PackageReference Include="Google.Apis" Version="1.42.0" />
+    <PackageReference Include="Google.Apis.Auth" Version="1.42.0" />
+    <PackageReference Include="Google.Apis.Core" Version="1.42.0" />
+    <PackageReference Include="Google.Apis.Drive.v3" Version="1.42.0.1772" />
+    <PackageReference Include="Google.Apis.Sheets.v4" Version="1.42.0.1791" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.17" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.10" />
+    <PackageReference Include="MongoDB.Driver" Version="2.10.0-beta1" />
+    <PackageReference Include="MySql.Data" Version="8.0.18" />
+    <PackageReference Include="System.Management" Version="4.7.0" />
+  </ItemGroup>
+
+</Project>

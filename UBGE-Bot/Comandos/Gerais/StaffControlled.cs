@@ -14,6 +14,8 @@ using System.Management;
 using UBGE_Bot.Main;
 using UBGE_Bot.LogExceptions;
 using UBGE_Bot.Utilidades;
+using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 
 namespace UBGE_Bot.Comandos.Gerais
 {
@@ -111,8 +113,22 @@ namespace UBGE_Bot.Comandos.Gerais
                     DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
 
                     Process p = Process.GetCurrentProcess();
-                    ManagementObjectSearcher mos = new ManagementObjectSearcher("root\\CIMV2", "SELECT * FROM Win32_Processor");
-                    ManagementObjectSearcher mram = new ManagementObjectSearcher("root\\CIMV2", "SELECT * FROM Win32_PhysicalMemory");
+                    string cpu, ram;
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    {
+                        ManagementObjectSearcher mos = new ManagementObjectSearcher("root\\CIMV2", "SELECT * FROM Win32_Processor");
+                        ManagementObjectSearcher mram = new ManagementObjectSearcher("root\\CIMV2", "SELECT * FROM Win32_PhysicalMemory");
+                        cpu = NomeDoProcessador(mos);
+                        ram = MemoriaRamDoPC(mram);
+                    } else
+                    {
+                        String[] cpuInfo = File.ReadAllLines(@"/proc/cpuinfo");
+                        Regex cpuRE = new Regex(@"^model\s*name\s*:\s *(.+?)\s*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+                        cpu = cpuRE.Match(cpuInfo.First(l => cpuRE.IsMatch(l))).Groups[1].Value;
+                        String[] ramInfo = File.ReadAllLines(@"/proc/meminfo");
+                        Regex ramRE = new Regex(@"^MemTotal\s*:\s*([0-9]+).*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+                        ram = MemoriaRamDoPC(ramRE.Match(ramInfo.First(l => ramRE.IsMatch(l))).Groups[1].Value);
+                    }
 
                     p.Refresh();
 
@@ -133,10 +149,10 @@ namespace UBGE_Bot.Comandos.Gerais
                         $"**Nome do computador:** {Environment.MachineName}\n" +
                         $"**Versão do windows:** {Environment.OSVersion.VersionString} - ()\n" +
                         $"**Sistema operacional de 64 bits?:** {(Environment.Is64BitOperatingSystem ? "Sim" : "Não").ToString()}\n" +
-                        $"**Processador:** {NomeDoProcessador(mos)}\n" +
+                        $"**Processador:** {cpu}\n" +
                         $"**Número de Núcleos:** {Environment.ProcessorCount.ToString()}\n" +
                         $"**Este é um processo 64 bits?:** {(Environment.Is64BitProcess ? "Sim" : "Não")}\n" +
-                        $"**Memória ram do computador:** {MemoriaRamDoPC(mram)}\n")
+                        $"**Memória ram do computador:** {ram}\n")
                         .AddField("Biblioteca(s):", $"**Versão do DSharpPlus:** {ctx.Client.VersionString}\n")
                         .WithThumbnailUrl(Valores.csharpLogo)
                         .WithTimestamp(DateTime.Now)
@@ -160,6 +176,13 @@ namespace UBGE_Bot.Comandos.Gerais
                 memoriaRam += ulong.Parse(objeto.Properties["Capacity"].Value.ToString());
 
             return $"{memoriaRam / 1024 / 1024 / 1024}gb ou {memoriaRam / 1024 / 1024}mb";
+        }
+
+        private string MemoriaRamDoPC(String memSizeKB)
+        {
+            ulong memoriaRam = ulong.Parse(memSizeKB);
+
+            return $"{memoriaRam / 1024 / 1024 }gb ou {memoriaRam / 1024}mb";
         }
 
         private string NomeDoProcessador(ManagementObjectSearcher managementObjectSearcher)
