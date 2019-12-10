@@ -179,15 +179,15 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
 
                         var MembrosReacoes = await mensagem.GetReactionsAsync(emoji);
 
-						string linhaMensagemEmbed = $"{emoji.ToString()} - {cargoJogoEmbed.Name}";
+                        string linhaMensagemEmbed = $"{emoji.ToString()} - {cargoJogoEmbed.Name}";
 
                         if (embedMensagemReactRole.Description.Contains(linhaMensagemEmbed))
                         {
                             var descricaoEmbed = embedMensagemReactRole.Description;
 
                             var lista = descricaoEmbed.Split('\n').ToList();
-							lista.RemoveAt(lista.FindIndex(linha => linha.Contains(linhaMensagemEmbed)));
-							
+                            lista.RemoveAt(lista.FindIndex(linha => linha.Contains(linhaMensagemEmbed)));
+                            
                             StringBuilder strEmbedFinal = new StringBuilder();
 
                             foreach (var linha in lista)                           
