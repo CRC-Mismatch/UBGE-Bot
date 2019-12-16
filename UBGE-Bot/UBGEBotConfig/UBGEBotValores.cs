@@ -51,85 +51,95 @@ namespace UBGE_Bot.UBGEBotConfig
         
 
         [JsonProperty("canalBotUBGE")]
-        public string canalBotUBGE { get; set; }
+        public ulong canalBotUBGE { get; set; }
 
         [JsonProperty("canalFormularioAlerta")]
-        public string canalFormularioAlerta { get; set; }
+        public ulong canalFormularioAlerta { get; set; }
 
         [JsonProperty("canalCrieSuaSalaAqui")]
-        public string canalCrieSuaSalaAqui { get; set; }
+        public ulong canalCrieSuaSalaAqui { get; set; }
 
         [JsonProperty("canalCentroDeReabilitacao")]
-        public string canalCentroDeReabilitacao { get; set; }
+        public ulong canalCentroDeReabilitacao { get; set; }
 
         [JsonProperty("canalPRServidor")]
-        public string canalPRServidor { get; set; }
+        public ulong canalPRServidor { get; set; }
 
         [JsonProperty("canalComandosBot")]
-        public string canalComandosBot { get; set; }
+        public ulong canalComandosBot { get; set; }
 
         [JsonProperty("canalTesteDoBot")]
-        public string canalTesteDoBot { get; set; }
+        public ulong canalTesteDoBot { get; set; }
 
         [JsonProperty("canalCliqueAqui")]
-        public string canalCliqueAqui { get; set; }
+        public ulong canalCliqueAqui { get; set; }
 
         [JsonProperty("canalBatePapo")]
-        public string canalBatePapo { get; set; }
+        public ulong canalBatePapo { get; set; }
 
         [JsonProperty("canalLog")]
-        public string canalLog { get; set; }
+        public ulong canalLog { get; set; }
 
         [JsonProperty("canalSelecioneSeusCargos")]
-        public string canalSelecioneSeusCargos { get; set; }
+        public ulong canalSelecioneSeusCargos { get; set; }
 
         [JsonProperty("canalListaSecretarias")]
-        public string canalListaSecretarias { get; set; }
+        public ulong canalListaSecretarias { get; set; }
 
         [JsonProperty("canalListaPioneiros")]
-        public string canalListaPioneiros { get; set; }
+        public ulong canalListaPioneiros { get; set; }
 
         [JsonProperty("canalOrganogramaECargosDoAlbion")]
-        public string canalOrganogramaECargosDoAlbion { get; set; }
+        public ulong canalOrganogramaECargosDoAlbion { get; set; }
 
         [JsonProperty("canalVotacoesConselho")]
-        public string canalVotacoesConselho { get; set; }
+        public ulong canalVotacoesConselho { get; set; }
+
+        [JsonProperty("canalDeVozCentroDeReabilitacao")]
+        public ulong canalDeVozCentroDeReabilitacao { get; set; }
+
 
 
         [JsonProperty("categoriaCanalDeVozPersonalizado")]
-        public string categoriaCanalDeVozPersonalizado { get; set; }
+        public ulong categoriaCanalDeVozPersonalizado { get; set; }
 
         [JsonProperty("categoriaModMailBot")]
-        public string categoriaModMailBot { get; set; }
+        public ulong categoriaModMailBot { get; set; }
 
 
 
         [JsonProperty("cargoAcessoGeral")]
-        public string cargoAcessoGeral { get; set; }
+        public ulong cargoAcessoGeral { get; set; }
 
         [JsonProperty("cargoMembroRegistrado")]
-        public string cargoMembroRegistrado { get; set; }
+        public ulong cargoMembroRegistrado { get; set; }
 
         [JsonProperty("cargoPrisioneiro")]
-        public string cargoPrisioneiro { get; set; }
+        public ulong cargoPrisioneiro { get; set; }
 
         [JsonProperty("cargoBots")]
-        public string cargoBots { get; set; }
+        public ulong cargoBots { get; set; }
 
         [JsonProperty("cargoSecretarioLider")]
-        public string cargoSecretarioLider { get; set; }
+        public ulong cargoSecretarioLider { get; set; }
 
         [JsonProperty("cargoBotsMusicais")]
-        public string cargoBotsMusicais { get; set; }
+        public ulong cargoBotsMusicais { get; set; }
 
         [JsonProperty("cargoModeradorDiscord")]
-        public string cargoModeradorDiscord { get; set; }
+        public ulong cargoModeradorDiscord { get; set; }
 
         [JsonProperty("cargoConselheiro")]
-        public string cargoConselheiro { get; set; }
+        public ulong cargoConselheiro { get; set; }
 
         [JsonProperty("cargoComiteComunitario")]
-        public string cargoComiteComunitario { get; set; }
+        public ulong cargoComiteComunitario { get; set; }
+
+        [JsonProperty("cargoNitroBooster")]
+        public ulong cargoNitroBooster { get; set; }
+
+        [JsonProperty("cargoDoador")]
+        public ulong cargoDoador { get; set; }
 
         public UBGEBotValores Build()
         {
@@ -177,6 +187,9 @@ namespace UBGE_Bot.UBGEBotConfig
                 canalVotacoesConselho = jsonConfig.canalVotacoesConselho,
                 cargoConselheiro = jsonConfig.cargoConselheiro,
                 cargoComiteComunitario = jsonConfig.cargoComiteComunitario,
+                cargoNitroBooster = jsonConfig.cargoNitroBooster,
+                cargoDoador = jsonConfig.cargoDoador,
+                canalDeVozCentroDeReabilitacao = jsonConfig.canalDeVozCentroDeReabilitacao,
             };
         }
     }

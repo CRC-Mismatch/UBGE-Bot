@@ -66,7 +66,7 @@ namespace UBGE_Bot.LogExceptions
                 }
 
                 DiscordGuild guildUBGE = await Program.ubgeBot.discordClient.GetGuildAsync(Valores.Guilds.UBGE);
-                DiscordChannel logUBGEBot = guildUBGE.GetChannel(guildUBGE.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalLog)).Id);
+                DiscordChannel logUBGEBot = guildUBGE.GetChannel(Valores.ChatsUBGE.canalLog);
                 DiscordMember Luiz = await guildUBGE.GetMemberAsync(Valores.Guilds.Membros.luiz);
 
                 DiscordEmbedBuilder Embed = new DiscordEmbedBuilder
@@ -90,7 +90,7 @@ namespace UBGE_Bot.LogExceptions
             {
                 DiscordGuild UBGE = await Program.ubgeBot.discordClient.GetGuildAsync(Valores.Guilds.UBGE);
                 DiscordMember ubgeBot = await UBGE.GetMemberAsync(Valores.Guilds.Membros.ubgeBot);
-                DiscordChannel canalLog = UBGE.GetChannel(UBGE.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalLog)).Id);
+                DiscordChannel canalLog = UBGE.GetChannel(Valores.ChatsUBGE.canalLog);
 
                 DiscordEmbedBuilder Embed = new DiscordEmbedBuilder();
 

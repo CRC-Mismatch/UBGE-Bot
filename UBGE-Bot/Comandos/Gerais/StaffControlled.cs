@@ -2,6 +2,7 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,9 +12,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Management;
+using System.Net;
 using UBGE_Bot.Main;
 using UBGE_Bot.LogExceptions;
 using UBGE_Bot.Utilidades;
+using MongoDB.Driver;
 
 namespace UBGE_Bot.Comandos.Gerais
 {
@@ -96,7 +99,7 @@ namespace UBGE_Bot.Comandos.Gerais
             }).Start();
         }
 
-        [Command("status"), UBGE]
+        [Command("status"), UBGE_Staff]
 
         public async Task BotStatusAsync(CommandContext ctx)
         {
@@ -131,7 +134,7 @@ namespace UBGE_Bot.Comandos.Gerais
                         $"**Versão:** {Valores.versao_Bot}")
                         .AddField("Especificações do computador onde estou hospedado:", $"**Nome:** {Environment.UserName}\n" +
                         $"**Nome do computador:** {Environment.MachineName}\n" +
-                        $"**Versão do windows:** {Environment.OSVersion.VersionString} - ()\n" +
+                        $"**Versão do windows:** {Environment.OSVersion.VersionString} - ({NomeDoSistemaOperacional()})\n" +
                         $"**Sistema operacional de 64 bits?:** {(Environment.Is64BitOperatingSystem ? "Sim" : "Não").ToString()}\n" +
                         $"**Processador:** {NomeDoProcessador(mos)}\n" +
                         $"**Número de Núcleos:** {Environment.ProcessorCount.ToString()}\n" +
@@ -170,12 +173,9 @@ namespace UBGE_Bot.Comandos.Gerais
             return null;
         }
 
-        private string NomeDoSistemaOperacional(ManagementObjectSearcher managementObjectSearcher)
+        private string NomeDoSistemaOperacional()
         {
-            foreach (var objeto in managementObjectSearcher.Get())
-                return objeto["Name"].ToString();
-
-            return "";
+            return Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion").GetValue("ProductName").ToString();
         }
 
         [Command("reiniciar"), Aliases("reboot", "restart"), RequireOwner]
@@ -240,7 +240,7 @@ namespace UBGE_Bot.Comandos.Gerais
             }).Start();
         }
 
-        [Command("listarservidores"), Aliases("listarservidor")]
+        [Command("listarservidores"), Aliases("listarservidor"), UBGE_Staff]
 
         public async Task ListarServidorAsync(CommandContext ctx)
         {
@@ -265,6 +265,259 @@ namespace UBGE_Bot.Comandos.Gerais
                         Timestamp = DateTime.Now,
                         Footer = new DiscordEmbedBuilder.EmbedFooter { Text = $"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", IconUrl = ctx.Member.AvatarUrl }
                     };
+
+                    await ctx.RespondAsync(embed: embed.Build());
+                }
+                catch (Exception exception)
+                {
+                    await Program.ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Comandos, exception);
+                }
+            }).Start();
+        }
+    }
+
+    [Group("mongo"), Aliases("mongodb", "mtk"), RequireOwner]
+
+    public sealed class MongoStaffControlled : BaseCommandModule
+    {
+        [Command("export"), Aliases("e", "exportar")]
+
+        public async Task ExportarAsync(CommandContext ctx, [RemainingText] string colecao = null)
+        {
+            await ctx.TriggerTypingAsync();
+
+            new Thread(async () =>
+            {
+                try
+                {
+                    DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
+
+                    if (string.IsNullOrWhiteSpace(colecao))
+                    {
+                        builder.WithAuthor("Digite o nome da coleção!", null, Valores.logoUBGE)
+                            .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                            .WithDescription(":thinking:")
+                            .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                            .WithTimestamp(DateTime.Now);
+
+                        await ctx.RespondAsync(embed: builder.Build());
+                        return;
+                    }
+
+                    string Comando = $"/c mongoexport --db local --collection {colecao} --out \"{Directory.GetCurrentDirectory()}\\Exports\\{colecao}.json\"";
+
+                    Process.Start("cmd.exe", Comando).WaitForExit();
+
+                    FileStream Arquivo = new FileStream($@"{Directory.GetCurrentDirectory()}\Exports\{colecao}.json", FileMode.Open);
+
+                    builder.WithAuthor($"Coleção exportada com sucesso de local.{colecao} para {colecao}.json", null, Valores.logoUBGE)
+                        .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                        .WithDescription(await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(ctx, "UBGE"))
+                        .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                        .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                        .WithTimestamp(DateTime.Now);
+
+                    await ctx.RespondAsync(embed: builder.Build());
+                    await ctx.RespondWithFileAsync(Arquivo);
+
+                    Arquivo.Close();
+                    Arquivo.Dispose();
+                    File.Delete($@"{Directory.GetCurrentDirectory()}\Exports\{colecao}.json");
+                }
+                catch (Exception exception)
+                {
+                    await Program.ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Comandos, exception);
+                }
+            }).Start();
+        }
+
+        [Command("import"), Aliases("i", "importar")]
+
+        public async Task ImportarAsync(CommandContext ctx, [RemainingText] string colecao = null)
+        {
+            await ctx.TriggerTypingAsync();
+
+            new Thread(async () =>
+            {
+                try
+                {
+                    DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
+
+                    if (string.IsNullOrWhiteSpace(colecao))
+                    {
+                        builder.WithAuthor("Digite o nome da coleção!", null, Valores.logoUBGE)
+                            .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                            .WithDescription(":thinking:")
+                            .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                            .WithTimestamp(DateTime.Now);
+
+                        await ctx.RespondAsync(embed: builder.Build());
+                        return;
+                    }
+
+                    if (ctx.Message.Attachments.ToList().Count != 0)
+                    {
+                        if (ctx.Message.Attachments.ToList().First().Url != null)
+                        {
+                            using (WebClient client = new WebClient())
+                                client.DownloadFile(ctx.Message.Attachments.ToList().FirstOrDefault().Url, $@"{Directory.GetCurrentDirectory()}\Exports\{colecao}.json");
+
+                            string command = $"/c mongoimport --db local --collection {colecao} --file \"{Directory.GetCurrentDirectory()}\\Exports\\{colecao}.json\"";
+                            Process.Start("cmd.exe", command).WaitForExit();
+
+                            await ctx.Message.DeleteAsync();
+
+                            builder.WithAuthor($"Coleção importada com sucesso de {colecao}.json para local.{colecao}", null, Valores.logoUBGE)
+                                .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                                .WithDescription(await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(ctx, "UBGE"))
+                                .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                                .WithTimestamp(DateTime.Now)
+                                .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
+
+                            await ctx.RespondAsync(embed: builder.Build());
+                            File.Delete($@"{Directory.GetCurrentDirectory()}\Exports\{colecao}.json");
+                        }
+                    }
+                }
+                catch (Exception exception)
+                {
+                    await Program.ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Comandos, exception);
+                }
+            }).Start();
+        }
+
+        [Command("createcollection"), Aliases("cc", "criarcolecao", "criarcoleção")]
+
+        public async Task CriarColecaoAsync(CommandContext ctx, [RemainingText] string collection = null)
+        {
+            await ctx.TriggerTypingAsync();
+
+            new Thread(async () =>
+            {
+                try
+                {
+                    DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
+
+                    if (string.IsNullOrWhiteSpace(collection))
+                    {
+                        builder.WithAuthor("Digite o nome da coleção!", null, Valores.logoUBGE)
+                            .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                            .WithDescription(":thinking:")
+                            .WithTimestamp(DateTime.Now)
+                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                            .WithThumbnailUrl(ctx.Member.AvatarUrl);
+
+                        await ctx.RespondAsync(embed: builder.Build());
+                        return;
+                    }
+
+                    var local = Program.ubgeBot.localDB;
+                    await local.CreateCollectionAsync(collection);
+
+                    builder.WithAuthor($"Coleção criada com sucesso em: local.{collection}", null, Valores.logoUBGE)
+                        .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                        .WithDescription(await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(ctx, "UBGE"))
+                        .WithTimestamp(DateTime.Now)
+                        .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                        .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
+
+                    await ctx.RespondAsync(embed: builder.Build());
+                }
+                catch (Exception exception)
+                {
+                    await Program.ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Comandos, exception);
+                }
+            }).Start();
+        }
+
+        [Command("dropcollection"), Aliases("dc", "droparcolecao", "droparcoleção", "apagarcolecao", "apagarcoleção")]
+
+        public async Task ExcluirColecaoAsync(CommandContext ctx, [RemainingText] string collection = null)
+        {
+            await ctx.TriggerTypingAsync();
+
+            new Thread(async () =>
+            {
+                try
+                {
+                    DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
+
+                    if (string.IsNullOrWhiteSpace(collection))
+                    {
+                        builder.WithAuthor("Digite o nome da coleção!", null, Valores.logoUBGE)
+                            .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                            .WithDescription(":thinking:")
+                            .WithTimestamp(DateTime.Now)
+                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                            .WithThumbnailUrl(ctx.Member.AvatarUrl);
+
+                        await ctx.RespondAsync(embed: builder.Build());
+                        return;
+                    }
+
+                    var local = Program.ubgeBot.localDB;
+                    await local.DropCollectionAsync(collection);
+
+                    builder.WithAuthor($"Coleção excluída com sucesso em: local.{collection}", null, Valores.logoUBGE)
+                        .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                        .WithDescription(await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(ctx, "UBGE"))
+                        .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                        .WithTimestamp(DateTime.Now)
+                        .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
+
+                    await ctx.RespondAsync(embed: builder.Build());
+                }
+                catch (Exception exception)
+                {
+                    await Program.ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Comandos, exception);
+                }
+            }).Start();
+        }
+
+        [Command("viewcollections"), Aliases("vercolecoes", "vercoleções", "vc")]
+
+        public async Task VerColecoesAsync(CommandContext ctx)
+        {
+            await ctx.TriggerTypingAsync();
+
+            new Thread(async () =>
+            {
+                try
+                {
+                    DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+
+                    var local = Program.ubgeBot.localDB;
+
+                    var listas = await (await local.ListCollectionNamesAsync()).ToListAsync();
+
+                    if (listas.Count() == 0)
+                    {
+                        embed.WithAuthor("Nenhuma coleção disponível!", null, Valores.logoUBGE)
+                            .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                            .WithDescription(":thinking:")
+                            .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                            .WithTimestamp(DateTime.Now);
+
+                        await ctx.RespondAsync(embed: embed.Build());
+                        return;
+                    }
+
+                    int index = 0;
+
+                    StringBuilder str = new StringBuilder();
+
+                    foreach (var nome in listas)
+                        str.Append($"`{++index}.` - **{nome}**\n");
+
+                    embed.WithAuthor("Coleções atuais:", null, Valores.logoUBGE)
+                        .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                        .WithDescription(await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(ctx, "UBGE"))
+                        .WithDescription(str.ToString())
+                        .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                        .WithTimestamp(DateTime.Now);
 
                     await ctx.RespondAsync(embed: embed.Build());
                 }

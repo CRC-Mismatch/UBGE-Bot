@@ -59,7 +59,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                     }
                     else
                     {
-                        DiscordRole registrado = ctx.Guild.GetRole(ctx.Guild.Roles.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoMembroRegistrado)).Id);
+                        DiscordRole registrado = ctx.Guild.GetRole(Valores.Cargos.cargoMembroRegistrado);
                         voiceChannel = ctx.Guild.GetChannel(resultadoSalas[0].idDaSala);
                         
                         var lista = resultadoSalas[0].idsPermitidos;
@@ -135,7 +135,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                     }
                     else
                     {
-                        DiscordRole registrado = ctx.Guild.GetRole(ctx.Guild.Roles.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoMembroRegistrado)).Id);
+                        DiscordRole registrado = ctx.Guild.GetRole(Valores.Cargos.cargoMembroRegistrado);
                         voiceChannel = ctx.Guild.GetChannel(resultadoSalas[0].idDaSala);
 
                         var lista = resultadoSalas[0].idsPermitidos;
@@ -198,7 +198,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                     }
                     else
                     {
-                        DiscordRole registrado = ctx.Guild.GetRole(ctx.Guild.Roles.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoMembroRegistrado)).Id);
+                        DiscordRole registrado = ctx.Guild.GetRole(Valores.Cargos.cargoMembroRegistrado);
                         voiceChannel = ctx.Guild.GetChannel(resultadoSalas[0].idDaSala);
 
                         var oldmaxJoin = resultadoSalas[0].limiteDeUsuarios;
@@ -292,8 +292,8 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                     DiscordChannel voiceChannel = null;
                     DiscordMember m = null;
 
-                    DiscordRole moderadorDiscordCargo = ctx.Guild.GetRole(ctx.Guild.Roles.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoModeradorDiscord)).Id),
-                    acessoGeralCargo = ctx.Guild.GetRole(ctx.Guild.Roles.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoAcessoGeral)).Id);
+                    DiscordRole moderadorDiscordCargo = ctx.Guild.GetRole(Valores.Cargos.cargoModeradorDiscord),
+                    acessoGeralCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAcessoGeral);
 
                     if (resultadoSalas.Count != 0)
                     {
@@ -362,8 +362,8 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
 
                     DiscordChannel voiceChannel = null;
 
-                    DiscordRole moderadorDiscordCargo = ctx.Guild.GetRole(ctx.Guild.Roles.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoModeradorDiscord)).Id),
-                    acessoGeralCargo = ctx.Guild.GetRole(ctx.Guild.Roles.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoAcessoGeral)).Id);
+                    DiscordRole moderadorDiscordCargo = ctx.Guild.GetRole(Valores.Cargos.cargoModeradorDiscord),
+                    acessoGeralCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAcessoGeral);
 
                     if (resultadoSalas.Count != 0)
                     {
@@ -467,9 +467,9 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
         }
     }
 
-    public sealed class Create : BaseCommandModule
+    public sealed class HelpDoMemberControlled : BaseCommandModule
     {
-        [Command("create"), UBGE]
+        [Command("create"), UBGE_CrieSuaSalaAqui]
         [Aliases("criar", "summon")]
 
         public async Task CriarCanalAsync(CommandContext ctx)
@@ -480,9 +480,9 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
             {
                 try
                 {
-                    DiscordChannel CrieSuaSalaAq = ctx.Guild.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains("CLIQUE AQUI!"));
+                    DiscordChannel cliqueAqui = ctx.Guild.GetChannel(Valores.ChatsUBGE.canalCliqueAqui);
 
-                    await dm.SendMessageAsync($"{ctx.Member.Mention}, entre no canal de voz: `{CrieSuaSalaAq.Name}` nesta categoria para criar um canal de voz personalizado!");
+                    await ctx.RespondAsync($"{ctx.Member.Mention}, entre no canal de voz: `{cliqueAqui.Name}` na categoria `{cliqueAqui.Parent.Name}` para criar um canal de voz personalizado!");
                 }
                 catch (Exception exception)
                 {

@@ -25,28 +25,28 @@ namespace UBGE_Bot.Utilidades
 
         public sealed class ChatsUBGE
         {
-            public static string canalLog = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalLog;
-            //public const ulong canalReacts = 505797244767698945;
-            public static string canalSelecioneSeusCargos = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalSelecioneSeusCargos;
-            public static string canalCentroDeReabilitacao = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalCentroDeReabilitacao;
-            public static string canalFormularioAlerta = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalFormularioAlerta;
-            public static string canalCrieSuaSalaAqui = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalCrieSuaSalaAqui;
-            public static string canalPRServidor = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalPRServidor;
-            public static string canalComandosBot = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalComandosBot;
+            public static ulong canalLog = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalLog;
+            public static ulong canalSelecioneSeusCargos = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalSelecioneSeusCargos;
+            public static ulong canalCentroDeReabilitacao = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalCentroDeReabilitacao;
+            public static ulong canalFormularioAlerta = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalFormularioAlerta;
+            public static ulong canalCrieSuaSalaAqui = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalCrieSuaSalaAqui;
+            public static ulong canalPRServidor = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalPRServidor;
+            public static ulong canalComandosBot = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalComandosBot;
             //public const ulong canalInstrucoesInformaticas = 558806468221206568;
-            public static string canalTesteDoBot = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalTesteDoBot;
-            public static string canalUBGEBot = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalBotUBGE;
-            public static string canalCliqueAqui = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalCliqueAqui;
-            public static string canalBatePapo = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalBatePapo;
-            public static string canalListaSecretarias = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalListaSecretarias;
-            public static string canalListaPioneiros = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalListaPioneiros;
-            public static string canalOrganogramaECargosDoAlbion = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalOrganogramaECargosDoAlbion;
-            public static string canalVotacoesConselho = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalVotacoesConselho;
+            public static ulong canalTesteDoBot = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalTesteDoBot;
+            public static ulong canalUBGEBot = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalBotUBGE;
+            public static ulong canalCliqueAqui = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalCliqueAqui;
+            public static ulong canalBatePapo = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalBatePapo;
+            public static ulong canalListaSecretarias = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalListaSecretarias;
+            public static ulong canalListaPioneiros = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalListaPioneiros;
+            public static ulong canalOrganogramaECargosDoAlbion = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalOrganogramaECargosDoAlbion;
+            public static ulong canalVotacoesConselho = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalVotacoesConselho;
+            public static ulong canalDeVozCentroDeReabilitacao = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalDeVozCentroDeReabilitacao;
 
             public sealed class Categorias 
             { 
-                public static string categoriaCliqueAqui = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.categoriaCanalDeVozPersonalizado;
-                public static string categoriaModMailBot = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.categoriaModMailBot;
+                public static ulong categoriaCliqueAqui = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.categoriaCanalDeVozPersonalizado;
+                public static ulong categoriaModMailBot = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.categoriaModMailBot;
             }
         }
 
@@ -80,17 +80,18 @@ namespace UBGE_Bot.Utilidades
 
         public sealed class Cargos
         {
-            public static string cargoPrisioneiro = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoPrisioneiro;
-            public static string cargoAcessoGeral = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoAcessoGeral;
-            public static string cargoMembroRegistrado = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoMembroRegistrado;
+            public static ulong cargoPrisioneiro = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoPrisioneiro;
+            public static ulong cargoAcessoGeral = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoAcessoGeral;
+            public static ulong cargoMembroRegistrado = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoMembroRegistrado;
             //public const ulong cargoInformatica = 558803534020083719;
-            //public const ulong ubgeBotCargo = 536981327325429761;
-            public static string cargosBotsMusicais = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoBotsMusicais;
-            public static string cargoBots = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoBots;
-            public static string cargoSecretarioLider = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoSecretarioLider;
-            public static string cargoModeradorDiscord = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoModeradorDiscord;
-            public static string cargoConselheiro = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoConselheiro;
-            public static string cargoComiteComunitario = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoComiteComunitario;
+            public static ulong cargosBotsMusicais = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoBotsMusicais;
+            public static ulong cargoBots = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoBots;
+            public static ulong cargoSecretarioLider = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoSecretarioLider;
+            public static ulong cargoModeradorDiscord = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoModeradorDiscord;
+            public static ulong cargoConselheiro = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoConselheiro;
+            public static ulong cargoComiteComunitario = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoComiteComunitario;
+            public static ulong cargoNitroBooster = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoNitroBooster;
+            public static ulong cargoDoador = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoDoador;
         }
 
         public sealed class Guilds

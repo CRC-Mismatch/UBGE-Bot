@@ -5,6 +5,7 @@ using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -394,6 +395,13 @@ namespace UBGE_Bot.Utilidades
                 return "Não especificado.";
         }
 
+        /// <summary>
+        /// Exclui as reações de um emoji de acordo com a mensagem e lista de membros que reagiram.
+        /// </summary>
+        /// <param name="mensagemEmbedReact"></param>
+        /// <param name="emoji"></param>
+        /// <param name="membrosQueReagiram"></param>
+        /// <returns></returns>
         public async Task ExcluiReacoesDeUmaListaDeMembros(DiscordMessage mensagemEmbedReact, DiscordEmoji emoji, IReadOnlyList<DiscordUser> membrosQueReagiram)
         {
             foreach (var membroDaReacao in membrosQueReagiram)
@@ -408,6 +416,10 @@ namespace UBGE_Bot.Utilidades
             }
         }
 
+        /// <summary>
+        /// Cor para o embed de ajuda nos comandos da staff/gerais.
+        /// </summary>
+        /// <returns></returns>
         public DiscordColor CorHelpComandos()
             => new DiscordColor(54, 57, 64);
     }
@@ -433,7 +445,7 @@ namespace UBGE_Bot.Utilidades
     {
         public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
         {
-            return Task.FromResult(ctx.Guild.Id == Valores.Guilds.UBGE && ctx.Member.Roles.ToList().FindAll(x => x.Permissions.HasFlag(Permissions.KickMembers)).Count != 0);
+            return Task.FromResult(ctx.Guild.Id == Valores.Guilds.UBGE && ctx.Member.Roles.ToList().FindAll(x => x.Permissions.HasFlag(Permissions.KickMembers)).Count != 0 || Debugger.IsAttached);
         }
     }
 
@@ -450,6 +462,14 @@ namespace UBGE_Bot.Utilidades
         public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
         {
             return Task.FromResult(ctx.Guild.Id == Valores.Guilds.ubgeAlbion);
+        }
+    }
+
+    public sealed class UBGE_CrieSuaSalaAquiAttribute : CheckBaseAttribute
+    {
+        public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
+        {
+            return Task.FromResult(ctx.Guild.Id == Valores.Guilds.UBGE && ctx.Channel.Id == Valores.ChatsUBGE.canalCrieSuaSalaAqui);
         }
     }
 }

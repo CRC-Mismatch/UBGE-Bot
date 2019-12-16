@@ -25,7 +25,7 @@ namespace UBGE_Bot.Comandos.Gerais
 {
     public sealed class MemberControlled : BaseCommandModule
     {
-        [Command("?"), Aliases("ajuda", "help")]
+        [Command("help"), Aliases("ajuda", "?")]
 
         public async Task HelpAsync(CommandContext ctx)
         {
@@ -37,16 +37,104 @@ namespace UBGE_Bot.Comandos.Gerais
                 {
                     DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
 
+                    var videoGameEmoji = DiscordEmoji.FromName(ctx.Client, ":video_game:");
+                    var comandosExtrasEmoji = DiscordEmoji.FromName(ctx.Client, ":wrench:");
+
                     if (ctx.Guild.Id == Valores.Guilds.UBGE)
                     {
-                        embed.WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
-                            .WithAuthor($"Olá, {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}!", null, Valores.logoUBGE)
-                            //.WithDescription($"Digite: `{ctx.Prefix}tutorial` para você receber ajuda com todos os sistemas implementados.")
-                            .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                        inicioHelp:
+
+                        DiscordRole cargoMembroRegistrado = ctx.Guild.GetRole(Valores.Cargos.cargoMembroRegistrado);
+
+                        DiscordRole cargoModeradorDiscord = ctx.Guild.GetRole(Valores.Cargos.cargoModeradorDiscord);
+
+                        DiscordChannel canalCliqueAqui = ctx.Guild.GetChannel(Valores.ChatsUBGE.canalCliqueAqui);
+
+                        var corEmbed = Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed();
+
+                        bool membroTemOCargoDeMembroRegistrado = ctx.Member.Roles.Contains(cargoMembroRegistrado);
+                        
+                        if (membroTemOCargoDeMembroRegistrado)
+                            embed.AddField($"{videoGameEmoji} - Sistema de criação de salas:", $"Crie canais de voz personalizados e chame seus amigos para se divertir!\nBasta entrar no canal de voz `#{canalCliqueAqui.Name}`");
+
+                        embed.WithColor(corEmbed)
+                            .WithAuthor($"{(membroTemOCargoDeMembroRegistrado ? "Olá" : "Oi")}, {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}!", null, Valores.logoUBGE)
+                            .WithDescription("Aqui abaixo estão os sistemas/comandos disponíveis para você! Clique no emoji referente a cada tópico descrito.")
+                            .AddField($"{comandosExtrasEmoji} - Comandos extras:", "Comandos extras que podem ser úteis para você que está usando o bot.")
+                            .WithThumbnailUrl(ctx.Member.AvatarUrl);
+
+                        DiscordMessage primeiraMensagemEmbed = await ctx.RespondAsync(embed: embed.Build());
+
+                        Program.ubgeBot.utilidadesGerais.LimpaEmbed(embed);
+
+                        embed.WithAuthor("Um breve tutorial de como ler e entender os meus comandos!")
+                            .WithColor(corEmbed)
+                            .WithDescription($"- `{ctx.Prefix}[Nome do grupo onde ele está, se existir no comando.] [Nome do comando] [Opção facultativa/obrigatória (Depende de cada comando)]`\n\n" +
+                            $"Caso não tenha entendido, reaja nas reações abaixo para entender os comandos na prática ou chame algum {cargoModeradorDiscord.Mention}. {await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(ctx, "UBGE")}")
                             .WithTimestamp(DateTime.Now)
                             .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
 
-                        await ctx.RespondAsync(embed: embed.Build());
+                        DiscordMessage segundaMensagemEmbed = await ctx.RespondAsync(embed: embed.Build());
+                        await segundaMensagemEmbed.CreateReactionAsync(videoGameEmoji);
+                        await Task.Delay(200);
+                        await segundaMensagemEmbed.CreateReactionAsync(comandosExtrasEmoji);
+
+                        var interactivity = ctx.Client.GetInteractivity();
+
+                        var emojiResposta = (await interactivity.WaitForReactionAsync(segundaMensagemEmbed, ctx.User, TimeSpan.FromMinutes(5))).Result.Emoji;
+
+                        if (emojiResposta == videoGameEmoji)
+                        {
+                            await primeiraMensagemEmbed.DeleteAsync();
+                            await segundaMensagemEmbed.DeleteAsync();
+
+                            Program.ubgeBot.utilidadesGerais.LimpaEmbed(embed);
+
+                            StringBuilder strComandosCriarSala = new StringBuilder();
+
+                            foreach (var comando in ctx.CommandsNext.RegisteredCommands.Values)
+                            {
+                                if (comando is CommandGroup grupo)
+                                {
+                                    foreach (var comandoNoGrupo in grupo.Children)
+                                    {
+                                        if (strComandosCriarSala.ToString().Contains(comandoNoGrupo.QualifiedName))
+                                            break;
+
+                                        if (!comandoNoGrupo.QualifiedName.Contains("sala") || comandoNoGrupo.QualifiedName.StartsWith("tutorial"))
+                                            break;
+
+                                        strComandosCriarSala.Append($"`{ctx.Prefix}{comandoNoGrupo.QualifiedName} {comandoNoGrupo.Description}");
+                                    }
+                                }
+                            }
+
+                            var canalCrieSuaSalaAqui = ctx.Guild.GetChannel(Valores.ChatsUBGE.canalCrieSuaSalaAqui);
+
+                            embed.WithAuthor("Sistema de criação de salas:", null, Valores.logoUBGE)
+                                .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                                .WithDescription($"Para criar uma sala no PC:\n" +
+                                $"`1.` - Copie isso: `#{canalCrieSuaSalaAqui.Name}`.\n" +
+                                $"`2.` - Aperte `Ctrl + T` e cole no espaço.\n" +
+                                $"`3.` - Aperte `Enter`.\n" +
+                                $"`4.` - Digite `{ctx.Prefix}criar`.\n\n" +
+                                $"Para criar uma sala no celular:\n" +
+                                $"`1.` - Procure pelo canal de texto: `#{canalCrieSuaSalaAqui.Name}`\n" +
+                                $"`2.` - Digite `{ctx.Prefix}criar`.\n\n" +
+                                $"Comandos:\n{strComandosCriarSala.ToString()}")
+                                .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                                .WithTimestamp(DateTime.Now)
+                                .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
+
+                            await ctx.RespondAsync(embed: embed.Build());
+                        }
+                        else if (emojiResposta == comandosExtrasEmoji)
+                        {
+                            await primeiraMensagemEmbed.DeleteAsync();
+                            await segundaMensagemEmbed.DeleteAsync();
+
+                            await ctx.RespondAsync("A categoria de comandos extras ainda está em desenvolvimento! Peço perdão pelo transtorno.");
+                        } 
                     }
                     else
                     {
@@ -143,9 +231,7 @@ namespace UBGE_Bot.Comandos.Gerais
                     var interact = ctx.Client.GetInteractivity();
                     string logoUBGEFoto = Directory.GetCurrentDirectory() + @"\Logos\LogoUBGE.png";
 
-                    List<DiscordChannel> canaisUBGE = ctx.Guild.Channels.Values.ToList();
-
-                    DiscordChannel log = ctx.Guild.GetChannel(canaisUBGE.Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalLog)).Id);//, ubgeBot = ctx.Guild.GetChannel(canaisUBGE.Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalUBGEBot)).Id);
+                    DiscordChannel log = ctx.Guild.GetChannel(Valores.ChatsUBGE.canalLog);
                     DiscordMember luiz = await ctx.Guild.GetMemberAsync(Valores.Guilds.Membros.luiz);
 
                     string respostaFinalComoChegouAUBGE = string.Empty,
@@ -1008,7 +1094,7 @@ namespace UBGE_Bot.Comandos.Gerais
             }).Start();
         }
 
-        [Command("userinfo"), Aliases("usuario", "usuário")]
+        [Command("userinfo"), Aliases("usuario", "usuário"), UBGE]
 
         public async Task UserInfoAsync(CommandContext ctx, DiscordMember membro = null)
         {
@@ -1020,7 +1106,7 @@ namespace UBGE_Bot.Comandos.Gerais
                 {
 
                     DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-                    DiscordRole cargoMembroRegistrado = ctx.Guild.GetRole(ctx.Guild.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoMembroRegistrado)).Id);
+                    DiscordRole cargoMembroRegistrado = ctx.Guild.GetRole(Valores.Cargos.cargoMembroRegistrado);
                     
                     string status = string.Empty, statusDiscord = string.Empty, statusFinal = string.Empty;
                     
@@ -1403,7 +1489,7 @@ namespace UBGE_Bot.Comandos.Gerais
             {
                 try
                 {
-                    DiscordRole botsMusicais = ctx.Guild.GetRole(ctx.Guild.Roles.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargosBotsMusicais)).Id);
+                    DiscordRole botsMusicais = ctx.Guild.GetRole(Valores.Cargos.cargosBotsMusicais);
 
                     StringBuilder str = new StringBuilder();
 
@@ -1443,7 +1529,7 @@ namespace UBGE_Bot.Comandos.Gerais
                 {
                     List<DiscordRole> cargosUBGE = ctx.Guild.Roles.Values.ToList();
 
-                    DiscordRole bots = ctx.Guild.GetRole(cargosUBGE.Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoBots)).Id), botsMusicais = ctx.Guild.GetRole(cargosUBGE.Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargosBotsMusicais)).Id);
+                    DiscordRole bots = ctx.Guild.GetRole(Valores.Cargos.cargoBots), botsMusicais = ctx.Guild.GetRole(Valores.Cargos.cargosBotsMusicais);
 
                     StringBuilder primeiroSTR = new StringBuilder(), segundoSTR = new StringBuilder();
 

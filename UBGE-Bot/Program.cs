@@ -76,7 +76,7 @@ namespace UBGE_Bot.Main
                     if (ubgeBot.botConectadoAoMongo)
                         await ExecutaList(ubgeBot, "Executando o **//list** automaticamente...");
                 };
-                timerComandos.Start();
+                //timerComandos.Start();
 
                 Timer timerModuloChecarBotAberto = new Timer()
                 {
@@ -91,12 +91,12 @@ namespace UBGE_Bot.Main
 
                 Timer checaCanaisAutoCreate = new Timer()
                 {
-                    Interval = 10000,
+                    Interval = 30000,
                 };
                 timerModuloChecarBotAberto.Elapsed += async delegate
                 {
-                    if (checkDosCanaisFoiIniciado) { }
-                        //await ChecaCanaisAutoCreate(ubgeBot);
+                    if (checkDosCanaisFoiIniciado) 
+                        await ChecaCanaisAutoCreate(ubgeBot);
                 };
                 timerModuloChecarBotAberto.Start();
 
@@ -106,8 +106,8 @@ namespace UBGE_Bot.Main
                 };
                 checaMembrosNaPrisao.Elapsed += async delegate
                 {
-                    if (checkDosCanaisFoiIniciado) { }
-                        //await VerificaPrisoesQuandoOBotInicia(ubgeBot);
+                    if (checkDosCanaisFoiIniciado) 
+                        await VerificaPrisoesQuandoOBotInicia(ubgeBot);
                 };
                 checaMembrosNaPrisao.Start();
 
@@ -136,15 +136,16 @@ namespace UBGE_Bot.Main
                 ubgeBotClient.discordClient.GuildBanRemoved += BanRetirado;
                 ubgeBotClient.discordClient.SocketClosed += BotCaiu;
                 ubgeBotClient.discordClient.SocketErrored += BotCaiuEErroNoSocket;
-                //ubgeBotClient.discordClient.GuildDownloadCompleted += DownloadsDosServidoresFoiConcluido;
+                ubgeBotClient.discordClient.GuildMemberUpdated += MembroAlterado;
+                ubgeBotClient.discordClient.GuildDownloadCompleted += DownloadsDosServidoresFoiConcluido;
                 
                 if (ubgeBotClient.botConectadoAoMongo)
                 {
                     ubgeBotClient.discordClient.MessageReactionAdded += ReacaoAdicionadaReactRole;
                     ubgeBotClient.discordClient.MessageReactionRemoved += ReacaoRemovidaReactRole;
                     ubgeBotClient.discordClient.MessageCreated += MensagemCriada;
-                    //ubgeBotClient.discordClient.VoiceStateUpdated += CanalDeVozPersonalizado;
-                    //ubgeBotClient.discordClient.GuildMemberAdded += MembroEntra;
+                    ubgeBotClient.discordClient.VoiceStateUpdated += CanalDeVozPersonalizado;
+                    ubgeBotClient.discordClient.GuildMemberAdded += MembroEntra;
                 }
             }
             catch (Exception exception)
@@ -181,11 +182,7 @@ namespace UBGE_Bot.Main
         {
             if (messageReactionAddEventArgs == null || 
                 messageReactionAddEventArgs.Channel.IsPrivate || 
-                messageReactionAddEventArgs.User.IsBot || 
-                !(messageReactionAddEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalSelecioneSeusCargos) ||
-                messageReactionAddEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalListaSecretarias) ||
-                messageReactionAddEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalListaPioneiros) ||
-                messageReactionAddEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalOrganogramaECargosDoAlbion)))
+                messageReactionAddEventArgs.User.IsBot)
                 return;
 
             await Task.Delay(200);
@@ -194,22 +191,26 @@ namespace UBGE_Bot.Main
             {
                 try
                 {
-                    DiscordGuild guildReaction = messageReactionAddEventArgs.Guild;
+                    var db = ubgeBot.localDB;
+                    
+                    var jogos = db.GetCollection<Jogos>(Valores.Mongo.jogos);
+                    var reacts = db.GetCollection<Reacts>(Valores.Mongo.reacts);
+                    
                     var emojiReacao = messageReactionAddEventArgs.Emoji;
+
+                    var filtroJogos = Builders<Jogos>.Filter.Eq(x => x.idDoEmoji, emojiReacao.Id);
+                    var resultadoJogos = await (await jogos.FindAsync(filtroJogos)).ToListAsync();
+
+                    if (resultadoJogos.Count == 0)
+                        return;
+
+                    DiscordGuild guildReaction = messageReactionAddEventArgs.Guild;
                     var mensagemEmoji = messageReactionAddEventArgs.Message;
                     var canalReaction = messageReactionAddEventArgs.Channel;
 
                     var reacoesMembro = await mensagemEmoji.GetReactionsAsync(emojiReacao);
 
-                    var db = ubgeBot.localDB;
-
                     var dbContar = db.GetCollection<ContaMembrosQuePegaramCargos>(Valores.Mongo.contaMembrosQuePegaramCargos);
-
-                    var jogos = db.GetCollection<Jogos>(Valores.Mongo.jogos);
-                    var reacts = db.GetCollection<Reacts>(Valores.Mongo.reacts);
-
-                    var filtroJogos = Builders<Jogos>.Filter.Eq(x => x.idDoEmoji, emojiReacao.Id);
-                    var resultadoJogos = await (await jogos.FindAsync(filtroJogos)).ToListAsync();
 
                     var resultadoReacts = await (await reacts.FindAsync(Builders<Reacts>.Filter.Eq(x => x.categoria, resultadoJogos.LastOrDefault().nomeDaCategoria))).ToListAsync();
 
@@ -225,7 +226,7 @@ namespace UBGE_Bot.Main
 
                     if (!resultadoDiferente && emojiReacao != null)
                     {
-                        DiscordChannel ubgeBot_ = UBGE.GetChannel(UBGE.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalUBGEBot)).Id);
+                        DiscordChannel ubgeBot_ = UBGE.GetChannel(Valores.ChatsUBGE.canalUBGEBot);
 
                         await mensagemEmoji.DeleteReactionAsync(emojiReacao, ubgeBot.discordClient.CurrentUser);
 
@@ -269,7 +270,7 @@ namespace UBGE_Bot.Main
                         return;
                     }
 
-                    DiscordRole acessoGeral = UBGE.Roles.Values.Where(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoAcessoGeral)).LastOrDefault();
+                    DiscordRole acessoGeral = UBGE.GetRole(Valores.Cargos.cargoAcessoGeral);
 
                     var membro = guildReaction == UBGE ? await UBGE.GetMemberAsync(messageReactionAddEventArgs.User.Id) : await guildReaction.GetMemberAsync(messageReactionAddEventArgs.User.Id);
 
@@ -311,7 +312,6 @@ namespace UBGE_Bot.Main
                     else
                         await ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.ReactRoleForaDaUBGE, "Cargo Adicionado!", $"{emojiReacao} | O membro: **{ubgeBot.utilidadesGerais.MencaoMembro(membro)}** pegou o cargo de: **{cargo.Name}**.", guildReaction.IconUrl, membro);
                 }
-                catch (NullReferenceException) { }
                 catch (Exception exception)
                 {
                     await ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Discord, exception);
@@ -323,11 +323,7 @@ namespace UBGE_Bot.Main
         {
             if (messageReactionRemoveEventArgs == null || 
                 messageReactionRemoveEventArgs.Channel.IsPrivate || 
-                messageReactionRemoveEventArgs.User.IsBot ||
-                !(messageReactionRemoveEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalSelecioneSeusCargos) ||
-                messageReactionRemoveEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalListaSecretarias) ||
-                messageReactionRemoveEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalListaPioneiros) ||
-                messageReactionRemoveEventArgs.Channel.Name.ToUpper().Contains(Valores.ChatsUBGE.canalOrganogramaECargosDoAlbion)))
+                messageReactionRemoveEventArgs.User.IsBot)
                 return;
 
             await Task.Delay(200);
@@ -336,13 +332,6 @@ namespace UBGE_Bot.Main
             {
                 try
                 {
-                    DiscordGuild guildReaction = messageReactionRemoveEventArgs.Guild;
-                    var emojiReacao = messageReactionRemoveEventArgs.Emoji;
-                    var mensagemEmoji = messageReactionRemoveEventArgs.Message;
-                    var canalReaction = messageReactionRemoveEventArgs.Channel;
-
-                    var reacoesMembro = await mensagemEmoji.GetReactionsAsync(emojiReacao);
-
                     var db = ubgeBot.localDB;
 
                     var dbContar = db.GetCollection<ContaMembrosQuePegaramCargos>(Valores.Mongo.contaMembrosQuePegaramCargos);
@@ -350,8 +339,19 @@ namespace UBGE_Bot.Main
                     var jogos = db.GetCollection<Jogos>(Valores.Mongo.jogos);
                     var reacts = db.GetCollection<Reacts>(Valores.Mongo.reacts);
 
+                    var emojiReacao = messageReactionRemoveEventArgs.Emoji;
+                    
                     var filtroJogos = Builders<Jogos>.Filter.Eq(x => x.idDoEmoji, emojiReacao.Id);
                     var resultadoJogos = await (await jogos.FindAsync(filtroJogos)).ToListAsync();
+
+                    if (resultadoJogos.Count == 0)
+                        return;
+
+                    DiscordGuild guildReaction = messageReactionRemoveEventArgs.Guild;
+                    var mensagemEmoji = messageReactionRemoveEventArgs.Message;
+                    var canalReaction = messageReactionRemoveEventArgs.Channel;
+
+                    var reacoesMembro = await mensagemEmoji.GetReactionsAsync(emojiReacao);
 
                     var resultadoReacts = await (await reacts.FindAsync(Builders<Reacts>.Filter.Eq(x => x.categoria, resultadoJogos.LastOrDefault().nomeDaCategoria))).ToListAsync();
 
@@ -367,7 +367,7 @@ namespace UBGE_Bot.Main
 
                     if (!resultadoDiferente && emojiReacao != null)
                     {
-                        DiscordChannel ubgeBot_ = UBGE.GetChannel(UBGE.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalUBGEBot)).Id);
+                        DiscordChannel ubgeBot_ = UBGE.GetChannel(Valores.ChatsUBGE.canalUBGEBot);
 
                         await mensagemEmoji.DeleteReactionAsync(emojiReacao, ubgeBot.discordClient.CurrentUser);
 
@@ -411,7 +411,7 @@ namespace UBGE_Bot.Main
                         return;
                     }
 
-                    DiscordRole acessoGeral = UBGE.Roles.Values.Where(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoAcessoGeral)).LastOrDefault();
+                    DiscordRole acessoGeral = UBGE.GetRole(Valores.Cargos.cargoAcessoGeral);
 
                     var membro = guildReaction == UBGE ? await UBGE.GetMemberAsync(messageReactionRemoveEventArgs.User.Id) : await guildReaction.GetMemberAsync(messageReactionRemoveEventArgs.User.Id);
 
@@ -453,7 +453,6 @@ namespace UBGE_Bot.Main
                     else
                         await ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.ReactRoleForaDaUBGE, "Cargo removido!", $"{emojiReacao} | O membro: **{ubgeBot.utilidadesGerais.MencaoMembro(membro)}** removeu o cargo de: **{cargo.Name}**.", guildReaction.IconUrl, membro);
                 }
-                catch (NullReferenceException) { }
                 catch (Exception exception)
                 {
                     await ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Discord, exception);
@@ -512,26 +511,13 @@ namespace UBGE_Bot.Main
 
                     if (!canalMensagem.IsPrivate)
                     {
-                        if (canalMensagem.Id == messageCreateEventArgs.Guild.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalFormularioAlerta)).Id)
+                        if (canalMensagem.Id == Valores.ChatsUBGE.canalFormularioAlerta)
                         {
                             if (donoMensagem.IsBot)
                             {
                                 await mensagem.CreateReactionAsync(DiscordEmoji.FromName(clientDiscord, ":white_check_mark:"));
                                 await Task.Delay(200);
                                 await mensagem.CreateReactionAsync(DiscordEmoji.FromName(clientDiscord, ":negative_squared_cross_mark:"));
-                            }
-                        }
-
-                        if (canalMensagem.Id == messageCreateEventArgs.Guild.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalCrieSuaSalaAqui)).Id)
-                        {
-                            if (mensagem.Content.ToLower().StartsWith("//sala") || mensagem.Content.ToLower().StartsWith($"ubge!sala") ||
-                            mensagem.Content.ToLower().StartsWith("//tutorial") || mensagem.Content.ToLower().StartsWith($"ubge!tutorial") ||
-                            mensagem.Attachments.Count != 0)
-                            { }
-                            else
-                            {
-                                if (!donoMensagem.IsBot)
-                                    await mensagem.DeleteAsync();
                             }
                         }
 
@@ -578,12 +564,11 @@ namespace UBGE_Bot.Main
                             }
                         }
 
-                        if (canalMensagem.Id != messageCreateEventArgs.Guild.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalTesteDoBot)).Id ||
-                            canalMensagem.Id != messageCreateEventArgs.Guild.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalPRServidor)).Id ||
-                            canalMensagem.Id != messageCreateEventArgs.Guild.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalCentroDeReabilitacao)).Id ||
-                            canalMensagem.Id != messageCreateEventArgs.Guild.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalComandosBot)).Id ||
-                            canalMensagem.Id != messageCreateEventArgs.Guild.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalCrieSuaSalaAqui)).Id ||
-                            canalMensagem.Id != messageCreateEventArgs.Guild.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalUBGEBot)).Id ||
+                        if (canalMensagem.Id != Valores.ChatsUBGE.canalTesteDoBot ||
+                            canalMensagem.Id != Valores.ChatsUBGE.canalPRServidor ||
+                            canalMensagem.Id != Valores.ChatsUBGE.canalComandosBot ||
+                            canalMensagem.Id != Valores.ChatsUBGE.canalCrieSuaSalaAqui ||
+                            canalMensagem.Id != Valores.ChatsUBGE.canalUBGEBot ||
                             !donoMensagem.IsBot)
                         {
                             var colecao = db.GetCollection<Levels>(Valores.Mongo.levels);
@@ -634,16 +619,13 @@ namespace UBGE_Bot.Main
 
                     var nomeMembroNoDiscord = ubgeBot.utilidadesGerais.RetornaNomeDiscord(donoMensagem_);
 
-                    List<DiscordRole> cargosUBGE = UBGE.Roles.Values.ToList();
-                    List<DiscordChannel> canaisUBGE = UBGE.Channels.Values.ToList();
+                    DiscordRole cargoModeradorDiscord = UBGE.GetRole(Valores.Cargos.cargoModeradorDiscord);
+                    DiscordRole cargoComiteComunitario = UBGE.GetRole(Valores.Cargos.cargoComiteComunitario);
+                    DiscordRole cargoConselheiro = UBGE.GetRole(Valores.Cargos.cargoConselheiro);
 
-                    DiscordRole cargoModeradorDiscord = cargosUBGE.Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoModeradorDiscord));
-                    DiscordRole cargoComiteComunitario = cargosUBGE.Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoComiteComunitario));
-                    DiscordRole cargoConselheiro = cargosUBGE.Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoConselheiro));
+                    DiscordChannel votacoesConselho = UBGE.GetChannel(Valores.ChatsUBGE.canalVotacoesConselho);
 
-                    DiscordChannel votacoesConselho = canaisUBGE.Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalVotacoesConselho));
-
-                    var modMailUBGE = canaisUBGE.Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.Categorias.categoriaModMailBot) && x.Type == ChannelType.Category);
+                    var modMailUBGE = UBGE.GetChannel(Valores.ChatsUBGE.Categorias.categoriaModMailBot);
 
                     if (mensagem.Content.ToLower() != "modmail")
                     {
@@ -900,29 +882,48 @@ namespace UBGE_Bot.Main
                     var local = ubgeBot.localDB;
                     var salas = local.GetCollection<Salas>(Valores.Mongo.salas);
 
-                    DiscordMember membro = await voiceStateUpdateEventArgs.Guild.GetMemberAsync(voiceStateUpdateEventArgs.User.Id);
+                    DiscordGuild UBGE = voiceStateUpdateEventArgs.Guild;
+                    
+                    DiscordMember membro = await UBGE.GetMemberAsync(voiceStateUpdateEventArgs.User.Id);
 
-                    var filtroSalas = Builders<Salas>.Filter.Eq(s => s.idDoDono, membro.Id);
-                    var resultadoSalas = await (await salas.FindAsync(filtroSalas)).ToListAsync();
-
-                    List<DiscordChannel> canaisUBGE = voiceStateUpdateEventArgs.Guild.Channels.Values.ToList();
-                    List<DiscordRole> cargosUBGE = voiceStateUpdateEventArgs.Guild.Roles.Values.ToList();
-
-                    DiscordChannel cliqueAqui = canaisUBGE.Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalCliqueAqui) && x.Parent.Children.Where(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalCrieSuaSalaAqui)).Count() != 0);
+                    DiscordChannel cliqueAqui = UBGE.GetChannel(Valores.ChatsUBGE.canalCliqueAqui);
 
                     if (cliqueAqui == null)
                         return;
 
-                    DiscordRole membroRegistradoCargo = voiceStateUpdateEventArgs.Guild.GetRole(cargosUBGE.Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoMembroRegistrado)).Id);
+                    var filtroSalas = Builders<Salas>.Filter.Eq(s => s.idDoDono, membro.Id);
+                    var resultadoSalas = await (await salas.FindAsync(filtroSalas)).ToListAsync();
 
-                    if (voiceStateUpdateEventArgs.After?.Channel != null && voiceStateUpdateEventArgs.After?.Channel?.Id == cliqueAqui.Id)
+                    if (voiceStateUpdateEventArgs.Before?.Channel != null &&
+                    voiceStateUpdateEventArgs.Before?.Channel?.Id == resultadoSalas.LastOrDefault().idDaSala &&
+                    voiceStateUpdateEventArgs.Before?.Channel?.Users.Count() == 0 &&
+                    voiceStateUpdateEventArgs.After?.Channel != null &&
+                    voiceStateUpdateEventArgs.After?.Channel?.Id == cliqueAqui.Id)
+                    {
+                        await membro.PlaceInAsync(UBGE.GetChannel(resultadoSalas.LastOrDefault().idDaSala));
+
+                        return;
+                    }
+
+                    if (voiceStateUpdateEventArgs.Before?.Channel != null &&
+                    voiceStateUpdateEventArgs.Before?.Channel?.Id == resultadoSalas.LastOrDefault().idDaSala &&
+                    voiceStateUpdateEventArgs.Before?.Channel?.Users.Count() == 0)
+                    {
+                        await UBGE.GetChannel(resultadoSalas.LastOrDefault().idDaSala).DeleteAsync();
+
+                        return;
+                    }
+
+                    DiscordRole membroRegistradoCargo = UBGE.GetRole(Valores.Cargos.cargoMembroRegistrado);
+
+                    if (voiceStateUpdateEventArgs.Before?.Channel == null && voiceStateUpdateEventArgs.After?.Channel?.Id == cliqueAqui.Id || voiceStateUpdateEventArgs.Before?.Channel != null && voiceStateUpdateEventArgs.After?.Channel?.Id == cliqueAqui.Id)
                     {
                         if (membro.Roles.Contains(membroRegistradoCargo))
                         {
-                            DiscordRole prisioneiroCargo = voiceStateUpdateEventArgs.Guild.GetRole(cargosUBGE.Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoPrisioneiro)).Id),
-                            botsMusicaisCargo = voiceStateUpdateEventArgs.Guild.GetRole(cargosUBGE.Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoBots)).Id),
-                            acessoGeralCargo = voiceStateUpdateEventArgs.Guild.GetRole(cargosUBGE.Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoAcessoGeral)).Id),
-                            moderadorDiscordCargo = voiceStateUpdateEventArgs.Guild.GetRole(cargosUBGE.Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoModeradorDiscord)).Id);
+                            DiscordRole prisioneiroCargo = UBGE.GetRole(Valores.Cargos.cargoPrisioneiro),
+                            botsMusicaisCargo = UBGE.GetRole(Valores.Cargos.cargoBots),
+                            acessoGeralCargo = UBGE.GetRole(Valores.Cargos.cargoAcessoGeral),
+                            moderadorDiscordCargo = UBGE.GetRole(Valores.Cargos.cargoModeradorDiscord);
 
                             string nomeAntigo = "📌 Clique aqui!";
                             await cliqueAqui.ModifyAsync(c => c.Name = $"📌 Sala criada!");
@@ -934,7 +935,7 @@ namespace UBGE_Bot.Main
                                 await cliqueAqui.ModifyAsync(c => c.Name = nomeAntigo);
                             }).Start();
 
-                            DiscordChannel canalDoMembro = await voiceStateUpdateEventArgs.Guild.CreateChannelAsync(!string.IsNullOrWhiteSpace(membro.Presence?.Activity?.Name) ? membro.Presence.Activity.Name : $"Sala do: {ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}", ChannelType.Voice, cliqueAqui.Parent);
+                            DiscordChannel canalDoMembro = await UBGE.CreateChannelAsync(!string.IsNullOrWhiteSpace(membro.Presence?.Activity?.Name) ? membro.Presence.Activity.Name : $"Sala do: {ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}", ChannelType.Voice, cliqueAqui.Parent);
 
                             if (resultadoSalas.Count == 0)
                             {
@@ -958,7 +959,7 @@ namespace UBGE_Bot.Main
                             {
                                 if (resultadoSalas[0].salaTrancada)
                                 {
-                                    await canalDoMembro.AddOverwriteAsync(voiceStateUpdateEventArgs.Guild.EveryoneRole, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection);
+                                    await canalDoMembro.AddOverwriteAsync(UBGE.EveryoneRole, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection);
                                     await canalDoMembro.AddOverwriteAsync(membro, Permissions.AccessChannels | Permissions.Speak | Permissions.UseVoice | Permissions.UseVoiceDetection);
                                     await canalDoMembro.AddOverwriteAsync(botsMusicaisCargo, Permissions.AccessChannels | Permissions.Speak | Permissions.UseVoice | Permissions.UseVoiceDetection);
                                     await canalDoMembro.AddOverwriteAsync(acessoGeralCargo, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection);
@@ -970,14 +971,14 @@ namespace UBGE_Bot.Main
 
                                     foreach (ulong idsMembros in resultadoSalas[0].idsPermitidos)
                                     {
-                                        membrosForeach = await voiceStateUpdateEventArgs.Guild.GetMemberAsync(idsMembros);
+                                        membrosForeach = await UBGE.GetMemberAsync(idsMembros);
 
                                         await canalDoMembro.AddOverwriteAsync(membrosForeach, Permissions.AccessChannels | Permissions.Speak | Permissions.UseVoice | Permissions.UseVoiceDetection);
                                     }
                                 }
                                 else
                                 {
-                                    await canalDoMembro.AddOverwriteAsync(voiceStateUpdateEventArgs.Guild.EveryoneRole, Permissions.AccessChannels | Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection);
+                                    await canalDoMembro.AddOverwriteAsync(UBGE.EveryoneRole, Permissions.AccessChannels | Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection);
                                     await canalDoMembro.AddOverwriteAsync(botsMusicaisCargo, Permissions.AccessChannels | Permissions.Speak | Permissions.UseVoice | Permissions.UseVoiceDetection);
 
                                     await salas.UpdateOneAsync(filtroSalas, Builders<Salas>.Update.Set(u => u.salaTrancada, false));
@@ -995,8 +996,8 @@ namespace UBGE_Bot.Main
                         {
                             try
                             {
-                                DiscordChannel Comandos_Bot = voiceStateUpdateEventArgs.Guild.GetChannel(cargosUBGE.Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalComandosBot)).Id);
-                                DiscordChannel BatePapo = canaisUBGE.Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalBatePapo));
+                                DiscordChannel Comandos_Bot = UBGE.GetChannel(Valores.ChatsUBGE.canalComandosBot);
+                                DiscordChannel BatePapo = UBGE.GetChannel(Valores.ChatsUBGE.canalBatePapo);
 
                                 await BatePapo.PlaceMemberAsync(membro);
 
@@ -1012,9 +1013,6 @@ namespace UBGE_Bot.Main
                             catch (Exception) { }
                         }
                     }
-                    else if (voiceStateUpdateEventArgs.Before?.Channel != null && voiceStateUpdateEventArgs.Before?.Channel?.Id == resultadoSalas.LastOrDefault().idDaSala && voiceStateUpdateEventArgs.Before?.Channel?.Users.Count() == 0)
-                        await voiceStateUpdateEventArgs.Guild.GetChannel(resultadoSalas.LastOrDefault().idDaSala).DeleteAsync();
-
                 }
                 catch (NullReferenceException) { }
                 catch (Exception exception)
@@ -1026,98 +1024,123 @@ namespace UBGE_Bot.Main
         
         public async Task NovoBan(GuildBanAddEventArgs guildBanAddEventArgs)
         {
-            if (guildBanAddEventArgs.Guild.Id == Valores.Guilds.UBGE)
+            if (guildBanAddEventArgs.Guild.Id != Valores.Guilds.UBGE)
+                return;
+
+            await Task.Delay(200);
+
+            new Thread(async () =>
             {
-                await Task.Delay(200);
-
-                new Thread(async () =>
+                try
                 {
-                    try
-                    {
-                        DiscordChannel logChat = guildBanAddEventArgs.Guild.GetChannel(guildBanAddEventArgs.Guild.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalLog)).Id);
+                    DiscordChannel logChat = guildBanAddEventArgs.Guild.GetChannel(Valores.ChatsUBGE.canalLog);
 
-                        DiscordEmbedBuilder embed = new DiscordEmbedBuilder
-                        {
-                            Color = ubgeBot.utilidadesGerais.CorAleatoriaEmbed(),
-                            Author = new DiscordEmbedBuilder.EmbedAuthor { Name = $"O membro: \"{ubgeBot.utilidadesGerais.RetornaNomeDiscord(guildBanAddEventArgs.Member)}#{guildBanAddEventArgs.Member.Discriminator}\" foi banido.", IconUrl = Valores.logoUBGE },
-                            Description = $"Dia e Hora: {DateTime.Now.ToString()}\n\n" +
-                                    $"ID do Membro: {guildBanAddEventArgs.Member.Id}",
-                            Timestamp = DateTime.Now,
-                            ThumbnailUrl = guildBanAddEventArgs.Member.AvatarUrl,
-                        };
-
-                        await logChat.SendMessageAsync(embed: embed.Build());
-                    }
-                    catch (Exception exception)
+                    DiscordEmbedBuilder embed = new DiscordEmbedBuilder
                     {
-                        await ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Discord, exception);
-                    }
-                }).Start();
-            }
+                        Color = ubgeBot.utilidadesGerais.CorAleatoriaEmbed(),
+                        Author = new DiscordEmbedBuilder.EmbedAuthor { Name = $"O membro: \"{ubgeBot.utilidadesGerais.RetornaNomeDiscord(guildBanAddEventArgs.Member)}#{guildBanAddEventArgs.Member.Discriminator}\" foi banido.", IconUrl = Valores.logoUBGE },
+                        Description = $"Dia e Hora: {DateTime.Now.ToString()}\n\n" +
+                                $"ID do Membro: {guildBanAddEventArgs.Member.Id}",
+                        Timestamp = DateTime.Now,
+                        ThumbnailUrl = guildBanAddEventArgs.Member.AvatarUrl,
+                    };
+
+                    await logChat.SendMessageAsync(embed: embed.Build());
+                }
+                catch (Exception exception)
+                {
+                    await ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Discord, exception);
+                }
+            }).Start();
         }
 
         public async Task BanRetirado(GuildBanRemoveEventArgs guildBanRemoveEventArgs)
         {
-            if (guildBanRemoveEventArgs.Guild.Id == Valores.Guilds.UBGE)
+            if (guildBanRemoveEventArgs.Guild.Id != Valores.Guilds.UBGE)
+                return;
+
+            await Task.Delay(200);
+
+            new Thread(async () =>
             {
-                await Task.Delay(200);
-
-                new Thread(async () =>
+                try
                 {
-                    try
-                    {
-                        DiscordChannel logChat = guildBanRemoveEventArgs.Guild.GetChannel(guildBanRemoveEventArgs.Guild.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalLog)).Id);
+                    DiscordChannel logChat = guildBanRemoveEventArgs.Guild.GetChannel(Valores.ChatsUBGE.canalLog);
 
-                        DiscordEmbedBuilder embed = new DiscordEmbedBuilder
-                        {
-                            Color = ubgeBot.utilidadesGerais.CorAleatoriaEmbed(),
-                            Author = new DiscordEmbedBuilder.EmbedAuthor { Name = $"O membro: \"{ubgeBot.utilidadesGerais.RetornaNomeDiscord(guildBanRemoveEventArgs.Member)}#{guildBanRemoveEventArgs.Member.Discriminator}\" foi desbanido.", IconUrl = Valores.logoUBGE },
-                            Description = $"Dia e Hora: {DateTime.Now.ToString()}\n\n" +
-                                $"ID do Membro: {guildBanRemoveEventArgs.Member.Id}",
-                            Timestamp = DateTime.Now,
-                            ThumbnailUrl = guildBanRemoveEventArgs.Member.AvatarUrl,
-                        };
-
-                        await logChat.SendMessageAsync(embed: embed.Build());
-                    }
-                    catch (Exception exception)
+                    DiscordEmbedBuilder embed = new DiscordEmbedBuilder
                     {
-                        await ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Discord, exception);
-                    }
-                }).Start();
-            }
+                        Color = ubgeBot.utilidadesGerais.CorAleatoriaEmbed(),
+                        Author = new DiscordEmbedBuilder.EmbedAuthor { Name = $"O membro: \"{ubgeBot.utilidadesGerais.RetornaNomeDiscord(guildBanRemoveEventArgs.Member)}#{guildBanRemoveEventArgs.Member.Discriminator}\" foi desbanido.", IconUrl = Valores.logoUBGE },
+                        Description = $"Dia e Hora: {DateTime.Now.ToString()}\n\n" +
+                            $"ID do Membro: {guildBanRemoveEventArgs.Member.Id}",
+                        Timestamp = DateTime.Now,
+                        ThumbnailUrl = guildBanRemoveEventArgs.Member.AvatarUrl,
+                    };
+
+                    await logChat.SendMessageAsync(embed: embed.Build());
+                }
+                catch (Exception exception)
+                {
+                    await ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Discord, exception);
+                }
+            }).Start();
         }
 
         public async Task MembroEntra(GuildMemberAddEventArgs guildMemberAddEventArgs)
         {
-            if (guildMemberAddEventArgs.Guild.Id == Valores.Guilds.UBGE)
+            if (guildMemberAddEventArgs.Guild.Id != Valores.Guilds.UBGE)
+                return;
+
+            await Task.Delay(200);
+
+            new Thread(async () =>
             {
-                await Task.Delay(200);
-
-                new Thread(async () =>
+                try
                 {
-                    try
-                    {
-                        List<DiscordChannel> canaisUBGE = guildMemberAddEventArgs.Guild.Channels.Values.ToList();
-                        List<DiscordRole> cargosUBGE = guildMemberAddEventArgs.Guild.Roles.Values.ToList();
+                    DiscordRole acessoGeralCargo = guildMemberAddEventArgs.Guild.GetRole(Valores.Cargos.cargoAcessoGeral);
+                    DiscordDmChannel privadoMembro = await guildMemberAddEventArgs.Member.CreateDmChannelAsync();
+                    DiscordChannel comandosBot = guildMemberAddEventArgs.Guild.GetChannel(Valores.ChatsUBGE.canalComandosBot);
 
-                        DiscordRole acessoGeralCargo = guildMemberAddEventArgs.Guild.GetRole(cargosUBGE.Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoAcessoGeral)).Id);
-                        DiscordDmChannel privadoMembro = await guildMemberAddEventArgs.Member.CreateDmChannelAsync();
-                        DiscordChannel comandosBot = guildMemberAddEventArgs.Guild.GetChannel(canaisUBGE.Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalComandosBot)).Id);
+                    await guildMemberAddEventArgs.Member.GrantRoleAsync(acessoGeralCargo);
+                    await privadoMembro.SendMessageAsync($"*{guildMemberAddEventArgs.Member.Mention}, Bem-Vindo a UBGE!*\n\n" +
+                    $"Leia a mensagem que o Mee6 lhe enviou no seu privado, ele lhe ajudará a dar os seus primeiros passos na UBGE.\n\n" +
+                    $"Para qualquer dúvida sobre mim, digite `//ajuda`.\n\n" +
+                    $"Obrigado por ler isso, e antes de tudo, sinta-se em casa! :smile:");
+                }
+                catch (Exception exception)
+                {
+                    await ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Discord, exception);
+                }
+            }).Start();
+        }
 
-                        await guildMemberAddEventArgs.Member.GrantRoleAsync(acessoGeralCargo);
-                        await privadoMembro.SendMessageAsync($"*{guildMemberAddEventArgs.Member.Mention}, Bem-Vindo a UBGE!*\n\n" +
-                        $"Leia a mensagem que o Mee6 lhe enviou no seu privado, ele lhe ajudará a dar os seus primeiros passos na UBGE.\n\n" +
-                        $"Para registrar-se como membro registrado na UBGE, digite: `//fazercenso` no {comandosBot.Mention}.\n\n" +
-                        $"Para qualquer dúvida sobre mim, digite `//ajuda`.\n\n" +
-                        $"Obrigado por ler isso, e antes de tudo, sinta-se em casa! :smile:");
-                    }
-                    catch (Exception exception)
-                    {
-                        await ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Discord, exception);
-                    }
-                }).Start();
-            }
+        private async Task MembroAlterado(GuildMemberUpdateEventArgs guildMemberUpdateEventArgs)
+        {
+            if (guildMemberUpdateEventArgs.Guild.Id != Valores.Guilds.UBGE)
+                return;
+
+            await Task.Delay(200);
+
+            new Thread(async () =>
+            {
+                try
+                {
+                    DiscordGuild UBGE = guildMemberUpdateEventArgs.Guild;
+                    DiscordMember membroDiscord = guildMemberUpdateEventArgs.Member;
+
+                    DiscordRole cargoNitroBooster = UBGE.GetRole(Valores.Cargos.cargoNitroBooster);
+                    DiscordRole cargoDoador = UBGE.GetRole(Valores.Cargos.cargoDoador);
+
+                    if (!guildMemberUpdateEventArgs.RolesBefore.Contains(cargoNitroBooster) && guildMemberUpdateEventArgs.RolesAfter.Contains(cargoNitroBooster))
+                        await membroDiscord.GrantRoleAsync(cargoDoador);
+                    else if (guildMemberUpdateEventArgs.RolesBefore.Contains(cargoNitroBooster) && !guildMemberUpdateEventArgs.RolesAfter.Contains(cargoNitroBooster))
+                        await membroDiscord.RevokeRoleAsync(cargoDoador);
+                }
+                catch (Exception exception)
+                {
+                    await ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Discord, exception);
+                }
+            }).Start();
         }
 
         public async Task ConectarEReconectarBotAoDiscordAsync(UBGEBot_ ubgeBotClient, bool novaSessao = false)
@@ -1164,8 +1187,8 @@ namespace UBGE_Bot.Main
 
                     List<DiscordRole> cargosUBGE = UBGE.Roles.Values.ToList(); 
 
-                    DiscordRole acessoGeral = UBGE.GetRole(cargosUBGE.Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoAcessoGeral)).Id);
-                    DiscordRole prisioneiro = UBGE.GetRole(cargosUBGE.Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoPrisioneiro)).Id);
+                    DiscordRole acessoGeral = UBGE.GetRole(Valores.Cargos.cargoAcessoGeral);
+                    DiscordRole prisioneiro = UBGE.GetRole(Valores.Cargos.cargoPrisioneiro);
 
                     DiscordMessage mensagem = null;
                     DiscordGuild servidor = null;
@@ -1294,7 +1317,7 @@ namespace UBGE_Bot.Main
                 try
                 {
                     DiscordGuild UBGE = await ubgeBotClient.discordClient.GetGuildAsync(Valores.Guilds.UBGE);
-                    DiscordChannel ubgeBot = UBGE.GetChannel(UBGE.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalUBGEBot)).Id);
+                    DiscordChannel ubgeBot = UBGE.GetChannel(Valores.ChatsUBGE.canalUBGEBot);
                     DiscordMember ubgeBotMembro = await UBGE.GetMemberAsync(Valores.Guilds.Membros.ubgeBot);
 
                     DiscordMessage mensagemAviso = await ubgeBot.SendMessageAsync($":warning: | {mensagemDoAviso} Dia e Hora: `{DateTime.Now.ToString()}`.");
@@ -1339,7 +1362,7 @@ namespace UBGE_Bot.Main
                             var resultadosDBMembrosRegistrados = await (await dbMembrosRegistrados.FindAsync(filtroDBMembrosRegistrados)).ToListAsync();
 
                             DiscordGuild UBGE = await ubgeBotClient.discordClient.GetGuildAsync(Valores.Guilds.UBGE);
-                            DiscordChannel BotUBGE = UBGE.GetChannel(UBGE.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalUBGEBot)).Id);
+                            DiscordChannel BotUBGE = UBGE.GetChannel(Valores.ChatsUBGE.canalUBGEBot);
 
                             DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
 
@@ -1461,15 +1484,16 @@ namespace UBGE_Bot.Main
 
                     DiscordMember botUBGE = await UBGE.GetMemberAsync(Valores.Guilds.Membros.ubgeBot);
 
-                    var canaisVozJogosGerais = UBGE.Channels.Values.ToList().FindAll(x => x.Parent != null && x.Parent.Name.ToUpper().Contains(Valores.ChatsUBGE.Categorias.categoriaCliqueAqui) && x.Type == ChannelType.Voice);
+                    DiscordChannel categoriaOutrosCanais = UBGE.GetChannel(Valores.ChatsUBGE.Categorias.categoriaCliqueAqui);
+                    var canaisDaCategoria = categoriaOutrosCanais.Children.Where(x => x.Type == ChannelType.Voice).ToList();
 
-                    var canalErrado = canaisVozJogosGerais.Find(x => x.Name.ToUpper().Contains("SALA CRIADA!"));
+                    var canalErrado = canaisDaCategoria.Find(x => x.Name.ToUpper().Contains("SALA CRIADA!"));
 
-                    string nomeCliqueAqui = "🎮 Clique aqui!";
+                    string nomeCliqueAqui = "📌 Clique aqui!";
 
-                    if (canaisVozJogosGerais.Contains(canalErrado))
+                    if (canaisDaCategoria.Contains(canalErrado))
                     {
-                        foreach (var canal in canaisVozJogosGerais)
+                        foreach (var canal in canaisDaCategoria)
                         {
                             if (canal == canalErrado)
                             {
@@ -1480,36 +1504,34 @@ namespace UBGE_Bot.Main
                         }
                     }
 
-                    DiscordChannel cliqueAquiVoz = canaisVozJogosGerais.Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalCliqueAqui) && x.Parent.Name.ToUpper().Contains(Valores.ChatsUBGE.Categorias.categoriaCliqueAqui));
-                    DiscordChannel radio = canaisVozJogosGerais.Find(x => x.Name.ToUpper().Contains("RÁDIO") && x.Parent.Name.ToUpper().Contains(Valores.ChatsUBGE.Categorias.categoriaCliqueAqui));
-                    DiscordChannel batePapo = canaisVozJogosGerais.Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalBatePapo) && x.Parent.Name.ToUpper().Contains(Valores.ChatsUBGE.Categorias.categoriaCliqueAqui));
+                    DiscordChannel cliqueAquiVoz = canaisDaCategoria.Find(x => x.Id == Valores.ChatsUBGE.canalCliqueAqui);
+                    DiscordChannel batePapo = canaisDaCategoria.Find(x => x.Id == Valores.ChatsUBGE.canalBatePapo);
 
                     if (cliqueAquiVoz == null)
-                        await UBGE.CreateChannelAsync(nomeCliqueAqui, ChannelType.Voice, radio.Parent);
+                        await UBGE.CreateChannelAsync(nomeCliqueAqui, ChannelType.Voice, categoriaOutrosCanais.Parent);
 
-                    canaisVozJogosGerais.Remove(cliqueAquiVoz);
-                    canaisVozJogosGerais.Remove(batePapo);
-                    canaisVozJogosGerais.Remove(radio);
+                    canaisDaCategoria.Remove(cliqueAquiVoz);
+                    canaisDaCategoria.Remove(batePapo);
 
                     if (cliqueAquiVoz.Users.Count() != 0)
                     {
-                        foreach (var Membro in cliqueAquiVoz.Users)
+                        foreach (var membro in cliqueAquiVoz.Users)
                         {
                             await Task.Delay(200);
 
-                            await Membro.PlaceInAsync(batePapo);
+                            await membro.PlaceInAsync(batePapo);
                         }
                     }
 
-                    if (canaisVozJogosGerais.Count != 0)
+                    if (canaisDaCategoria.Count() != 0)
                     {
-                        foreach (var Canal in canaisVozJogosGerais)
+                        foreach (var canal in canaisDaCategoria)
                         {
-                            if (Canal.Users.Count() == 0 && Canal.PermissionsFor(botUBGE).HasFlag(Permissions.ManageChannels))
+                            if (canal.Users.Count() == 0 && canal.PermissionsFor(botUBGE).HasFlag(Permissions.ManageChannels))
                             {
                                 await Task.Delay(200);
 
-                                await Canal.DeleteAsync();
+                                await canal.DeleteAsync();
                             }
                         }
                     }
@@ -1553,29 +1575,6 @@ namespace UBGE_Bot.Main
             }).Start();
         }
 
-        private static async Task ChecaSeFazAEleicaoDeSecretarioLider(UBGEBot_ ubgeBotClient)
-        {
-            await Task.Delay(200);
-
-            new Thread(async () =>
-            {
-                while (true)
-                {
-                    try
-                    {
-                        var db = ubgeBotClient.localDB;
-
-                        var collectionVotacao = db.GetCollection<VotacaoSecretarioLider>(Valores.Mongo.votacaoSecretarioLider);
-                        var resultadoVotacao = await (await collectionVotacao.FindAsync(Builders<VotacaoSecretarioLider>.Filter.Empty)).ToListAsync();
-                    }
-                    catch (Exception exception)
-                    {
-
-                    }
-                }
-            }).Start();
-        }
-
         private static async Task VerificaPrisoesQuandoOBotInicia(UBGEBot_ ubgeBotClient)
         {
             await Task.Delay(200);
@@ -1589,9 +1588,9 @@ namespace UBGE_Bot.Main
 
                     DiscordGuild UBGE = await ubgeBotClient.discordClient.GetGuildAsync(Valores.Guilds.UBGE);
 
-                    DiscordRole prisioneiroCargo = UBGE.GetRole(UBGE.Roles.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoPrisioneiro)).Id), cargosMembroForeach = null;
+                    DiscordRole prisioneiroCargo = UBGE.GetRole(Valores.Cargos.cargoPrisioneiro), cargosMembroForeach = null;
 
-                    DiscordChannel ubgeBot = UBGE.GetChannel(UBGE.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalUBGEBot)).Id);
+                    DiscordChannel ubgeBot = UBGE.GetChannel(Valores.ChatsUBGE.canalUBGEBot);
 
                     DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
 
@@ -1625,7 +1624,7 @@ namespace UBGE_Bot.Main
                                 strCargos.Append($"{cargosMembroForeach.Mention} | ");
                             }
 
-                            embed.WithAuthor($"O membro: \"{ubgeBotClient.utilidadesGerais.RetornaNomeDiscord(membroPrisao)}#{membroPrisao.Discriminator}\", saiu da prisão.")
+                            embed.WithAuthor($"O membro: \"{ubgeBotClient.utilidadesGerais.RetornaNomeDiscord(membroPrisao)}#{membroPrisao.Discriminator}\", saiu da prisão.", null, Valores.logoUBGE)
                                 .WithColor(ubgeBotClient.utilidadesGerais.CorAleatoriaEmbed())
                                 .WithDescription($"Cargos devolvidos: {strCargos.ToString()}")
                                 .WithThumbnailUrl(membroPrisao.AvatarUrl)
@@ -1656,7 +1655,7 @@ namespace UBGE_Bot.Main
                     {
                         DiscordGuild UBGE = await ubgeBotClient.discordClient.GetGuildAsync(Valores.Guilds.UBGE);
 
-                        DiscordChannel canal = UBGE.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalUBGEBot));
+                        DiscordChannel canal = UBGE.GetChannel(Valores.ChatsUBGE.canalUBGEBot);
 
                         if (!(await canal.GetMessagesAsync(1)).LastOrDefault().Content.Contains("Não foi possível conectar ao MongoDB!"))
                             await canal.SendMessageAsync("Não foi possível conectar ao MongoDB! Alguns comandos podem estar indisponíveis. :cry:");
@@ -1668,6 +1667,7 @@ namespace UBGE_Bot.Main
                 }
             }).Start();
         }
+
 
 
         private static async Task BuscaServidoresPR(UBGEBot_ ubgeBotClient, HttpClient httpClient)

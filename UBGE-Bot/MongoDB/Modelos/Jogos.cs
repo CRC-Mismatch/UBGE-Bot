@@ -7,7 +7,7 @@ namespace UBGE_Bot.MongoDB.Modelos
     public sealed class Jogos
     {
         [BsonId]
-        public ObjectId id_ { get; set; }
+        public ObjectId _id { get; set; }
 
         [BsonElement("CargoID"), BsonRepresentation(BsonType.String)]
         public ulong idDoCargo { get; set; }

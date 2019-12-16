@@ -35,20 +35,10 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
             {
                 try
                 {
+                    if (membro == null)
+                        membro = ctx.Member;
 
                     DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-
-                    if (membro == null)
-                    {
-                        embed.WithColor(Program.ubgeBot.utilidadesGerais.CorHelpComandos())
-                            .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
-                            .AddField("PC/Mobile", $"{ctx.Prefix}s c Membro[ID/Menção]")
-                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
-                            .WithTimestamp(DateTime.Now);
-
-                        await ctx.RespondAsync(embed: embed.Build());
-                        return;
-                    }
 
                     DiscordEmoji addMembroRegistrado = DiscordEmoji.FromName(ctx.Client, ":large_blue_circle:"),
                     cancelaEmbed = DiscordEmoji.FromName(ctx.Client, ":red_circle:"),
@@ -56,7 +46,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
 
                     InteractivityExtension interact = ctx.Client.GetInteractivity();
 
-                    DiscordRole membroRegistrado = ctx.Guild.Roles.Values.ToList().Find(x=> x.Name.ToUpper().Contains(Valores.Cargos.cargoMembroRegistrado));
+                    DiscordRole membroRegistrado = ctx.Guild.GetRole(Valores.Cargos.cargoMembroRegistrado);
 
                     string estado = string.Empty,comoChegouAUBGE = string.Empty, idade = string.Empty, idiomas = string.Empty,
                         jogosMaisJogados = string.Empty, builderFezCenso = string.Empty, diasMembroEntrou = string.Empty, 
@@ -134,9 +124,9 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                     else
                         diasContaCriada = $"{(int)(DateTime.Now - membro.CreationTimestamp.DateTime).TotalDays} dias";
 
-                    foreach (var Cargo in membro.Roles.OrderByDescending(x => x.Position))
-                        strCargos.Append($"{Cargo.Mention} | ");
-                    
+                    foreach (var cargo in membro.Roles.Where(x => x != null).OrderByDescending(x => x.Position))
+                        strCargos.Append($"{cargo.Mention} | ");
+
                     strCargos.Append($"\n\n{(membro.Roles.Count() > 1 ? $"**{membro.Roles.Count()}** cargos ao total." : $"**{membro.Roles.Count()}** cargo ao total.")}");
 
                     if (strCargos.Length > 1024)
@@ -353,7 +343,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
 
                     var interact = ctx.Client.GetInteractivity();
 
-                    DiscordRole prisioneiro = ctx.Guild.GetRole(ctx.Guild.Roles.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoPrisioneiro)).Id);
+                    DiscordRole prisioneiro = ctx.Guild.GetRole(Valores.Cargos.cargoPrisioneiro);
 
                     var cargosMembro = membro.Roles;
 
@@ -361,8 +351,8 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
 
                     List<DiscordChannel> canaisUBGE = ctx.Guild.Channels.Values.ToList();
 
-                    DiscordChannel centroReabilitacao = ctx.Guild.GetChannel(canaisUBGE.Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalCentroDeReabilitacao)).Id),
-                    logChat = ctx.Guild.GetChannel(canaisUBGE.Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalLog)).Id);
+                    DiscordChannel centroReabilitacao = ctx.Guild.GetChannel(Valores.ChatsUBGE.canalCentroDeReabilitacao),
+                    logChat = ctx.Guild.GetChannel(Valores.ChatsUBGE.canalLog);
 
                     DiscordEmoji marcarSim = DiscordEmoji.FromName(ctx.Client, ":white_check_mark:"),
                     marcarNao = DiscordEmoji.FromName(ctx.Client, ":negative_squared_cross_mark:"),
@@ -729,8 +719,8 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
 
                     List<DiscordRole> cargosUBGE = ctx.Guild.Roles.Values.ToList();
 
-                    DiscordRole cargoMembroRegistrado = ctx.Guild.GetRole(cargosUBGE.Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoMembroRegistrado)).Id),
-                    prisioneiroCargo = ctx.Guild.GetRole(cargosUBGE.Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoPrisioneiro)).Id);
+                    DiscordRole cargoMembroRegistrado = ctx.Guild.GetRole(Valores.Cargos.cargoMembroRegistrado),
+                    prisioneiroCargo = ctx.Guild.GetRole(Valores.Cargos.cargoPrisioneiro);
 
                     var membrosTotaisUBGE = (await ctx.Guild.GetAllMembersAsync()).ToList();
 
@@ -844,7 +834,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                         return;
                     }
 
-                    DiscordRole prisioneiroCargo = ctx.Guild.GetRole(ctx.Guild.Roles.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoPrisioneiro)).Id);
+                    DiscordRole prisioneiroCargo = ctx.Guild.GetRole(Valores.Cargos.cargoPrisioneiro);
 
                     var db = Program.ubgeBot.localDB;
                     var collectionInfracoes = db.GetCollection<Infracao>(Valores.Mongo.infracoes);
@@ -876,8 +866,8 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
 
                     List<DiscordChannel> canaisUBGE = ctx.Guild.Channels.Values.ToList();
 
-                    DiscordChannel centroReabilitacao = ctx.Guild.GetChannel(canaisUBGE.Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalCentroDeReabilitacao)).Id),
-                    logChat = ctx.Guild.GetChannel(canaisUBGE.Find(x => x.Name.ToUpper().Contains(Valores.ChatsUBGE.canalLog)).Id);
+                    DiscordChannel centroReabilitacao = ctx.Guild.GetChannel(Valores.ChatsUBGE.canalCentroDeReabilitacao),
+                    logChat = ctx.Guild.GetChannel(Valores.ChatsUBGE.canalLog);
 
                     List<ulong> cargos = new List<ulong>();
 
@@ -894,6 +884,14 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                     }
 
                     await membro.GrantRoleAsync(prisioneiroCargo);
+
+
+                    if (membro.VoiceState?.Channel != null) 
+                    {
+                        DiscordChannel canalDeVozCentroDeReabilitacao = ctx.Guild.GetChannel(Valores.ChatsUBGE.canalDeVozCentroDeReabilitacao);
+
+                        await membro.PlaceInAsync(canalDeVozCentroDeReabilitacao);
+                    }
 
                     await collectionInfracoes.InsertOneAsync(new Infracao
                     {
@@ -1027,7 +1025,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                     var filtro = Builders<Infracao>.Filter.Eq(x => x.idInfrator, membro.Id);
                     var listaInfracoes = await (await collectionInfracoes.FindAsync(filtro)).ToListAsync();
 
-                    DiscordRole prisioneiroCargo = ctx.Guild.GetRole(ctx.Guild.Roles.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoPrisioneiro)).Id), cargo = null;
+                    DiscordRole prisioneiroCargo = ctx.Guild.GetRole(Valores.Cargos.cargoPrisioneiro), cargo = null;
 
                     if (listaInfracoes.Count == 0)
                     {
@@ -1160,7 +1158,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                         return;
                     }
 
-                    DiscordRole cargoPrisioneiro = ctx.Guild.GetRole(ctx.Guild.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoPrisioneiro)).Id);
+                    DiscordRole cargoPrisioneiro = ctx.Guild.GetRole(Valores.Cargos.cargoPrisioneiro);
 
                     if (!membro.Roles.Contains(cargoPrisioneiro))
                     {
@@ -1267,7 +1265,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
             {
                 try
                 {
-                    DiscordRole prisioneiroCargo = ctx.Guild.GetRole(ctx.Guild.Channels.Values.ToList().Find(x => x.Name.ToUpper().Contains(Valores.Cargos.cargoPrisioneiro)).Id);
+                    DiscordRole prisioneiroCargo = ctx.Guild.GetRole(Valores.Cargos.cargoPrisioneiro);
 
                     StringBuilder strPrisioneiros = new StringBuilder();
 

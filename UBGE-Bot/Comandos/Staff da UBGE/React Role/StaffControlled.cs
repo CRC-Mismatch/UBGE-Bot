@@ -37,7 +37,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
                     {
                         embed.WithColor(Program.ubgeBot.utilidadesGerais.CorHelpComandos())
                            .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
-                           .AddField("PC/Mobile", $"{ctx.Prefix}cargo.add Canal[Id] Emoji Cargo[Id/Menção/Nome entre \"\"\"] Nome[Categoria]")
+                           .AddField("PC/Mobile", $"{ctx.Prefix}rr cargo.add Canal[Id] Emoji Cargo[Id/Menção/Nome entre \"\"\"] Nome[Categoria]")
                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
                            .WithTimestamp(DateTime.Now);
 
@@ -134,7 +134,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
                     {
                         embed.WithColor(Program.ubgeBot.utilidadesGerais.CorHelpComandos())
                            .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
-                           .AddField("PC/Mobile", $"{ctx.Prefix}cargo.del Canal[Id] Emoji")
+                           .AddField("PC/Mobile", $"{ctx.Prefix}rr cargo.del Canal[Id] Emoji")
                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
                            .WithTimestamp(DateTime.Now);
 
@@ -322,7 +322,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
                     {
                         embed.WithColor(Program.ubgeBot.utilidadesGerais.CorHelpComandos())
                            .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
-                           .AddField("PC/Mobile", $"{ctx.Prefix}cat.add Nome[Jogos: FPS]")
+                           .AddField("PC/Mobile", $"{ctx.Prefix}rr cat.add Canal[Id] Nome[Jogos: FPS]")
                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
                            .WithTimestamp(DateTime.Now);
 
@@ -462,7 +462,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
                     {
                         embed.WithColor(Program.ubgeBot.utilidadesGerais.CorHelpComandos())
                             .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
-                            .AddField("PC/Mobile", $"{ctx.Prefix}cat.del Nome[Jogos: FPS]")
+                            .AddField("PC/Mobile", $"{ctx.Prefix}rr cat.del Canal[Id] Nome[Jogos: FPS]")
                             .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
                             .WithTimestamp(DateTime.Now);
 
@@ -520,7 +520,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
                 {
                     embed.WithAuthor("Como executar este comando:", null, Valores.infoLogo)
                         .WithColor(Program.ubgeBot.utilidadesGerais.CorHelpComandos())
-                        .AddField("PC/Mobile", $"{ctx.Prefix}cat.edit Nome[Jogos: FPS]")
+                        .AddField("PC/Mobile", $"{ctx.Prefix}rr cat.edit Canal[Id] Nome[Jogos: FPS]")
                         .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
                         .WithTimestamp(DateTime.Now);
 

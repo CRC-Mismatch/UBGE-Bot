@@ -36,7 +36,7 @@ namespace UBGE_Bot.Carregamento
 
         public string prefixoMensagens { get; private set; } = "[Config]";
         public string prefixoBotConsole { get; private set; } = "[UBGE-Bot]";
-        public string versaoBot { get; private set; } = $"v{Assembly.GetEntryAssembly().GetName().Version.ToString()}-beta3";
+        public string versaoBot { get; private set; } = $"v{Assembly.GetEntryAssembly().GetName().Version.ToString()}-beta4";
 
         public UBGEBot_()
         {
@@ -50,7 +50,7 @@ namespace UBGE_Bot.Carregamento
                     mongoClient = new MongoClient(new MongoClientSettings 
                     { 
                         Server = new MongoServerAddress(ubgeBotConfig.ubgeBotDatabasesConfig.mongoDBIP, int.Parse(ubgeBotConfig.ubgeBotDatabasesConfig.mongoDBPorta)),
-                        ConnectTimeout = TimeSpan.FromSeconds(5),
+                        ConnectTimeout = TimeSpan.FromSeconds(10),
                     });
                     
                     localDB = mongoClient.GetDatabase(Valores.Mongo.local);
