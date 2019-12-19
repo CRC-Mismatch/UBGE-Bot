@@ -32,7 +32,6 @@ namespace UBGE_Bot.Utilidades
             public static ulong canalCrieSuaSalaAqui = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalCrieSuaSalaAqui;
             public static ulong canalPRServidor = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalPRServidor;
             public static ulong canalComandosBot = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalComandosBot;
-            //public const ulong canalInstrucoesInformaticas = 558806468221206568;
             public static ulong canalTesteDoBot = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalTesteDoBot;
             public static ulong canalUBGEBot = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalBotUBGE;
             public static ulong canalCliqueAqui = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalCliqueAqui;
@@ -42,11 +41,14 @@ namespace UBGE_Bot.Utilidades
             public static ulong canalOrganogramaECargosDoAlbion = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalOrganogramaECargosDoAlbion;
             public static ulong canalVotacoesConselho = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalVotacoesConselho;
             public static ulong canalDeVozCentroDeReabilitacao = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalDeVozCentroDeReabilitacao;
+            public static ulong canalRecomendacoesPromocoes = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalRecomendacoesPromocoes;
 
             public sealed class Categorias 
             { 
                 public static ulong categoriaCliqueAqui = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.categoriaCanalDeVozPersonalizado;
                 public static ulong categoriaModMailBot = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.categoriaModMailBot;
+                public static ulong categoriaUBGE = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.categoriaUBGE;
+                public static ulong categoriaConselhoComunitario = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.categoriaConselhoComunitario;
             }
         }
 
@@ -76,6 +78,7 @@ namespace UBGE_Bot.Utilidades
             public const string checkBotAberto = "CheckBotAberto";
             public const string votacaoSecretarioLider = "VotacaoSecretarioLider";
             public const string modMail = "ModMail";
+            public const string doador = "Doador";
         }
 
         public sealed class Cargos
@@ -83,7 +86,6 @@ namespace UBGE_Bot.Utilidades
             public static ulong cargoPrisioneiro = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoPrisioneiro;
             public static ulong cargoAcessoGeral = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoAcessoGeral;
             public static ulong cargoMembroRegistrado = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoMembroRegistrado;
-            //public const ulong cargoInformatica = 558803534020083719;
             public static ulong cargosBotsMusicais = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoBotsMusicais;
             public static ulong cargoBots = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoBots;
             public static ulong cargoSecretarioLider = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoSecretarioLider;

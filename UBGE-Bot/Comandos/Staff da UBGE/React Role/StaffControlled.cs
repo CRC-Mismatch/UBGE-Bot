@@ -17,7 +17,7 @@ using UBGE_Bot.Utilidades;
 
 namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
 {
-    [Group("reactrole"), Aliases("rr"), UBGE]
+    [Group("reactrole"), Aliases("rr"), UBGE_Staff]
 
     public sealed class StaffControlled : BaseCommandModule
     {
@@ -220,12 +220,10 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
                             }
                         }
 
-                        if (i != 0)
-                        {
-                            await msgAguarde.DeleteAsync();
+                        await msgAguarde.DeleteAsync();
 
+                        if (i != 0)
                             await ctx.RespondAsync($"Existem **{i}** reações que não foram removidas por que os membros saíram da {ctx.Guild.Name}, por favor, remova-as manualmente. :wink:");
-                        }
 
                         embed.WithAuthor("Jogo removido!", null, Valores.logoUBGE)
                             .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
@@ -266,10 +264,14 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
 
                     var commandsNext = ctx.Client.GetCommandsNext();
 
-                    var ProcuraComando = commandsNext.FindCommand($"reactrole cargo.add {canalReactRole} {emoji} {cargoServidor} {categoriaReact}", out var Args);
+                    var ProcuraComando = commandsNext.FindCommand($"reactrole cargo.add {canalReactRole.Id} {emoji} {cargoServidor.Mention} {categoriaReact}", out var Args);
                     var Comando = commandsNext.CreateFakeContext(ctx.Member, ctx.Channel, "", "//", ProcuraComando, Args);
 
                     await commandsNext.ExecuteCommandAsync(Comando);
+                }
+                catch (ArgumentException)
+                {
+                    await ctx.RespondAsync($"{ctx.Member.Mention}, este emoji não foi encontrado!");
                 }
                 catch (Exception exception)
                 {
@@ -292,10 +294,14 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
 
                     var commandsNext = ctx.Client.GetCommandsNext();
 
-                    var ProcuraComando = commandsNext.FindCommand($"reactrole cargo.del {canalReactRole} {emoji}", out var Args);
+                    var ProcuraComando = commandsNext.FindCommand($"reactrole cargo.del {canalReactRole.Id} {emojiServidor}", out var Args);
                     var Comando = commandsNext.CreateFakeContext(ctx.Member, ctx.Channel, "", "//", ProcuraComando, Args);
 
                     await commandsNext.ExecuteCommandAsync(Comando);
+                }
+                catch (ArgumentException)
+                {
+                    await ctx.RespondAsync($"{ctx.Member.Mention}, este emoji não foi encontrado!");
                 }
                 catch (Exception exception)
                 {

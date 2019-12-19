@@ -98,6 +98,9 @@ namespace UBGE_Bot.UBGEBotConfig
         [JsonProperty("canalDeVozCentroDeReabilitacao")]
         public ulong canalDeVozCentroDeReabilitacao { get; set; }
 
+        [JsonProperty("canalRecomendacoesPromocoes")]
+        public ulong canalRecomendacoesPromocoes { get; set; }
+
 
 
         [JsonProperty("categoriaCanalDeVozPersonalizado")]
@@ -105,6 +108,12 @@ namespace UBGE_Bot.UBGEBotConfig
 
         [JsonProperty("categoriaModMailBot")]
         public ulong categoriaModMailBot { get; set; }
+
+        [JsonProperty("categoriaUBGE")]
+        public ulong categoriaUBGE { get; set; }
+
+        [JsonProperty("categoriaConselhoComunitario")]
+        public ulong categoriaConselhoComunitario { get; set; }
 
 
 
@@ -190,6 +199,9 @@ namespace UBGE_Bot.UBGEBotConfig
                 cargoNitroBooster = jsonConfig.cargoNitroBooster,
                 cargoDoador = jsonConfig.cargoDoador,
                 canalDeVozCentroDeReabilitacao = jsonConfig.canalDeVozCentroDeReabilitacao,
+                canalRecomendacoesPromocoes = jsonConfig.canalRecomendacoesPromocoes,
+                categoriaUBGE = jsonConfig.categoriaUBGE,
+                categoriaConselhoComunitario = jsonConfig.categoriaConselhoComunitario,
             };
         }
     }

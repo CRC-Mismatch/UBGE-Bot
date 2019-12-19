@@ -245,7 +245,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                         {
                             if (listaMembrosQuePegaramOCargoDeMembroRegistrado.FirstOrDefault().idsMembrosQuePegaramOCargo.Contains(membro.Id))
                             {
-                                await collectionMembrosQuePegaramCargos.UpdateOneAsync(filtroMembrosQuePegaramOCargoDeMembroRegistrado, 
+                                await collectionMembrosQuePegaramCargos.UpdateOneAsync(filtroMembrosQuePegaramOCargoDeMembroRegistrado,
                                     Builders<MembrosQuePegaramOCargoDeMembroRegistrado>.Update.Set(x => x.numeroPessoasQuePegaramOCargoDeMembroRegistrado, listaMembrosQuePegaramOCargoDeMembroRegistrado.FirstOrDefault().numeroPessoasQuePegaramOCargoDeMembroRegistrado + 1));
                             }
                             else
@@ -280,19 +280,21 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                             if (listaMembrosQuePegaramOCargoDeMembroRegistrado.FirstOrDefault().idsMembrosQuePegaramOCargo.Contains(membro.Id))
                             {
                                 listaMembrosQuePegaramOCargoDeMembroRegistrado.FirstOrDefault().idsMembrosQuePegaramOCargo.Remove(membro.Id);
-                                
+
                                 await collectionMembrosQuePegaramCargos.UpdateOneAsync(filtroMembrosQuePegaramOCargoDeMembroRegistrado, Builders<MembrosQuePegaramOCargoDeMembroRegistrado>.Update.Set(x => x.numeroPessoasQuePegaramOCargoDeMembroRegistrado, listaMembrosQuePegaramOCargoDeMembroRegistrado.FirstOrDefault().numeroPessoasQuePegaramOCargoDeMembroRegistrado - 1)
                                     .Set(y => y.idsMembrosQuePegaramOCargo, listaMembrosQuePegaramOCargoDeMembroRegistrado.FirstOrDefault().idsMembrosQuePegaramOCargo));
                             }
                             else
                             {
-                                await collectionMembrosQuePegaramCargos.UpdateOneAsync(filtroMembrosQuePegaramOCargoDeMembroRegistrado, 
+                                await collectionMembrosQuePegaramCargos.UpdateOneAsync(filtroMembrosQuePegaramOCargoDeMembroRegistrado,
                                     Builders<MembrosQuePegaramOCargoDeMembroRegistrado>.Update.Set(x => x.numeroPessoasQuePegaramOCargoDeMembroRegistrado, listaMembrosQuePegaramOCargoDeMembroRegistrado.FirstOrDefault().numeroPessoasQuePegaramOCargoDeMembroRegistrado - 1));
                             }
                         }
 
                         await msgEmbed.ModifyAsync(embed: embed.Build());
                     }
+                    else
+                        return;
                 }
                 catch (DSharpPlus.Exceptions.NotFoundException)
                 {
@@ -425,7 +427,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                             ni.dadosPrisao = log;
 
                             await infracoesCollection.InsertOneAsync(ni);
-                            
+
                             await msgEmbed.ModifyAsync(embed: embed.Build());
 
                             await membro.GrantRoleAsync(prisioneiro);
@@ -497,6 +499,8 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
 
                             await msgEmbed.ModifyAsync(embed: embed.Build());
                         }
+                        else
+                            return;
                     }
                     else if (addtive.ToLowerInvariant() == "log")
                     {
@@ -532,8 +536,11 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                             {
                                 var nForeach = lista.IndexOf(infra);
 
-                                foreach (var cargosMembroForeach in infra.dadosPrisao.cargosDoMembro)
-                                    strCargos.Append($"<@&{cargosMembroForeach}> | ");
+                                if (infra.dadosPrisao.cargosDoMembro != null)
+                                {
+                                    foreach (var cargosMembroForeach in infra.dadosPrisao.cargosDoMembro)
+                                        strCargos.Append($"<@&{cargosMembroForeach}> | ");
+                                }
 
                                 if (strCargos.Length >= 700)
                                 {
@@ -563,6 +570,9 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                                     $"Tempo: {(!string.IsNullOrWhiteSpace(infra.dadosPrisao.tempoDoMembroNaPrisao) ? infra.dadosPrisao.tempoDoMembroNaPrisao : "Não especificado.")}{(!string.IsNullOrWhiteSpace(Dias) ? $" ou {Math.Round(double.Parse(Dias.Replace("h", "")) / 24, 2)} dias" : "")}\n" +
                                     $"Cargos: {(!string.IsNullOrWhiteSpace(strCargos.ToString()) ? strCargos.ToString() : "Não especificado.")}");
                             }
+
+                            embed.WithTimestamp(DateTime.Now)
+                                .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
 
                             await ctx.RespondAsync(embed: embed.Build());
                         }
@@ -696,7 +706,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
             }).Start();
         }
 
-        //[Command("list"), Aliases("lists"), Description("`\nLista e dá o cargo automaticamente de membro registrado para os membros que tem + de 7 dias na UBGE.\n\n")]
+        [Command("list"), Aliases("lists"), Description("`\nLista e dá o cargo automaticamente de membro registrado para os membros que tem + de 7 dias na UBGE.\n\n")]
 
         public async Task ListAsync(CommandContext ctx)
         {
@@ -1289,6 +1299,86 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                 catch (Exception exception)
                 {
                     await Program.ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Comandos, exception); 
+                }
+            }).Start();
+        }
+    }
+
+    [Group("doador"), UBGE_Staff]
+
+    public sealed class DoadorStaffControlled : BaseCommandModule 
+    { 
+        [Command("novo")]
+
+        public async Task NovoDoadorAsync(CommandContext ctx, string tempoComoDoador = null, DiscordMember membro = null)
+        {
+            await ctx.TriggerTypingAsync();
+
+            new Thread(async () =>
+            {
+                try
+                {
+                    DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+
+
+                    var local = Program.ubgeBot.localDB;
+
+                    var collectionDoador = local.GetCollection<Doador>(Valores.Mongo.doador);
+
+                    var filtroDoador = Builders<Doador>.Filter.Eq(x => x.idDoMembro, membro.Id);
+
+                    var respostaListaDoadores = await (await collectionDoador.FindAsync(filtroDoador)).ToListAsync();
+
+                    var numeroDeVezesQueOMembroDoou = respostaListaDoadores.Count;
+
+                    DiscordRole cargoDoador = ctx.Guild.GetRole(Valores.Cargos.cargoDoador);
+
+                    if (numeroDeVezesQueOMembroDoou == 0)
+                    {
+                        await membro.GrantRoleAsync(cargoDoador);
+
+                        var diaHoraVirouDoador = DateTime.Now.ToString();
+
+                        await collectionDoador.InsertOneAsync(new Doador
+                        {
+                            idDoMembro = membro.Id,
+                            jaDoou = "Não",
+                            diasEHorasQueOMembroVirouDoador = new List<string> { $"{diaHoraVirouDoador} - {tempoComoDoador}" },
+                        });
+
+                        embed.WithAuthor("O novo doador foi adicionado com sucesso!", null, Valores.logoUBGE)
+                            .WithDescription($"{Program.ubgeBot.utilidadesGerais.MencaoMembro(membro)}, foi adicionado com sucesso aos doadores!\n\n" +
+                            $"Tempo: **{tempoComoDoador}**")
+                            .WithThumbnailUrl(membro.AvatarUrl)
+                            .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                            .WithTimestamp(DateTime.Now);
+
+                        await ctx.RespondAsync(embed: embed.Build());
+                    }
+                    else
+                    {
+                        if (!membro.Roles.Contains(cargoDoador))
+                            await membro.GrantRoleAsync(cargoDoador);
+
+                        var diaHoraVirouDoador = DateTime.Now.ToString();
+
+                        await collectionDoador.UpdateOneAsync(filtroDoador, Builders<Doador>.Update.Set(x => x.diasEHorasQueOMembroVirouDoador, respostaListaDoadores.LastOrDefault().diasEHorasQueOMembroVirouDoador.Append($"{diaHoraVirouDoador} - {tempoComoDoador}")).Set(y => y.jaDoou, $"Sim, {numeroDeVezesQueOMembroDoou + 1} vezes."));
+
+                        embed.WithAuthor("A nova doação foi adicionada com sucesso!", null, Valores.logoUBGE)
+                            .WithDescription($"{Program.ubgeBot.utilidadesGerais.MencaoMembro(membro)}, foi re-adicionado com sucesso aos doadores!\n\n" +
+                            $"Tempo: **{tempoComoDoador}**")
+                            .WithThumbnailUrl(membro.AvatarUrl)
+                            .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                            .WithTimestamp(DateTime.Now);
+
+                        await ctx.RespondAsync(embed: embed.Build());
+                    }
+                }
+                catch (Exception exception)
+                {
+                    await Program.ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Comandos, exception);
                 }
             }).Start();
         }

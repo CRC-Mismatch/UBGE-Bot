@@ -472,4 +472,10 @@ namespace UBGE_Bot.Utilidades
             return Task.FromResult(ctx.Guild.Id == Valores.Guilds.UBGE && ctx.Channel.Id == Valores.ChatsUBGE.canalCrieSuaSalaAqui);
         }
     }
+
+
+    public interface IAplicavelAoCliente
+    {
+        void AplicarAoBot(DiscordClient discordClient, bool botConectadoAoMongo = true);
+    }
 }

@@ -53,7 +53,7 @@ namespace UBGE_Bot.Comandos.Gerais
                         var corEmbed = Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed();
 
                         bool membroTemOCargoDeMembroRegistrado = ctx.Member.Roles.Contains(cargoMembroRegistrado);
-                        
+
                         if (membroTemOCargoDeMembroRegistrado)
                             embed.AddField($"{videoGameEmoji} - Sistema de criação de salas:", $"Crie canais de voz personalizados e chame seus amigos para se divertir!\nBasta entrar no canal de voz `#{canalCliqueAqui.Name}`");
 
@@ -83,6 +83,8 @@ namespace UBGE_Bot.Comandos.Gerais
 
                         var emojiResposta = (await interactivity.WaitForReactionAsync(segundaMensagemEmbed, ctx.User, TimeSpan.FromMinutes(5))).Result.Emoji;
 
+                        DiscordEmoji emojiVoltar = DiscordEmoji.FromName(ctx.Client, ":arrow_backward:");
+                        
                         if (emojiResposta == videoGameEmoji)
                         {
                             await primeiraMensagemEmbed.DeleteAsync();
@@ -126,15 +128,56 @@ namespace UBGE_Bot.Comandos.Gerais
                                 .WithTimestamp(DateTime.Now)
                                 .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
 
-                            await ctx.RespondAsync(embed: embed.Build());
+                            DiscordMessage msgCriarSala = await ctx.RespondAsync(embed: embed.Build());
+                            await msgCriarSala.CreateReactionAsync(emojiVoltar);
+
+                            var emojiRespostaCriarSala = (await interactivity.WaitForReactionAsync(msgCriarSala, ctx.User, TimeSpan.FromMinutes(5))).Result.Emoji;
+
+                            if (emojiRespostaCriarSala == emojiVoltar)
+                            {
+                                await msgCriarSala.DeleteAsync();
+
+                                goto inicioHelp;
+                            }
                         }
                         else if (emojiResposta == comandosExtrasEmoji)
                         {
                             await primeiraMensagemEmbed.DeleteAsync();
                             await segundaMensagemEmbed.DeleteAsync();
 
-                            await ctx.RespondAsync("A categoria de comandos extras ainda está em desenvolvimento! Peço perdão pelo transtorno.");
-                        } 
+                            embed.WithAuthor("Comandos extras:", null, Valores.logoUBGE)
+                                .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                                .WithDescription($"`{ctx.Prefix}ping`\nVê o ping do bot.\n\n" +
+                                $"`{ctx.Prefix}meuid`\nMostra o id do membro que digitou o comando.\n\n" +
+                                $"`{ctx.Prefix}uptime`\nVê há quanto tempo o bot está ligado.\n\n" +
+                                $"`{ctx.Prefix}avatar/foto Membro[ID/Menção]`\nVê a sua foto ou a foto de outro membro (Quando usado a menção).\n\n" +
+                                $"`{ctx.Prefix}userinfo/usuário Membro[ID/Menção]`\nVê as suas informações ou a informações de outros membros (Quando usado a menção).\n\n" +
+                                $"`{ctx.Prefix}dólar`\nVê o preço do dólar.\n\n" +
+                                $"`{ctx.Prefix}euro`\nVê o preço do euro.\n\n" +
+                                $"`{ctx.Prefix}servidorinfo/guildinfo/serverinfo`\nVê as informações do servidor (Pode ser executado em outros servidores).\n\n" +
+                                $"`{ctx.Prefix}fotoservidor/avatarservidor/avatarguild`\nVê a foto do servidor (Pode ser executado em outros servidores).\n\n" +
+                                $"`{ctx.Prefix}procuramembros Jogo[Nome]`\nO bot procurará membros que estão jogando determinado jogo (Ele procurará em todos os servidores que ele está).\n\n" +
+                                $"`{ctx.Prefix}listar Canal[ID]`\nO bot listará todos os membros que estão em um canal de voz.\n\n" +
+                                $"`{ctx.Prefix}botslivres`\nO bot listará quais bots musicais em toda a UBGE estão livres para serem usados.\n\n" +
+                                $"`{ctx.Prefix}ajudabots`\nO bot listará os bots da UBGE que estão onlines e que lhe pode ajudar em algo.\n\n")
+                                .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                                .WithTimestamp(DateTime.Now)
+                                .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
+
+                            DiscordMessage msgComandosExtras = await ctx.RespondAsync(embed: embed.Build());
+                            await msgComandosExtras.CreateReactionAsync(emojiVoltar);
+
+                            var emojiRespostaComandosExtras = (await interactivity.WaitForReactionAsync(msgComandosExtras, ctx.User, TimeSpan.FromMinutes(5))).Result.Emoji;
+
+                            if (emojiRespostaComandosExtras == emojiVoltar)
+                            {
+                                await msgComandosExtras.DeleteAsync();
+
+                                goto inicioHelp;
+                            }
+                        }
+                        else
+                            return;
                     }
                     else
                     {
@@ -153,7 +196,7 @@ namespace UBGE_Bot.Comandos.Gerais
                             //$"`{ctx.Prefix}procuramembros Jogo(Nome de um Jogo)`\nO bot mostrará todos os membros que estão jogando o jogo que foi especificado no comando.\n\n" +
                             //$"`{ctx.Prefix}listar ID(ID de um Canal de Voz)`\nO bot mostrará todos os membros que estão em um canal de voz.\n\n")
                             //.WithDescription($"Para mais comandos, execute `{ctx.Prefix}{ctx.Command.Name}` na UBGE.")
-                            .WithThumbnailUrl(ctx.Member.AvatarUrl)                            
+                            .WithThumbnailUrl(ctx.Member.AvatarUrl)
                             .WithTimestamp(DateTime.Now)
                             .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
 
@@ -189,7 +232,7 @@ namespace UBGE_Bot.Comandos.Gerais
 
                 var dataFinal = DateTime.Now - p.StartTime;
 
-                await ctx.RespondAsync($"Estou ligado há: {(dataFinal.Days == 0 ? string.Empty : $"{(dataFinal.Days > 1 ? $"**{dataFinal.Days} dias**, " : $"**{dataFinal.Days} dia**, ")}")}{(dataFinal.Hours == 0 ? string.Empty : $"{(dataFinal.Hours > 1 ? $"**{dataFinal.Hours} horas**, " : $"**{dataFinal.Hours} hora**, ")}")}{(dataFinal.Minutes == 0 ? string.Empty : $"{(dataFinal.Minutes > 1 ? $"**{dataFinal.Minutes} minutos**" : $"**{dataFinal.Minutes} minuto**")}")}{(dataFinal.Seconds == 0 ? string.Empty : $"{(dataFinal.Seconds > 1 ? $" e **{dataFinal.Seconds} segundos**" : $" e **{dataFinal.Seconds} segundo**")}")}.");
+                await ctx.RespondAsync($"Estou ligado há: {(dataFinal.Days == 0 ? string.Empty : $"{(dataFinal.Days > 1 ? $"**{dataFinal.Days} dias**, " : $"**{dataFinal.Days} dia**, ")}")}{(dataFinal.Hours == 0 ? string.Empty : $"{(dataFinal.Hours > 1 ? $"**{dataFinal.Hours} horas**, " : $"**{dataFinal.Hours} hora**, ")}")}{(dataFinal.Minutes == 0 ? string.Empty : $"{(dataFinal.Minutes > 1 ? $"**{dataFinal.Minutes} minutos** e " : $"**{dataFinal.Minutes} minuto** e ")}")}{(dataFinal.Seconds == 0 ? string.Empty : $"{(dataFinal.Seconds > 1 ? $"**{dataFinal.Seconds} segundos**" : $"**{dataFinal.Seconds} segundo**")}")}.");
             }
             catch (Exception exception)
             {
@@ -1062,29 +1105,29 @@ namespace UBGE_Bot.Comandos.Gerais
             {
                 try
                 {
-                    DiscordEmbedBuilder Embed = new DiscordEmbedBuilder();
+                    DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
 
                     if (membro == null)
                     {
-                        Embed.WithAuthor($"Avatar do membro: \"{ctx.Member.Username}\"", null, Valores.logoUBGE)
+                        embed.WithAuthor($"Avatar do membro: \"{ctx.Member.Username}\"", null, Valores.logoUBGE)
                             .WithImageUrl(ctx.Member.GetAvatarUrl(ImageFormat.Png, 2048))
                             .WithDescription($"Para baixar, {Formatter.MaskedUrl("clique aqui", new Uri(ctx.Member.GetAvatarUrl(ImageFormat.Png, 2048)), "clique aqui")}.")
                             .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
                             .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
                             .WithTimestamp(DateTime.Now);
 
-                        await ctx.RespondAsync(embed: Embed.Build(), content: ctx.Member.Mention);
+                        await ctx.RespondAsync(embed: embed.Build(), content: ctx.Member.Mention);
                     }
                     else
                     {
-                        Embed.WithAuthor($"Avatar do membro: \"{membro.Username}\"", null, Valores.logoUBGE)
+                        embed.WithAuthor($"Avatar do membro: \"{membro.Username}\"", null, Valores.logoUBGE)
                             .WithImageUrl(membro.GetAvatarUrl(ImageFormat.Png, 2048))
                             .WithDescription($"Para baixar, {Formatter.MaskedUrl("clique aqui", new Uri(membro.GetAvatarUrl(ImageFormat.Png, 2048)), "clique aqui")}.")
                             .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
                             .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
                             .WithTimestamp(DateTime.Now);
 
-                        await ctx.RespondAsync(embed: Embed.Build(), content: ctx.Member.Mention);
+                        await ctx.RespondAsync(embed: embed.Build(), content: ctx.Member.Mention);
                     }
                 }
                 catch (Exception exception)
@@ -1228,7 +1271,7 @@ namespace UBGE_Bot.Comandos.Gerais
             {
                 try
                 {
-                    var Json = await Program.httpClientMain.GetStringAsync("https://api.hgbrasil.com/finance/quotations?format=json&key=27044a14");
+                    var Json = await Program.httpClient.GetStringAsync("https://api.hgbrasil.com/finance/quotations?format=json&key=27044a14");
                     var Resposta = (JObject)JsonConvert.DeserializeObject(Json);
                     
                     var Resultados = Resposta.SelectToken("results");
@@ -1261,7 +1304,7 @@ namespace UBGE_Bot.Comandos.Gerais
             {
                 try
                 {
-                    var Json = await Program.httpClientMain.GetStringAsync("https://api.hgbrasil.com/finance/quotations?format=json&key=27044a14");
+                    var Json = await Program.httpClient.GetStringAsync("https://api.hgbrasil.com/finance/quotations?format=json&key=27044a14");
                     var Resposta = (JObject)JsonConvert.DeserializeObject(Json);
 
                     var Resultados = Resposta.SelectToken("results");
@@ -1430,7 +1473,7 @@ namespace UBGE_Bot.Comandos.Gerais
             }).Start();
         }
 
-        [Command("listar")]
+        [Command("listar"), UBGE]
 
         public async Task ListarMembrosEmUmCanalDeVox(CommandContext ctx, DiscordChannel canal = null)
         {

@@ -47,7 +47,7 @@ namespace UBGE_Bot.Comandos.Gerais
             }).Start();
         }
 
-        [Command("viewrole"), Aliases("vr", "vercargo"), RequireOwner, RequireBotPermissions(Permissions.ManageRoles)]
+        [Command("viewrole"), Aliases("vr", "vercargo"), RequireOwner]
 
         public async Task VerCargoAsync(CommandContext ctx, DiscordRole cargo = null)
         {
@@ -61,7 +61,7 @@ namespace UBGE_Bot.Comandos.Gerais
 
                     if (cargo == null)
                     {
-                        embed.WithColor(new DiscordColor(0x32363c))
+                        embed.WithColor(Program.ubgeBot.utilidadesGerais.CorHelpComandos())
                                 .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
                                 .AddField("PC/Mobile", $"{ctx.Prefix}dev viewrole[ID/Nome entre \"\"]")
                                 .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
@@ -95,6 +95,51 @@ namespace UBGE_Bot.Comandos.Gerais
                 catch (Exception exception)
                 {
                     await Program.ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Comandos, exception);
+                }
+            }).Start();
+        }
+
+        [Command("viewemoji"), Aliases("ve", "veremoji"), UBGE_Staff]
+
+        public async Task VerEmojiAsync(CommandContext ctx, string emojiNome = null)
+        {
+            await ctx.TriggerTypingAsync();
+
+            new Thread(async () =>
+            {
+                try
+                {
+                    DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+
+                    if (string.IsNullOrWhiteSpace(emojiNome))
+                    {
+                        embed.WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                            .WithAuthor($"Diga o nome do emoji!", null, Valores.logoUBGE)
+                            .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                            .WithDescription(":warning:")
+                            .WithTimestamp(DateTime.Now)
+                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
+
+                        await ctx.RespondAsync(embed: embed.Build());
+                        return;
+                    }
+
+                    var emojo = await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(ctx, emojiNome);
+
+                    embed.WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                        .WithAuthor($"Informações do Emoji: \"{emojo.Name}\" - ({emojo.Name})", null, Valores.logoUBGE)
+                        .WithThumbnailUrl(emojo.Url)
+                        .WithDescription($"ID: {emojo.Id}\n\n" +
+                        $"É um gif?: {(emojo.IsAnimated ? "Sim" : "Não")}\n\n" +
+                        $"Colocado no dia: {emojo.CreationTimestamp.DateTime.ToString()}")
+                        .WithTimestamp(DateTime.Now)
+                        .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
+
+                    await ctx.RespondAsync(embed: embed.Build());
+                }
+                catch (Exception)
+                {
+                    await ctx.RespondAsync($"{ctx.Member.Mention}, este emoji não foi encontrado!");
                 }
             }).Start();
         }

@@ -4,7 +4,6 @@ using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using MongoDB.Driver;
 using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UBGE_Bot.Main;
@@ -50,7 +49,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
 
                     DiscordChannel voiceChannel = null;
 
-                    if (resultadoSalas.Count == 0)
+                    if (resultadoSalas.Count == 0 || ctx.Guild.GetChannel(resultadoSalas[0].idDaSala) == null)
                     {
                         embed.WithAuthor($"❎ - Você não possui uma sala ativa!", null, Valores.logoUBGE);
                         embed.WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed());
@@ -59,9 +58,19 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                     }
                     else
                     {
+                        if (resultadoSalas[0].idDoDono == membro.Id)
+                        {
+                            embed.WithAuthor("❎ - Você não pode adicionar a si mesmo!", null, Valores.logoUBGE)
+                                .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed());
+
+                            await ctx.RespondAsync(embed: embed.Build());
+
+                            return;
+                        }
+
                         DiscordRole registrado = ctx.Guild.GetRole(Valores.Cargos.cargoMembroRegistrado);
                         voiceChannel = ctx.Guild.GetChannel(resultadoSalas[0].idDaSala);
-                        
+
                         var lista = resultadoSalas[0].idsPermitidos;
 
                         if (!lista.Contains(membro.Id))
@@ -126,7 +135,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
 
                     DiscordChannel voiceChannel = null;
 
-                    if (resultadoSalas.Count == 0)
+                    if (resultadoSalas.Count == 0 || ctx.Guild.GetChannel(resultadoSalas[0].idDaSala) == null)
                     {
                         embed.WithAuthor($"❎ - Você não possui uma sala ativa!", null, Valores.logoUBGE);
                         embed.WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed());
@@ -135,6 +144,16 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                     }
                     else
                     {
+                        if (resultadoSalas[0].idDoDono == membro.Id)
+                        {
+                            embed.WithAuthor("❎ - Você não pode remover a si mesmo!", null, Valores.logoUBGE)
+                                .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed());
+
+                            await ctx.RespondAsync(embed: embed.Build());
+
+                            return;
+                        }
+
                         DiscordRole registrado = ctx.Guild.GetRole(Valores.Cargos.cargoMembroRegistrado);
                         voiceChannel = ctx.Guild.GetChannel(resultadoSalas[0].idDaSala);
 
@@ -189,7 +208,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
 
                     DiscordChannel voiceChannel = null;
 
-                    if (resultadoSalas.Count == 0)
+                    if (resultadoSalas.Count == 0 || ctx.Guild.GetChannel(resultadoSalas[0].idDaSala) == null)
                     {
                         embed.WithAuthor($"❎ - Você não possui uma sala ativa!", null, Valores.logoUBGE);
                         embed.WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed());
@@ -295,7 +314,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                     DiscordRole moderadorDiscordCargo = ctx.Guild.GetRole(Valores.Cargos.cargoModeradorDiscord),
                     acessoGeralCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAcessoGeral);
 
-                    if (resultadoSalas.Count != 0)
+                    if (resultadoSalas.Count != 0 && ctx.Guild.GetChannel(resultadoSalas[0].idDaSala) != null)
                     {
                         voiceChannel = ctx.Guild.GetChannel(resultadoSalas[0].idDaSala);
 
@@ -365,7 +384,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                     DiscordRole moderadorDiscordCargo = ctx.Guild.GetRole(Valores.Cargos.cargoModeradorDiscord),
                     acessoGeralCargo = ctx.Guild.GetRole(Valores.Cargos.cargoAcessoGeral);
 
-                    if (resultadoSalas.Count != 0)
+                    if (resultadoSalas.Count != 0 && ctx.Guild.GetChannel(resultadoSalas[0].idDaSala) != null)
                     {
                         voiceChannel = ctx.Guild.GetChannel(resultadoSalas[0].idDaSala);
 
@@ -438,7 +457,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
 
                     DiscordChannel voiceChannel = null;
 
-                    if (resultadoSalas.Count != 0)
+                    if (resultadoSalas.Count != 0 && ctx.Guild.GetChannel(resultadoSalas[0].idDaSala) != null)
                     {
                         voiceChannel = ctx.Guild.GetChannel(resultadoSalas[0].idDaSala);
 
@@ -474,7 +493,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
 
         public async Task CriarCanalAsync(CommandContext ctx)
         {
-            var dm = await ctx.Member.CreateDmChannelAsync();
+            await ctx.TriggerTypingAsync();
 
             new Thread(async () =>
             {

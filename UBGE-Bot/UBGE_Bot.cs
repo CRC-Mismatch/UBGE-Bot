@@ -7,6 +7,8 @@ using MongoDB.Bson;
 using Microsoft.Extensions.DependencyInjection;
 using MySql.Data.MySqlClient;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using UBGE_Bot.Main;
 using UBGE_Bot.LogExceptions;
@@ -30,21 +32,28 @@ namespace UBGE_Bot.Carregamento
 
         public IContainer servicesIContainer { get; set; }
 
+        public IEnumerable<Type> sistemas { get; private set; }
+
         public UtilidadesGerais utilidadesGerais { get; private set; }
-        
+
         public bool botConectadoAoMongo { get; set; } = true;
 
         public string prefixoMensagens { get; private set; } = "[Config]";
         public string prefixoBotConsole { get; private set; } = "[UBGE-Bot]";
-        public string versaoBot { get; private set; } = $"v{Assembly.GetEntryAssembly().GetName().Version.ToString()}-beta4";
+        public string versaoBot { get; private set; } = $"v{Assembly.GetEntryAssembly().GetName().Version.ToString()}-beta5";
 
         public UBGEBot_()
         {
             try
             {
                 ubgeBotConfig = new UBGEBotConfig_();
-                logExceptionsToDiscord = new LogExceptionsToDiscord();
+                ubgeBotConfig.ubgeBotDatabasesConfig = ubgeBotConfig.ubgeBotDatabasesConfig.Build();
+                ubgeBotConfig.ubgeBotGoogleAPIConfig = ubgeBotConfig.ubgeBotGoogleAPIConfig.Build();
+                ubgeBotConfig.ubgeBotServidoresConfig = ubgeBotConfig.ubgeBotServidoresConfig.Build();
+                ubgeBotConfig.ubgeBotValoresConfig = ubgeBotConfig.ubgeBotValoresConfig.Build();
 
+                logExceptionsToDiscord = new LogExceptionsToDiscord();
+                
                 try
                 {
                     mongoClient = new MongoClient(new MongoClientSettings 
@@ -57,7 +66,7 @@ namespace UBGE_Bot.Carregamento
                     
                     localDB.RunCommand<BsonDocument>(new BsonDocument("ping", 1));
                 }
-                catch (TimeoutException)
+                catch (Exception)
                 {
                     botConectadoAoMongo = false;
 
@@ -84,14 +93,24 @@ namespace UBGE_Bot.Carregamento
                 utilidadesGerais = new UtilidadesGerais();
 
                 discordClient = new DiscordClient(new DiscordConfiguration(ubgeBotConfig.ubgeBotDiscordConfig.Build()));
-
                 commandsNext = discordClient.UseCommandsNext(new CommandsNextConfiguration(ubgeBotConfig.ubgeBotCommandsNextConfig.Build(
-                    new ServiceCollection().AddSingleton(this)
+                    new ServiceCollection()
+                    .AddSingleton(this)
                     .AddSingleton(discordClient)
                     .BuildServiceProvider())));
                 interactivityExtension = discordClient.UseInteractivity(new InteractivityConfiguration(ubgeBotConfig.ubgeBotInteractivityConfig.Build()));
-
                 commandsNext.RegisterCommands(Assembly.GetEntryAssembly());
+                
+                sistemas = Assembly.GetExecutingAssembly().GetTypes().Where(x => x.GetInterfaces().Contains(typeof(IAplicavelAoCliente)));
+
+                foreach (var sistema in sistemas)
+                {
+                    try
+                    {
+                        ((IAplicavelAoCliente)Activator.CreateInstance(sistema)).AplicarAoBot(discordClient, botConectadoAoMongo);
+                    }
+                    catch (Exception) { Console.WriteLine($"{sistema.Name}"); }
+                }
 
                 Console.Title = $"UBGE-Bot online! {versaoBot}";
             }
