@@ -4,7 +4,7 @@
 Bot feito na linguagem C#, utilizando a biblioteca [DSharpPlus](https://github.com/DSharpPlus/DSharpPlus/), e desenvolvido para o servidor da UBGE.
 
 - Donos: **Luiz Fernando#8721**, **Paulo#4230** (Não é o dono atual/desenvolvedor) e **Mismatch#0666**
-- Responsável e atual desenvolvedor: **[UBGE] Luiz#8721** e **Mismatch#0666**
+- Responsáveis e atuais desenvolvedores: **[UBGE] Luiz#8721** e **Mismatch#0666**
 
 - O bot roda atualmente em **.NET Core 3.0**
 
