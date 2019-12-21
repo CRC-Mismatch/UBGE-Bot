@@ -1308,7 +1308,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
 
     public sealed class DoadorStaffControlled : BaseCommandModule 
     { 
-        [Command("novo")]
+        [Command("novo"), Aliases("new")]
 
         public async Task NovoDoadorAsync(CommandContext ctx, string tempoComoDoador = null, DiscordMember membro = null)
         {
@@ -1320,6 +1320,18 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                 {
                     DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
 
+                    if (string.IsNullOrWhiteSpace(tempoComoDoador) || membro == null)
+                    {
+                        embed.WithColor(Program.ubgeBot.utilidadesGerais.CorHelpComandos())
+                            .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
+                            .AddField("PC/Mobile", $"{ctx.Prefix}doador novo Tempo[Xs, Xm, Xh, Xd] Membro[ID/Menção]")
+                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                            .WithTimestamp(DateTime.Now);
+
+                        await ctx.RespondAsync(embed: embed.Build());
+
+                        return;
+                    }
 
                     var local = Program.ubgeBot.localDB;
 
@@ -1342,7 +1354,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
                         await collectionDoador.InsertOneAsync(new Doador
                         {
                             idDoMembro = membro.Id,
-                            jaDoou = "Não",
+                            jaDoou = "Sim",
                             diasEHorasQueOMembroVirouDoador = new List<string> { $"{diaHoraVirouDoador} - {tempoComoDoador}" },
                         });
 
@@ -1363,13 +1375,155 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE
 
                         var diaHoraVirouDoador = DateTime.Now.ToString();
 
-                        await collectionDoador.UpdateOneAsync(filtroDoador, Builders<Doador>.Update.Set(x => x.diasEHorasQueOMembroVirouDoador, respostaListaDoadores.LastOrDefault().diasEHorasQueOMembroVirouDoador.Append($"{diaHoraVirouDoador} - {tempoComoDoador}")).Set(y => y.jaDoou, $"Sim, {numeroDeVezesQueOMembroDoou + 1} vezes."));
+                        await collectionDoador.UpdateOneAsync(filtroDoador, Builders<Doador>.Update.Set(x => x.diasEHorasQueOMembroVirouDoador, respostaListaDoadores.LastOrDefault().diasEHorasQueOMembroVirouDoador.Append($"{diaHoraVirouDoador} - {tempoComoDoador}")).Set(y => y.jaDoou, $"Sim, {numeroDeVezesQueOMembroDoou + 1} vezes"));
 
                         embed.WithAuthor("A nova doação foi adicionada com sucesso!", null, Valores.logoUBGE)
                             .WithDescription($"{Program.ubgeBot.utilidadesGerais.MencaoMembro(membro)}, foi re-adicionado com sucesso aos doadores!\n\n" +
                             $"Tempo: **{tempoComoDoador}**")
                             .WithThumbnailUrl(membro.AvatarUrl)
                             .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                            .WithTimestamp(DateTime.Now);
+
+                        await ctx.RespondAsync(embed: embed.Build());
+                    }
+                }
+                catch (Exception exception)
+                {
+                    await Program.ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Comandos, exception);
+                }
+            }).Start();
+        }
+    
+        [Command("remover"), Aliases("retirar")]
+
+        public async Task RemoverDoadorAsync(CommandContext ctx, DiscordMember membro = null)
+        {
+            await ctx.TriggerTypingAsync();
+
+            new Thread(async () =>
+            {
+                try
+                {
+                    DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+
+                    if (membro == null)
+                    {
+                        embed.WithColor(Program.ubgeBot.utilidadesGerais.CorHelpComandos())
+                            .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
+                            .AddField("PC/Mobile", $"{ctx.Prefix}doador remover Membro[ID/Menção]")
+                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                            .WithTimestamp(DateTime.Now);
+
+                        await ctx.RespondAsync(embed: embed.Build());
+
+                        return;
+                    }
+
+                    var local = Program.ubgeBot.localDB;
+
+                    var collectionDoador = local.GetCollection<Doador>(Valores.Mongo.doador);
+
+                    var filtroDoador = Builders<Doador>.Filter.Eq(x => x.idDoMembro, membro.Id);
+
+                    var respostaListaDoadores = await (await collectionDoador.FindAsync(filtroDoador)).ToListAsync();
+
+                    if (respostaListaDoadores.Count == 0)
+                    {
+                        embed.WithAuthor("Este membro não fez doação!", null, Valores.logoUBGE)
+                            .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                            .WithDescription(":thinking:")
+                            .WithThumbnailUrl(membro.AvatarUrl)
+                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                            .WithTimestamp(DateTime.Now);
+
+                        await ctx.RespondAsync(embed: embed.Build());
+
+                        return;
+                    }
+                    else
+                    {
+                        await collectionDoador.DeleteOneAsync(filtroDoador);
+
+                        embed.WithAuthor($"O membro: \"{Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}\" foi removido dos doadores com sucesso!", null, Valores.logoUBGE)
+                            .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                            .WithDescription(await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(ctx, "UBGE"))
+                            .WithThumbnailUrl(membro.AvatarUrl)
+                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                            .WithTimestamp(DateTime.Now);
+
+                        await ctx.RespondAsync(embed: embed.Build());
+                    }
+                }
+                catch (Exception exception)
+                {
+                    await Program.ubgeBot.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Comandos, exception);
+                }
+            }).Start();
+        }
+
+        [Command("listar"), Aliases("ver")]
+
+        public async Task VerDoadoresAsync(CommandContext ctx, DiscordMember membro = null)
+        {
+            await ctx.TriggerTypingAsync();
+
+            new Thread(async () =>
+            {
+                try
+                {
+                    var local = Program.ubgeBot.localDB;
+
+                    var collectionDoador = local.GetCollection<Doador>(Valores.Mongo.doador);
+
+                    DiscordRole cargoDoador = ctx.Guild.GetRole(Valores.Cargos.cargoDoador);
+                    
+                    DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+
+                    if (membro == null)
+                    {
+                        var membrosUBGE = (await ctx.Guild.GetAllMembersAsync()).Where(x => x.Roles.Contains(cargoDoador));
+                        
+                        StringBuilder str = new StringBuilder();
+
+                        DiscordMessage msgAguarde = await ctx.RespondAsync($"Aguarde... {await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(ctx, "leofsjal")}");
+
+                        foreach (var membro_ in membrosUBGE)
+                        {
+                            var filtroDoador = Builders<Doador>.Filter.Eq(x => x.idDoMembro, membro_.Id);
+
+                            var respostaListaDoadores = await (await collectionDoador.FindAsync(filtroDoador)).ToListAsync();
+
+                            str.Append($"{Program.ubgeBot.utilidadesGerais.MencaoMembro(membro_)} - Armazenado no bot?: **{(respostaListaDoadores.Count != 0 ? "Sim" : "Não")}**\n");
+                        }
+
+                        await msgAguarde.DeleteAsync();
+
+                        embed.WithAuthor("Lista dos atuais doadores da UBGE:", null, Valores.logoUBGE)
+                            .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                            .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                            .WithDescription(string.IsNullOrWhiteSpace(str.ToString()) ? "Não há membros doadores na UBGE." : str.ToString())
+                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                            .WithTimestamp(DateTime.Now);
+
+                        await ctx.RespondAsync(embed: embed.Build());
+                    }
+                    else
+                    {
+                        var filtroDoador = Builders<Doador>.Filter.Eq(x => x.idDoMembro, membro.Id);
+
+                        var respostaListaDoadores = await (await collectionDoador.FindAsync(filtroDoador)).ToListAsync();
+
+                        var ultimaRespostaDoadores = respostaListaDoadores.LastOrDefault();
+
+                        var diaHoraDoacao = ultimaRespostaDoadores.diasEHorasQueOMembroVirouDoador.LastOrDefault().Split('-');
+
+                        embed.WithAuthor($"Informações do doador: \"{Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}\"", null, Valores.logoUBGE)
+                            .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                            .WithThumbnailUrl(membro.AvatarUrl)
+                            .WithDescription($"Já doou?: **{ultimaRespostaDoadores.jaDoou}{(ultimaRespostaDoadores.jaDoou.Contains("Sim") ? " e foi armazenado no bot" : string.Empty)}.**\n\n" +
+                            $"Dia e hora que o membro doou (Última doação): **{diaHoraDoacao[0]}**\n\n" +
+                            $"Tempo do membro como doador: **{diaHoraDoacao[1].Replace(" ", "")}**")
                             .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
                             .WithTimestamp(DateTime.Now);
 

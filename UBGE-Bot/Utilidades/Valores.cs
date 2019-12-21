@@ -57,7 +57,6 @@ namespace UBGE_Bot.Utilidades
             public const string local = "local";
             public const string reacts = "Reacts";
             public const string salas = "Salas";
-            public const string users = "Users";
             public const string jogos = "Jogos";
             public const string servidoresUBGE = "ServidoresUBGE";
             public const string infracoes = "Infra";
@@ -94,6 +93,8 @@ namespace UBGE_Bot.Utilidades
             public static ulong cargoComiteComunitario = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoComiteComunitario;
             public static ulong cargoNitroBooster = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoNitroBooster;
             public static ulong cargoDoador = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoDoador;
+            public static ulong cargoUBGEBot = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoUBGEBot;
+            public static ulong cargoAdministradorDiscord = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.cargoAdministradorDiscord;
         }
 
         public sealed class Guilds

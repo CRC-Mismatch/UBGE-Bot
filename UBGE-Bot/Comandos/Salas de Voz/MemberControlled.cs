@@ -4,6 +4,8 @@ using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using MongoDB.Driver;
 using System;
+using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UBGE_Bot.Main;
@@ -19,7 +21,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
     {
         [Command("addmembro"), Aliases("adicionarmembro"), Description("[<@Amigo>]`\nAdiciona um amigo à lista branca.\n\n")]
 
-        public async Task AddAsync(CommandContext ctx, DiscordMember membro = null)
+        public async Task AddMembroNaSalaAsync(CommandContext ctx, DiscordMember membro = null)
         {
             await ctx.TriggerTypingAsync();
 
@@ -104,7 +106,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
 
         [Command("delmembro"), Aliases("deletarmembro", "apagarmembro", "removemembro", "removermembro"), Description("[<@Amigo>]`\nRemove um amigo da lista branca.\n\n")]
 
-        public async Task DelAsync(CommandContext ctx, DiscordMember membro = null)
+        public async Task DelMembroNaSalaAsync(CommandContext ctx, DiscordMember membro = null)
         {
             await ctx.TriggerTypingAsync();
 
@@ -190,7 +192,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
 
         [Command("max"), Aliases("maximo", "máximo"), Description("[Número de 1 a 99]`\nLimite de Membros.\n\n")]
 
-        public async Task MaxAsync(CommandContext ctx, int maxJoin)
+        public async Task MaxSalaAsync(CommandContext ctx, int maxJoin)
         {
             await ctx.TriggerTypingAsync();
 
@@ -292,7 +294,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
 
         [Command("lock"), Aliases("trancar"), Description("`\nTrava a sua sala.\n\n")]
 
-        public async Task LockAsync(CommandContext ctx)
+        public async Task LockSalasync(CommandContext ctx)
         {
             await ctx.TriggerTypingAsync();
 
@@ -363,7 +365,7 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
 
         [Command("unlock"), Aliases("destrancar"), Description("`\nDestrava a sua sala.\n\n")]
 
-        public async Task UnlockAsync(CommandContext ctx)
+        public async Task UnlockSalaAsync(CommandContext ctx)
         {
             await ctx.TriggerTypingAsync();
 
@@ -424,10 +426,9 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
             }).Start();
         }
 
-        [Command("nome"), Description("[Nome Novo]`\nAltera o nome da sala.\n\n")]
-        [Aliases("name")]
+        [Command("nome"), Aliases("name"), Description("[Nome Novo]`\nAltera o nome da sala.\n\n")]
 
-        public async Task NomeAsync(CommandContext ctx, [RemainingText] string nome = null)
+        public async Task NomeSalaAsync(CommandContext ctx, [RemainingText] string nome = null)
         {
             await ctx.TriggerTypingAsync();
 
@@ -484,12 +485,88 @@ namespace UBGE_Bot.Comandos.Salas_de_Voz
                 }
             }).Start();
         }
+
+        [Command("listar"), Aliases("identificar"), Description("[ID do Canal]")]
+
+        public async Task IdentificarSalaAsync(CommandContext ctx, DiscordChannel sala = null)
+        {
+            await ctx.TriggerTypingAsync();
+
+            new Thread(async () =>
+            {
+                try
+                {
+                    DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+
+                    if (sala == null)
+                    {
+                        embed.WithColor(Program.ubgeBot.utilidadesGerais.CorHelpComandos())
+                            .WithAuthor("Como executar este comando:", null, Valores.infoLogo)
+                            .AddField("PC/Mobile", $"{ctx.Prefix}sala identificar Sala[ID]")
+                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                            .WithTimestamp(DateTime.Now);
+
+                        await ctx.RespondAsync(embed: embed.Build());
+                        return;
+                    }
+
+                    var local = Program.ubgeBot.localDB;
+                    var salasCollection = local.GetCollection<Salas>(Valores.Mongo.salas);
+
+                    var filtroSalas = Builders<Salas>.Filter.Eq(x => x.idDaSala, sala.Id);
+                    var resultadoSalas = await (await salasCollection.FindAsync(filtroSalas)).ToListAsync();
+
+                    DiscordChannel sala_ = null;
+
+                    if (resultadoSalas.Count != 0 && ctx.Guild.GetChannel(sala.Id) != null)
+                    {
+                        sala_ = ctx.Guild.GetChannel(sala.Id);
+
+                        var ultimaRespostaSala = resultadoSalas.LastOrDefault();
+
+                        StringBuilder str = new StringBuilder();
+
+                        foreach (var membros in ultimaRespostaSala.idsPermitidos)
+                        {
+                            if (membros != ultimaRespostaSala.idDoDono)
+                                str.Append($"{Program.ubgeBot.utilidadesGerais.MencaoMembro(await ctx.Guild.GetMemberAsync(membros))}, ");
+                        }
+
+                        string membrosPermitidos = string.Empty;
+
+                        if (!string.IsNullOrWhiteSpace(str.ToString()))
+                            membrosPermitidos = str.ToString().EndsWith(", ") ? str.ToString().Remove(str.Length - 2) : str.ToString();
+                        else
+                            membrosPermitidos = "Não existe restrição de id's neste canal de voz.";
+
+                        embed.WithAuthor($"Informações do canal de voz: \"{sala_.Name}\"", null, Valores.logoUBGE)
+                            .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                            .WithDescription($"Dono: {Program.ubgeBot.utilidadesGerais.MencaoMembro(await ctx.Guild.GetMemberAsync(ultimaRespostaSala.idDoDono))}\n\n" +
+                            $"Limite de usuários: **{(ultimaRespostaSala.limiteDeUsuarios == 0 ? "Não tem limite." : $"{ultimaRespostaSala.limiteDeUsuarios} membros.")}**\n\n" +
+                            $"Esta sala está trancada?: **{(ultimaRespostaSala.salaTrancada ? "Sim" : "Não")}**\n\n" +
+                            $"Id's permitidos para entrar na sala: {membrosPermitidos}");
+
+                        await ctx.RespondAsync(embed: embed.Build());
+                    }
+                    else
+                    {
+                        embed.WithAuthor($"❎ - Esta sala não existe ou você colocou o ID errado!", null, Valores.logoUBGE);
+                        embed.WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed());
+
+                        await ctx.RespondAsync(embed: embed.Build());
+                    }
+                }
+                catch (Exception exception)
+                {
+
+                }
+            }).Start();
+        }
     }
 
     public sealed class HelpDoMemberControlled : BaseCommandModule
     {
-        [Command("create"), UBGE_CrieSuaSalaAqui]
-        [Aliases("criar", "summon")]
+        [Command("create"), Aliases("criar", "summon"), UBGE_CrieSuaSalaAqui]
 
         public async Task CriarCanalAsync(CommandContext ctx)
         {

@@ -40,6 +40,10 @@ namespace UBGE_Bot.Comandos.Gerais
                     var videoGameEmoji = DiscordEmoji.FromName(ctx.Client, ":video_game:");
                     var comandosExtrasEmoji = DiscordEmoji.FromName(ctx.Client, ":wrench:");
 
+                    var comandosStaff = DiscordEmoji.FromName(ctx.Client, ":cop:");
+                    var comandosReactRole = DiscordEmoji.FromName(ctx.Client, ":jigsaw:");
+                    var comandosModMail = DiscordEmoji.FromName(ctx.Client, ":envelope:");
+
                     if (ctx.Guild.Id == Valores.Guilds.UBGE)
                     {
                         inicioHelp:
@@ -63,6 +67,13 @@ namespace UBGE_Bot.Comandos.Gerais
                             .AddField($"{comandosExtrasEmoji} - Comandos extras:", "Comandos extras que podem ser úteis para você que está usando o bot.")
                             .WithThumbnailUrl(ctx.Member.AvatarUrl);
 
+                        if (ctx.Member.Roles.Where(x => x.Permissions.HasFlag(Permissions.KickMembers)).Count() != 0)
+                        {
+                            embed.AddField($"{comandosStaff} - Comandos de moderação:", $"Comandos de moderação para os {ctx.Guild.GetRole(Valores.Cargos.cargoAdministradorDiscord).Mention} e os {cargoModeradorDiscord.Mention}.")
+                                .AddField($"{comandosReactRole} - Comandos do react role:", $"Comandos do react role para adicionar e remover cargos de jogos.")
+                                .AddField($"{comandosModMail} - Comandos do ModMail:", $"Comandos relacionados ao sistema do ModMail.");
+                        }
+
                         DiscordMessage primeiraMensagemEmbed = await ctx.RespondAsync(embed: embed.Build());
 
                         Program.ubgeBot.utilidadesGerais.LimpaEmbed(embed);
@@ -78,6 +89,12 @@ namespace UBGE_Bot.Comandos.Gerais
                         await segundaMensagemEmbed.CreateReactionAsync(videoGameEmoji);
                         await Task.Delay(200);
                         await segundaMensagemEmbed.CreateReactionAsync(comandosExtrasEmoji);
+                        await Task.Delay(200);
+                        await segundaMensagemEmbed.CreateReactionAsync(comandosStaff);
+                        await Task.Delay(200);
+                        await segundaMensagemEmbed.CreateReactionAsync(comandosReactRole);
+                        await Task.Delay(200);
+                        await segundaMensagemEmbed.CreateReactionAsync(comandosModMail);
 
                         var interactivity = ctx.Client.GetInteractivity();
 
@@ -89,8 +106,6 @@ namespace UBGE_Bot.Comandos.Gerais
                         {
                             await primeiraMensagemEmbed.DeleteAsync();
                             await segundaMensagemEmbed.DeleteAsync();
-
-                            Program.ubgeBot.utilidadesGerais.LimpaEmbed(embed);
 
                             StringBuilder strComandosCriarSala = new StringBuilder();
 
@@ -159,7 +174,8 @@ namespace UBGE_Bot.Comandos.Gerais
                                 $"`{ctx.Prefix}procuramembros Jogo[Nome]`\nO bot procurará membros que estão jogando determinado jogo (Ele procurará em todos os servidores que ele está).\n\n" +
                                 $"`{ctx.Prefix}listar Canal[ID]`\nO bot listará todos os membros que estão em um canal de voz.\n\n" +
                                 $"`{ctx.Prefix}botslivres`\nO bot listará quais bots musicais em toda a UBGE estão livres para serem usados.\n\n" +
-                                $"`{ctx.Prefix}ajudabots`\nO bot listará os bots da UBGE que estão onlines e que lhe pode ajudar em algo.\n\n")
+                                $"`{ctx.Prefix}ajudabots`\nO bot listará os bots da UBGE que estão onlines e que lhe pode ajudar em algo.\n\n\n" +
+                                $"`{ctx.Prefix}servidores`\nO bot mostrará os servidores da UBGE de determinado jogo. *Se ele existir obviamente.*")
                                 .WithThumbnailUrl(ctx.Member.AvatarUrl)
                                 .WithTimestamp(DateTime.Now)
                                 .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
@@ -175,6 +191,39 @@ namespace UBGE_Bot.Comandos.Gerais
 
                                 goto inicioHelp;
                             }
+                        }
+                        else if (emojiResposta == comandosStaff)
+                        {
+                            await primeiraMensagemEmbed.DeleteAsync();
+                            await segundaMensagemEmbed.DeleteAsync();
+
+                            StringBuilder strComandos = new StringBuilder();
+
+                            foreach (var comando in ctx.CommandsNext.RegisteredCommands.Values)
+                            {
+                                if (comando is CommandGroup grupo)
+                                {
+                                    foreach (var comandoNoGrupo in grupo.Children)
+                                    {
+                                        if (strComandos.ToString().Contains($"{ctx.Prefix}{(grupo.Aliases.Count == 0 ? grupo.Name : grupo.Aliases[0])} {(comandoNoGrupo.Aliases.Count != 0 ? comandoNoGrupo.Aliases[0] : $"{comandoNoGrupo.Name}")}"))
+                                            break;
+
+                                        if (!comandoNoGrupo.QualifiedName.Contains("staff"))
+                                            break;
+
+                                        if (!string.IsNullOrWhiteSpace(comandoNoGrupo.Description))
+                                            strComandos.Append($"`{ctx.Prefix}{(grupo.Aliases.Count == 0 ? grupo.Name : grupo.Aliases[0])} {(comandoNoGrupo.Aliases.Count != 0 ? comandoNoGrupo.Aliases[0] : $"{comandoNoGrupo.Name}")} {comandoNoGrupo.Description}");
+                                    }
+                                }
+                            }
+
+                            embed.WithAuthor("Comandos da staff:", null, Valores.logoUBGE)
+                                .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                                .WithDescription(strComandos.ToString())
+                                .WithTimestamp(DateTime.Now)
+                                .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
+
+                            await ctx.RespondAsync(embed: embed.Build());
                         }
                         else
                             return;

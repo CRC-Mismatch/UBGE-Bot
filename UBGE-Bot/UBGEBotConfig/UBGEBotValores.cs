@@ -150,6 +150,12 @@ namespace UBGE_Bot.UBGEBotConfig
         [JsonProperty("cargoDoador")]
         public ulong cargoDoador { get; set; }
 
+        [JsonProperty("cargoUBGEBot")]
+        public ulong cargoUBGEBot { get; set; }
+
+        [JsonProperty("cargoAdministradorDiscord")]
+        public ulong cargoAdministradorDiscord { get; set; }
+
         public UBGEBotValores Build()
         {
             var jsonConfig = JsonConvert.DeserializeObject<UBGEBotValores>(File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\JsonUBGE_Bot\ValoresConfig.json"));
@@ -202,6 +208,8 @@ namespace UBGE_Bot.UBGEBotConfig
                 canalRecomendacoesPromocoes = jsonConfig.canalRecomendacoesPromocoes,
                 categoriaUBGE = jsonConfig.categoriaUBGE,
                 categoriaConselhoComunitario = jsonConfig.categoriaConselhoComunitario,
+                cargoUBGEBot = jsonConfig.cargoUBGEBot,
+                cargoAdministradorDiscord = jsonConfig.cargoAdministradorDiscord,
             };
         }
     }

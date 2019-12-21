@@ -28,7 +28,7 @@ namespace UBGE_Bot.Sistemas.Discord
 
             Timer checaCanaisAutoCreate = new Timer()
             {
-                Interval = 30000,
+                Interval = 10000,
             };
             checaCanaisAutoCreate.Elapsed += async delegate
             {
@@ -283,9 +283,17 @@ namespace UBGE_Bot.Sistemas.Discord
 
                     if (canaisDaCategoria.Count() != 0)
                     {
+                        DiscordOverwriteBuilder permissoes = new DiscordOverwriteBuilder
+                        {
+                            Allowed = Permissions.ManageChannels,
+                            Denied = Permissions.None,
+                        };
+
                         foreach (var canal in canaisDaCategoria)
                         {
-                            if (canal.Users.Count() == 0 && canal.PermissionsFor(botUBGE).HasFlag(Permissions.ManageChannels))
+                            var permissoesDoCanal = canal.PermissionOverwrites.ToList();
+
+                            if (canal.Users.Count() == 0 && permissoesDoCanal.Exists(x => x.Type == OverwriteType.Role && x.Allowed == permissoes.Allowed && x.Id == Valores.Cargos.cargoUBGEBot))
                             {
                                 await Task.Delay(200);
 
