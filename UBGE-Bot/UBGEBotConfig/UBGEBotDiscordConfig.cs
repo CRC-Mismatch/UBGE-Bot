@@ -37,8 +37,8 @@ namespace UBGE_Bot.UBGEBotConfig
 
         public DiscordConfiguration Build()
         {
-            var jsonConfig = JsonConvert.DeserializeObject<UBGEBotDiscordConfig>(File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\JsonUBGE_Bot\DiscordConfig.json"));
-            
+            UBGEBotDiscordConfig jsonConfig = JsonConvert.DeserializeObject<UBGEBotDiscordConfig>(File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\JsonUBGE_Bot\DiscordConfig.json"));
+
             return new DiscordConfiguration
             {
                 Token = jsonConfig.tokenBot,

@@ -1,6 +1,7 @@
 ﻿using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using DSharpPlus.Exceptions;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,10 +13,8 @@ namespace UBGE_Bot.Sistemas.Discord
 {
     public sealed class MembroEntraUBGE : IAplicavelAoCliente
     {
-        public void AplicarAoBot(DiscordClient discordClient, bool botConectadoAoMongo)
-        {
-            discordClient.GuildMemberAdded += MembroEntra;
-        }
+        public void AplicarAoBot(DiscordClient discordClient, bool botConectadoAoMongo, bool sistemaAtivo)
+            => discordClient.GuildMemberAdded += MembroEntra;
 
         private async Task MembroEntra(GuildMemberAddEventArgs guildMemberAddEventArgs)
         {
@@ -37,6 +36,12 @@ namespace UBGE_Bot.Sistemas.Discord
                     $"Leia a mensagem que o Mee6 lhe enviou no seu privado, ele lhe ajudará a dar os seus primeiros passos na UBGE.\n\n" +
                     $"Para qualquer dúvida sobre mim, digite `//ajuda`.\n\n" +
                     $"Obrigado por ler isso, e antes de tudo, sinta-se em casa! :smile:");
+                }
+                catch (UnauthorizedException)
+                {
+                    Program.ubgeBot.logExceptionsToDiscord.Aviso(LogExceptionsToDiscord.TipoAviso.Discord, "Não foi possível enviar a mensagem de pedido para fazer o censo no privado do membro.");
+
+                    await Program.ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.Aviso, "Erro!", "Não foi possível enviar a mensagem de pedido para fazer o censo no privado do membro.");
                 }
                 catch (Exception exception)
                 {

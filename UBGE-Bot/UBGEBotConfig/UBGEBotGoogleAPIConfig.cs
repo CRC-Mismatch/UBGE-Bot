@@ -12,6 +12,9 @@ namespace UBGE_Bot.UBGEBotConfig
         [JsonProperty("google_censo_range")]
         public string censoRange { get; set; }
 
+        [JsonProperty("google_censoplanilha_range")]
+        public string censoPlanilhaRange { get; set; }
+
         [JsonProperty("google_infracoes_id")]
         public string infracaoID { get; set; }
 
@@ -26,12 +29,13 @@ namespace UBGE_Bot.UBGEBotConfig
 
         public UBGEBotGoogleAPIConfig Build()
         {
-            var jsonConfig = JsonConvert.DeserializeObject<UBGEBotGoogleAPIConfig>(File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\JsonUBGE_Bot\GoogleSheetsConfig.json"));
+            UBGEBotGoogleAPIConfig jsonConfig = JsonConvert.DeserializeObject<UBGEBotGoogleAPIConfig>(File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\JsonUBGE_Bot\GoogleSheetsConfig.json"));
 
             return new UBGEBotGoogleAPIConfig
             {
                 censoID = jsonConfig.censoID,
                 censoRange = jsonConfig.censoRange,
+                censoPlanilhaRange = jsonConfig.censoPlanilhaRange,
                 infracaoID = jsonConfig.infracaoID,
                 infracaoRange = jsonConfig.infracaoRange,
                 cadastroGuildAlbionSpreadsheet = jsonConfig.cadastroGuildAlbionSpreadsheet,

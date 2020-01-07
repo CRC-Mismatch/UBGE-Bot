@@ -10,7 +10,7 @@ namespace UBGE_Bot.Sistemas.Discord
 {
     public class ReconectarBot : IAplicavelAoCliente
     {
-        public void AplicarAoBot(DiscordClient discordClient, bool botConectadoAoMongo)
+        public void AplicarAoBot(DiscordClient discordClient, bool botConectadoAoMongo, bool sistemaAtivo)
         {
             discordClient.SocketClosed += BotCaiu;
             discordClient.SocketErrored += BotCaiuEErroNoSocket;
@@ -29,7 +29,7 @@ namespace UBGE_Bot.Sistemas.Discord
             catch (Exception exception)
             {
                 Program.ubgeBot.logExceptionsToDiscord.ExceptionToTxt(exception);
-                Program.ShutdownBot();
+                Program.DesligarBot();
             }
         }
 
@@ -46,7 +46,7 @@ namespace UBGE_Bot.Sistemas.Discord
             catch (Exception exception)
             {
                 Program.ubgeBot.logExceptionsToDiscord.ExceptionToTxt(exception);
-                Program.ShutdownBot();
+                Program.DesligarBot();
             }
         }
     }

@@ -18,9 +18,9 @@ namespace UBGE_Bot.Sistemas.Discord
 {
     public sealed class ReactRoleUBGE : IAplicavelAoCliente
     {
-        public void AplicarAoBot(DiscordClient discordClient, bool botConectadoAoMongo)
+        public void AplicarAoBot(DiscordClient discordClient, bool botConectadoAoMongo, bool sistemaAtivo)
         {
-            if (botConectadoAoMongo)
+            if (botConectadoAoMongo && sistemaAtivo)
             {
                 discordClient.MessageReactionAdded += ReacaoAdicionadaReactRole;
                 discordClient.MessageReactionRemoved += ReacaoRemovidaReactRole;
@@ -38,136 +38,112 @@ namespace UBGE_Bot.Sistemas.Discord
             {
                 try
                 {
-                    var db = Program.ubgeBot.localDB;
+                    IMongoDatabase db = Program.ubgeBot.localDB;
 
-                    var jogos = db.GetCollection<Jogos>(Valores.Mongo.jogos);
-                    var reacts = db.GetCollection<Reacts>(Valores.Mongo.reacts);
+                    IMongoCollection<Reacts> reacts = db.GetCollection<Reacts>(Valores.Mongo.reacts);
+                    List<Reacts> resultadoReacts = await (await reacts.FindAsync(Builders<Reacts>.Filter.Eq(x => x.idDoCanal, messageReactionAddEventArgs.Channel.Id))).ToListAsync();
 
-                    var emojiReacao = messageReactionAddEventArgs.Emoji;
-
-                    var filtroJogos = Builders<Jogos>.Filter.Eq(x => x.idDoEmoji, emojiReacao.Id);
-                    var resultadoJogos = await (await jogos.FindAsync(filtroJogos)).ToListAsync();
-
-                    if (resultadoJogos.Count == 0)
-                        return;
-
-                    DiscordGuild guildReaction = messageReactionAddEventArgs.Guild;
-                    var mensagemEmoji = messageReactionAddEventArgs.Message;
-                    var canalReaction = messageReactionAddEventArgs.Channel;
-
-                    var reacoesMembro = await mensagemEmoji.GetReactionsAsync(emojiReacao);
-
-                    var dbContar = db.GetCollection<ContaMembrosQuePegaramCargos>(Valores.Mongo.contaMembrosQuePegaramCargos);
-
-                    var resultadoReacts = await (await reacts.FindAsync(Builders<Reacts>.Filter.Eq(x => x.categoria, resultadoJogos.LastOrDefault().nomeDaCategoria))).ToListAsync();
-
-                    var ultimoResultadoJogos = resultadoJogos.LastOrDefault();
-                    var ultimoResultadoReacts = resultadoReacts.LastOrDefault();
-
-                    bool resultadoDiferente = true;
-
-                    if (resultadoJogos.Count == 0 || (resultadoJogos.Count != 0 && guildReaction.GetRole(ultimoResultadoJogos.idDoCargo) == null))
-                        resultadoDiferente = false;
-
-                    DiscordGuild UBGE = await messageReactionAddEventArgs.Client.GetGuildAsync(Valores.Guilds.UBGE);
-
-                    if (!resultadoDiferente && emojiReacao != null)
+                    if (resultadoReacts.Count != 0)
                     {
-                        DiscordChannel ubgeBot_ = UBGE.GetChannel(Valores.ChatsUBGE.canalUBGEBot);
+                        IMongoCollection<Jogos> jogos = db.GetCollection<Jogos>(Valores.Mongo.jogos);
 
-                        await mensagemEmoji.DeleteReactionAsync(emojiReacao, Program.ubgeBot.discordClient.CurrentUser);
+                        DiscordEmoji emojiReacao = messageReactionAddEventArgs.Emoji;
 
-                        DiscordMessage mensagemEmbed = null;
+                        FilterDefinition<Jogos> filtroJogos = Builders<Jogos>.Filter.Eq(x => x.idDoEmoji, emojiReacao.Id);
+                        List<Jogos> resultadoJogos = await (await jogos.FindAsync(filtroJogos)).ToListAsync();
 
-                        if (await canalReaction.GetMessageAsync(resultadoReacts.LastOrDefault().idDaMensagem) == null)
+                        if (resultadoJogos.Count == 0)
                             return;
 
-                        mensagemEmbed = await canalReaction.GetMessageAsync(resultadoReacts.LastOrDefault().idDaMensagem);
+                        DiscordGuild guildReaction = messageReactionAddEventArgs.Guild;
+                        DiscordMessage mensagemEmoji = messageReactionAddEventArgs.Message;
+                        DiscordChannel canalReaction = messageReactionAddEventArgs.Channel;
 
-                        var embedMensagem = mensagemEmbed.Embeds.LastOrDefault();
+                        IReadOnlyList<DiscordUser> reacoesMembro = await mensagemEmoji.GetReactionsAsync(emojiReacao);
 
-                        if (embedMensagem.Description.Contains(emojiReacao.ToString()))
+                        Jogos ultimoResultadoJogos = resultadoJogos.LastOrDefault();
+                        Reacts ultimoResultadoReacts = resultadoReacts.LastOrDefault();
+
+                        bool resultadoDiferente = true;
+
+                        if (resultadoJogos.Count == 0 || (resultadoJogos.Count != 0 && guildReaction.GetRole(ultimoResultadoJogos.idDoCargo) == null))
+                            resultadoDiferente = false;
+
+                        DiscordGuild UBGE = await messageReactionAddEventArgs.Client.GetGuildAsync(Valores.Guilds.UBGE);
+
+                        if (!resultadoDiferente && emojiReacao != null)
                         {
-                            DiscordEmbedBuilder novoEmbed = new DiscordEmbedBuilder(embedMensagem);
-                            var descricaoEmbed = embedMensagem.Description;
+                            DiscordChannel ubgeBot_ = UBGE.GetChannel(Valores.ChatsUBGE.canalUBGEBot);
 
-                            var lista = descricaoEmbed.Split('\n').ToList();
+                            await mensagemEmoji.DeleteReactionAsync(emojiReacao, Program.ubgeBot.discordClient.CurrentUser);
 
-                            StringBuilder strEmbedFinal = new StringBuilder();
+                            DiscordMessage mensagemEmbed = await canalReaction.GetMessageAsync(resultadoReacts.LastOrDefault().idDaMensagem);
 
-                            for (int linha = 0; linha < lista.Count; linha++)
+                            DiscordEmbed embedMensagem = mensagemEmbed.Embeds.LastOrDefault();
+
+                            if (embedMensagem.Description.Contains(emojiReacao.ToString()))
                             {
-                                if (lista[linha].Contains(emojiReacao.ToString()))
-                                    lista.RemoveAt(linha);
+                                DiscordEmbedBuilder novoEmbed = new DiscordEmbedBuilder(embedMensagem);
+                                string descricaoEmbed = embedMensagem.Description;
 
-                                strEmbedFinal.Append($"{lista[linha]}\n");
+                                List<string> lista = descricaoEmbed.Split('\n').ToList();
+
+                                StringBuilder strEmbedFinal = new StringBuilder();
+
+                                for (int linha = 0; linha < lista.Count; linha++)
+                                {
+                                    if (lista[linha].Contains(emojiReacao.ToString()))
+                                        lista.RemoveAt(linha);
+
+                                    strEmbedFinal.Append($"{lista[linha]}\n");
+                                }
+
+                                novoEmbed.Description = strEmbedFinal.ToString();
+                                novoEmbed.WithAuthor(embedMensagem.Author.Name, null, Valores.logoUBGE);
+                                novoEmbed.WithColor(new DiscordColor(0x32363c));
+
+                                await mensagemEmbed.ModifyAsync(embed: novoEmbed.Build());
+
+                                await jogos.DeleteOneAsync(filtroJogos);
+                            }
+                            else if (!embedMensagem.Description.Contains(emojiReacao.ToString()) && emojiReacao != null)
+                            {
+                                await ExcluiEAtualizaReactionDoEmoji(Program.ubgeBot, mensagemEmoji, emojiReacao, reacoesMembro, ultimoResultadoReacts, canalReaction, guildReaction, ubgeBot_);
+
+                                return;
                             }
 
-                            novoEmbed.Description = strEmbedFinal.ToString();
-                            novoEmbed.WithAuthor(embedMensagem.Author.Name, null, Valores.logoUBGE);
-                            novoEmbed.WithColor(new DiscordColor(0x32363c));
-
-                            await mensagemEmbed.ModifyAsync(embed: novoEmbed.Build());
-
-                            await jogos.DeleteOneAsync(filtroJogos);
-                        }
-                        else if (!embedMensagem.Description.Contains(emojiReacao.ToString()) && emojiReacao != null)
-                        {
                             await ExcluiEAtualizaReactionDoEmoji(Program.ubgeBot, mensagemEmoji, emojiReacao, reacoesMembro, ultimoResultadoReacts, canalReaction, guildReaction, ubgeBot_);
 
                             return;
                         }
 
-                        await ExcluiEAtualizaReactionDoEmoji(Program.ubgeBot, mensagemEmoji, emojiReacao, reacoesMembro, ultimoResultadoReacts, canalReaction, guildReaction, ubgeBot_);
+                        DiscordMember membro = guildReaction == UBGE ? await UBGE.GetMemberAsync(messageReactionAddEventArgs.User.Id) : await guildReaction.GetMemberAsync(messageReactionAddEventArgs.User.Id);
 
-                        return;
-                    }
-
-                    DiscordRole acessoGeral = UBGE.GetRole(Valores.Cargos.cargoAcessoGeral);
-
-                    var membro = guildReaction == UBGE ? await UBGE.GetMemberAsync(messageReactionAddEventArgs.User.Id) : await guildReaction.GetMemberAsync(messageReactionAddEventArgs.User.Id);
-
-                    if (ultimoResultadoJogos.idDoCargo == acessoGeral.Id)
-                    {
-                        await membro.RevokeRoleAsync(acessoGeral);
-
-                        Program.ubgeBot.logExceptionsToDiscord.Aviso(LogExceptionsToDiscord.TipoAviso.Discord, $"O membro: \"{Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}\" removeu o cargo de \"{acessoGeral.Name}\".");
-
-                        await Program.ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.ReactRoleUBGE, "Cargo Removido!", $"{emojiReacao} | O membro: {Program.ubgeBot.utilidadesGerais.MencaoMembro(membro)} removeu o cargo de: {acessoGeral.Mention}.\n\nOu:\n- `@{Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}`\n- `@{acessoGeral.Name}`", Program.ubgeBot.discordClient.CurrentUser.AvatarUrl, membro);
-                        
-                        return;
-                    }
-
-                    DiscordRole cargo = guildReaction.GetRole(ultimoResultadoJogos.idDoCargo);
-
-                    var filtroDBContar = Builders<ContaMembrosQuePegaramCargos>.Filter.Eq(x => x.jogo, cargo.Name);
-                    var resultadosDBContar = await (await dbContar.FindAsync(filtroDBContar)).ToListAsync();
-
-                    if (resultadosDBContar.Count == 0)
-                        await dbContar.InsertOneAsync(new ContaMembrosQuePegaramCargos { jogo = cargo.Name, numeroDePessoas = 1, idsDosMembrosQuePegaramOCargo = new List<ulong> { membro.Id } });
-                    else
-                    {
-                        var primeiroResultado = resultadosDBContar.FirstOrDefault();
-
-                        if (!primeiroResultado.idsDosMembrosQuePegaramOCargo.Contains(membro.Id))
+                        if (ultimoResultadoJogos.idDoCargo == Valores.Cargos.cargoAcessoGeral)
                         {
-                            if (primeiroResultado.idsDosMembrosQuePegaramOCargo.Contains(1))
-                                primeiroResultado.idsDosMembrosQuePegaramOCargo.Remove(1);
+                            DiscordRole acessoGeral = UBGE.GetRole(Valores.Cargos.cargoAcessoGeral);
 
-                            await dbContar.UpdateOneAsync(filtroDBContar, Builders<ContaMembrosQuePegaramCargos>.Update
-                                .Set(x => x.numeroDePessoas, primeiroResultado.numeroDePessoas + 1)
-                                .Set(y => y.idsDosMembrosQuePegaramOCargo, primeiroResultado.idsDosMembrosQuePegaramOCargo.Append(membro.Id)));
+                            await membro.RevokeRoleAsync(acessoGeral);
+
+                            Program.ubgeBot.logExceptionsToDiscord.Aviso(LogExceptionsToDiscord.TipoAviso.Discord, $"O membro: \"{Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}\" removeu o cargo de \"{acessoGeral.Name}\".");
+
+                            await Program.ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.ReactRoleUBGE, "Cargo Removido!", $"{emojiReacao} | O membro: {Program.ubgeBot.utilidadesGerais.MencaoMembro(membro)} removeu o cargo de: {acessoGeral.Mention}.\n\nOu:\n- `@{Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}`\n- `@{acessoGeral.Name}`", Program.ubgeBot.discordClient.CurrentUser.AvatarUrl, membro);
+
+                            return;
                         }
+
+                        DiscordRole cargo = guildReaction.GetRole(ultimoResultadoJogos.idDoCargo);
+
+                        await membro.GrantRoleAsync(cargo);
+
+                        Program.ubgeBot.logExceptionsToDiscord.Aviso(LogExceptionsToDiscord.TipoAviso.Discord, $"O membro: \"{Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}\" pegou o cargo de: \"{cargo.Name}\".");
+
+                        if (guildReaction.Id == Valores.Guilds.UBGE)
+                            await Program.ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.ReactRoleUBGE, "Cargo Adicionado!", $"{emojiReacao} | O membro: {Program.ubgeBot.utilidadesGerais.MencaoMembro(membro)} pegou o cargo de: {cargo.Mention}.\n\nOu:\n- `@{Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}`\n- `@{cargo.Name}`", Program.ubgeBot.discordClient.CurrentUser.AvatarUrl, membro);
+                        else
+                            await Program.ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.ReactRoleForaDaUBGE, "Cargo Adicionado!", $"{emojiReacao} | O membro: **{Program.ubgeBot.utilidadesGerais.MencaoMembro(membro)}** pegou o cargo de: **{cargo.Name}**.", guildReaction.IconUrl, membro);
                     }
-
-                    await membro.GrantRoleAsync(cargo);
-
-                    Program.ubgeBot.logExceptionsToDiscord.Aviso(LogExceptionsToDiscord.TipoAviso.Discord, $"O membro: \"{Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}\" pegou o cargo de: \"{cargo.Name}\".");
-
-                    if (guildReaction.Id == Valores.Guilds.UBGE)
-                        await Program.ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.ReactRoleUBGE, "Cargo Adicionado!", $"{emojiReacao} | O membro: {Program.ubgeBot.utilidadesGerais.MencaoMembro(membro)} pegou o cargo de: {cargo.Mention}.\n\nOu:\n- `@{Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}`\n- `@{cargo.Name}`", Program.ubgeBot.discordClient.CurrentUser.AvatarUrl, membro);
-                    else
-                        await Program.ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.ReactRoleForaDaUBGE, "Cargo Adicionado!", $"{emojiReacao} | O membro: **{Program.ubgeBot.utilidadesGerais.MencaoMembro(membro)}** pegou o cargo de: **{cargo.Name}**.", guildReaction.IconUrl, membro);
                 }
                 catch (Exception exception)
                 {
@@ -187,136 +163,112 @@ namespace UBGE_Bot.Sistemas.Discord
             {
                 try
                 {
-                    var db = Program.ubgeBot.localDB;
+                    IMongoDatabase db = Program.ubgeBot.localDB;
 
-                    var dbContar = db.GetCollection<ContaMembrosQuePegaramCargos>(Valores.Mongo.contaMembrosQuePegaramCargos);
+                    IMongoCollection<Reacts> reacts = db.GetCollection<Reacts>(Valores.Mongo.reacts);
+                    List<Reacts> resultadoReacts = await (await reacts.FindAsync(Builders<Reacts>.Filter.Eq(x => x.idDoCanal, messageReactionRemoveEventArgs.Channel.Id))).ToListAsync();
 
-                    var jogos = db.GetCollection<Jogos>(Valores.Mongo.jogos);
-                    var reacts = db.GetCollection<Reacts>(Valores.Mongo.reacts);
-
-                    var emojiReacao = messageReactionRemoveEventArgs.Emoji;
-
-                    var filtroJogos = Builders<Jogos>.Filter.Eq(x => x.idDoEmoji, emojiReacao.Id);
-                    var resultadoJogos = await (await jogos.FindAsync(filtroJogos)).ToListAsync();
-
-                    if (resultadoJogos.Count == 0)
-                        return;
-
-                    DiscordGuild guildReaction = messageReactionRemoveEventArgs.Guild;
-                    var mensagemEmoji = messageReactionRemoveEventArgs.Message;
-                    var canalReaction = messageReactionRemoveEventArgs.Channel;
-
-                    var reacoesMembro = await mensagemEmoji.GetReactionsAsync(emojiReacao);
-
-                    var resultadoReacts = await (await reacts.FindAsync(Builders<Reacts>.Filter.Eq(x => x.categoria, resultadoJogos.LastOrDefault().nomeDaCategoria))).ToListAsync();
-
-                    var ultimoResultadoJogos = resultadoJogos.LastOrDefault();
-                    var ultimoResultadoReacts = resultadoReacts.LastOrDefault();
-
-                    bool resultadoDiferente = true;
-
-                    if (resultadoJogos.Count == 0 || (resultadoJogos.Count != 0 && guildReaction.GetRole(ultimoResultadoJogos.idDoCargo) == null))
-                        resultadoDiferente = false;
-
-                    DiscordGuild UBGE = await messageReactionRemoveEventArgs.Client.GetGuildAsync(Valores.Guilds.UBGE);
-
-                    if (!resultadoDiferente && emojiReacao != null)
+                    if (resultadoReacts.Count != 0)
                     {
-                        DiscordChannel ubgeBot_ = UBGE.GetChannel(Valores.ChatsUBGE.canalUBGEBot);
+                        IMongoCollection<Jogos> jogos = db.GetCollection<Jogos>(Valores.Mongo.jogos);
 
-                        await mensagemEmoji.DeleteReactionAsync(emojiReacao, Program.ubgeBot.discordClient.CurrentUser);
+                        DiscordEmoji emojiReacao = messageReactionRemoveEventArgs.Emoji;
 
-                        DiscordMessage mensagemEmbed = null;
+                        FilterDefinition<Jogos> filtroJogos = Builders<Jogos>.Filter.Eq(x => x.idDoEmoji, emojiReacao.Id);
+                        List<Jogos> resultadoJogos = await (await jogos.FindAsync(filtroJogos)).ToListAsync();
 
-                        if (await canalReaction.GetMessageAsync(resultadoReacts.LastOrDefault().idDaMensagem) == null)
+                        if (resultadoJogos.Count == 0)
                             return;
 
-                        mensagemEmbed = await canalReaction.GetMessageAsync(resultadoReacts.LastOrDefault().idDaMensagem); 
-                        
-                        var embedMensagem = mensagemEmbed.Embeds.LastOrDefault();
+                        DiscordGuild guildReaction = messageReactionRemoveEventArgs.Guild;
+                        DiscordMessage mensagemEmoji = messageReactionRemoveEventArgs.Message;
+                        DiscordChannel canalReaction = messageReactionRemoveEventArgs.Channel;
 
-                        if (embedMensagem.Description.Contains(emojiReacao.ToString()))
+                        IReadOnlyList<DiscordUser> reacoesMembro = await mensagemEmoji.GetReactionsAsync(emojiReacao);
+
+                        Jogos ultimoResultadoJogos = resultadoJogos.LastOrDefault();
+                        Reacts ultimoResultadoReacts = resultadoReacts.LastOrDefault();
+
+                        bool resultadoDiferente = true;
+
+                        if (resultadoJogos.Count == 0 || (resultadoJogos.Count != 0 && guildReaction.GetRole(ultimoResultadoJogos.idDoCargo) == null))
+                            resultadoDiferente = false;
+
+                        DiscordGuild UBGE = await messageReactionRemoveEventArgs.Client.GetGuildAsync(Valores.Guilds.UBGE);
+
+                        if (!resultadoDiferente && emojiReacao != null)
                         {
-                            DiscordEmbedBuilder novoEmbed = new DiscordEmbedBuilder(embedMensagem);
-                            var descricaoEmbed = embedMensagem.Description;
+                            DiscordChannel ubgeBot_ = UBGE.GetChannel(Valores.ChatsUBGE.canalUBGEBot);
 
-                            var lista = descricaoEmbed.Split('\n').ToList();
+                            await mensagemEmoji.DeleteReactionAsync(emojiReacao, Program.ubgeBot.discordClient.CurrentUser);
 
-                            StringBuilder strEmbedFinal = new StringBuilder();
+                            DiscordMessage mensagemEmbed = await canalReaction.GetMessageAsync(resultadoReacts.LastOrDefault().idDaMensagem);
 
-                            for (int linha = 0; linha < lista.Count; linha++)
+                            DiscordEmbed embedMensagem = mensagemEmbed.Embeds.LastOrDefault();
+
+                            if (embedMensagem.Description.Contains(emojiReacao.ToString()))
                             {
-                                if (lista[linha].Contains(emojiReacao.ToString()))
-                                    lista.RemoveAt(linha);
+                                DiscordEmbedBuilder novoEmbed = new DiscordEmbedBuilder(embedMensagem);
+                                string descricaoEmbed = embedMensagem.Description;
 
-                                strEmbedFinal.Append($"{lista[linha]}\n");
+                                List<string> lista = descricaoEmbed.Split('\n').ToList();
+
+                                StringBuilder strEmbedFinal = new StringBuilder();
+
+                                for (int linha = 0; linha < lista.Count; linha++)
+                                {
+                                    if (lista[linha].Contains(emojiReacao.ToString()))
+                                        lista.RemoveAt(linha);
+
+                                    strEmbedFinal.Append($"{lista[linha]}\n");
+                                }
+
+                                novoEmbed.Description = strEmbedFinal.ToString();
+                                novoEmbed.WithAuthor(embedMensagem.Author.Name, null, Valores.logoUBGE);
+                                novoEmbed.WithColor(new DiscordColor(0x32363c));
+
+                                await mensagemEmbed.ModifyAsync(embed: novoEmbed.Build());
+
+                                await jogos.DeleteOneAsync(filtroJogos);
+                            }
+                            else if (!embedMensagem.Description.Contains(emojiReacao.ToString()) && emojiReacao != null)
+                            {
+                                await ExcluiEAtualizaReactionDoEmoji(Program.ubgeBot, mensagemEmoji, emojiReacao, reacoesMembro, ultimoResultadoReacts, canalReaction, guildReaction, ubgeBot_);
+
+                                return;
                             }
 
-                            novoEmbed.Description = strEmbedFinal.ToString();
-                            novoEmbed.WithAuthor(embedMensagem.Author.Name, null, Valores.logoUBGE);
-                            novoEmbed.WithColor(new DiscordColor(0x32363c));
-
-                            await mensagemEmbed.ModifyAsync(embed: novoEmbed.Build());
-
-                            await jogos.DeleteOneAsync(filtroJogos);
-                        }
-                        else if (!embedMensagem.Description.Contains(emojiReacao.ToString()) && emojiReacao != null)
-                        {
                             await ExcluiEAtualizaReactionDoEmoji(Program.ubgeBot, mensagemEmoji, emojiReacao, reacoesMembro, ultimoResultadoReacts, canalReaction, guildReaction, ubgeBot_);
 
                             return;
                         }
 
-                        await ExcluiEAtualizaReactionDoEmoji(Program.ubgeBot, mensagemEmoji, emojiReacao, reacoesMembro, ultimoResultadoReacts, canalReaction, guildReaction, ubgeBot_);
+                        DiscordMember membro = guildReaction == UBGE ? await UBGE.GetMemberAsync(messageReactionRemoveEventArgs.User.Id) : await guildReaction.GetMemberAsync(messageReactionRemoveEventArgs.User.Id);
 
-                        return;
-                    }
-
-                    DiscordRole acessoGeral = UBGE.GetRole(Valores.Cargos.cargoAcessoGeral);
-
-                    var membro = guildReaction == UBGE ? await UBGE.GetMemberAsync(messageReactionRemoveEventArgs.User.Id) : await guildReaction.GetMemberAsync(messageReactionRemoveEventArgs.User.Id);
-
-                    if (ultimoResultadoJogos.idDoCargo == acessoGeral.Id)
-                    {
-                        await membro.GrantRoleAsync(acessoGeral);
-
-                        Program.ubgeBot.logExceptionsToDiscord.Aviso(LogExceptionsToDiscord.TipoAviso.Discord, $"O membro: \"{Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}\" pegou o cargo de \"{acessoGeral.Name}\".");
-
-                        await Program.ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.ReactRoleUBGE, "Cargo Adicionado!", $"{emojiReacao} | O membro: {Program.ubgeBot.utilidadesGerais.MencaoMembro(membro)} pegou o cargo de: {acessoGeral.Mention}.\n\nOu:\n- `@{Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}`\n- `@{acessoGeral.Name}`", Program.ubgeBot.discordClient.CurrentUser.AvatarUrl, membro);
-
-                        return;
-                    }
-
-                    DiscordRole cargo = guildReaction.GetRole(ultimoResultadoJogos.idDoCargo);
-
-                    var filtroDBContar = Builders<ContaMembrosQuePegaramCargos>.Filter.Eq(x => x.jogo, cargo.Name);
-                    var resultadosDBContar = await (await dbContar.FindAsync(filtroDBContar)).ToListAsync();
-
-                    if (resultadosDBContar.Count == 0)
-                        await dbContar.InsertOneAsync(new ContaMembrosQuePegaramCargos { jogo = cargo.Name, numeroDePessoas = 1, idsDosMembrosQuePegaramOCargo = new List<ulong> { membro.Id } });
-                    else
-                    {
-                        var primeiroResultado = resultadosDBContar.FirstOrDefault();
-
-                        if (!primeiroResultado.idsDosMembrosQuePegaramOCargo.Contains(membro.Id))
+                        if (ultimoResultadoJogos.idDoCargo == Valores.Cargos.cargoAcessoGeral)
                         {
-                            if (primeiroResultado.idsDosMembrosQuePegaramOCargo.Contains(1))
-                                primeiroResultado.idsDosMembrosQuePegaramOCargo.Remove(1);
+                            DiscordRole acessoGeral = UBGE.GetRole(Valores.Cargos.cargoAcessoGeral);
 
-                            await dbContar.UpdateOneAsync(filtroDBContar, Builders<ContaMembrosQuePegaramCargos>.Update
-                                .Set(x => x.numeroDePessoas, primeiroResultado.numeroDePessoas + 1)
-                                .Set(y => y.idsDosMembrosQuePegaramOCargo, primeiroResultado.idsDosMembrosQuePegaramOCargo.Append(membro.Id)));
+                            await membro.GrantRoleAsync(acessoGeral);
+
+                            Program.ubgeBot.logExceptionsToDiscord.Aviso(LogExceptionsToDiscord.TipoAviso.Discord, $"O membro: \"{Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}\" pegou o cargo de \"{acessoGeral.Name}\".");
+
+                            await Program.ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.ReactRoleUBGE, "Cargo Adicionado!", $"{emojiReacao} | O membro: {Program.ubgeBot.utilidadesGerais.MencaoMembro(membro)} pegou o cargo de: {acessoGeral.Mention}.\n\nOu:\n- `@{Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}`\n- `@{acessoGeral.Name}`", Program.ubgeBot.discordClient.CurrentUser.AvatarUrl, membro);
+
+                            return;
                         }
+
+                        DiscordRole cargo = guildReaction.GetRole(ultimoResultadoJogos.idDoCargo);
+
+                        await membro.RevokeRoleAsync(cargo);
+
+                        Program.ubgeBot.logExceptionsToDiscord.Aviso(LogExceptionsToDiscord.TipoAviso.Discord, $"O membro: \"{Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}\" removeu o cargo de: \"{cargo.Name}\".");
+
+                        if (guildReaction.Id == Valores.Guilds.UBGE)
+                            await Program.ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.ReactRoleUBGE, "Cargo removido!", $"{emojiReacao} | O membro: {Program.ubgeBot.utilidadesGerais.MencaoMembro(membro)} removeu o cargo de: {cargo.Mention}.\n\nOu:\n- `@{Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}`\n- `@{cargo.Name}`", Program.ubgeBot.discordClient.CurrentUser.AvatarUrl, membro);
+                        else
+                            await Program.ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.ReactRoleForaDaUBGE, "Cargo removido!", $"{emojiReacao} | O membro: **{Program.ubgeBot.utilidadesGerais.MencaoMembro(membro)}** removeu o cargo de: **{cargo.Name}**.", guildReaction.IconUrl, membro);
                     }
-
-                    await membro.RevokeRoleAsync(cargo);
-
-                    Program.ubgeBot.logExceptionsToDiscord.Aviso(LogExceptionsToDiscord.TipoAviso.Discord, $"O membro: \"{Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}\" removeu o cargo de: \"{cargo.Name}\".");
-
-                    if (guildReaction.Id == Valores.Guilds.UBGE)
-                        await Program.ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.ReactRoleUBGE, "Cargo removido!", $"{emojiReacao} | O membro: {Program.ubgeBot.utilidadesGerais.MencaoMembro(membro)} removeu o cargo de: {cargo.Mention}.\n\nOu:\n- `@{Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(membro)}#{membro.Discriminator}`\n- `@{cargo.Name}`", Program.ubgeBot.discordClient.CurrentUser.AvatarUrl, membro);
-                    else
-                        await Program.ubgeBot.logExceptionsToDiscord.EmbedLogMessages(LogExceptionsToDiscord.TipoEmbed.ReactRoleForaDaUBGE, "Cargo removido!", $"{emojiReacao} | O membro: **{Program.ubgeBot.utilidadesGerais.MencaoMembro(membro)}** removeu o cargo de: **{cargo.Name}**.", guildReaction.IconUrl, membro);
                 }
                 catch (Exception exception)
                 {
@@ -331,8 +283,8 @@ namespace UBGE_Bot.Sistemas.Discord
             {
                 await ubgeBotClient.utilidadesGerais.ExcluiReacoesDeUmaListaDeMembros(mensagemEmoji, emojiReacao, reacoesMembro);
 
-                var atualizaMensagem = await canalReaction.GetMessageAsync(resultadoReacts.idDaMensagem);
-                var mensagemEmojiAtualizado = await atualizaMensagem.GetReactionsAsync(emojiReacao);
+                DiscordMessage atualizaMensagem = await canalReaction.GetMessageAsync(resultadoReacts.idDaMensagem);
+                IReadOnlyList<DiscordUser> mensagemEmojiAtualizado = await atualizaMensagem.GetReactionsAsync(emojiReacao);
 
                 if (mensagemEmojiAtualizado.Count() != 0)
                     await ubgeBot.SendMessageAsync($":warning:, existem **{mensagemEmojiAtualizado.Count()}** reações sobrando no emoji: {emojiReacao.ToString()} no canal: {canalReaction.Mention}, elas não foram removidas pois os membros saíram da(o): **{guildReaction.Name}**");

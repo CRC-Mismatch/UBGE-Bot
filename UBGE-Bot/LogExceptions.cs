@@ -1,7 +1,6 @@
 ﻿using DSharpPlus.Entities;
 using System;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UBGE_Bot.Utilidades;
@@ -11,10 +10,12 @@ namespace UBGE_Bot.LogExceptions
 {
     public sealed class LogExceptionsToDiscord
     {
-        public enum TipoAviso { Comandos, Discord, Servidores, Sistemas, Lavalink, Mongo }
-        public enum TipoLog { Comandos, Discord, Servidores, Sistemas, Lavalink, Mongo }
-        public enum TipoErro { Comandos, Discord, Servidores, Sistemas, Lavalink, Mongo }
+        public enum TipoAviso { Comandos, Discord, Servidores, Sistemas, Lavalink, Mongo, MySQL }
+        public enum TipoLog { Comandos, Discord, Servidores, Sistemas, Lavalink, Mongo, MySQL }
+        public enum TipoErro { Comandos, Discord, Servidores, Sistemas, Lavalink, Mongo, MySQL }
         public enum TipoEmbed { ReactRoleUBGE, Aviso, SAC, ReactRoleForaDaUBGE }
+
+        private readonly string prefixoBotConsole = "[UBGE-Bot]";
 
         public void ExceptionToTxt(Exception exception)
         {
@@ -22,35 +23,27 @@ namespace UBGE_Bot.LogExceptions
                 streamWriter.WriteLine(exception.ToString());
         }
 
-        public void Aviso(TipoAviso tipo, string mensagem)
+        public void Aviso(TipoAviso tipo, string mensagem, string prefixoConfig = null)
         {
             Console.BackgroundColor = ConsoleColor.DarkBlue;
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine($"{RetornaDataAtualParecidoComODSharpPlus()} {Valores.prefixoBot} [Aviso] [{tipo}] {mensagem}");
+            Console.WriteLine($"{RetornaDataAtualParecidoComODSharpPlus()} {prefixoBotConsole}{(string.IsNullOrWhiteSpace(prefixoConfig) ? string.Empty : $" [{prefixoConfig}]")} [Aviso] [{tipo}] {mensagem}");
             Console.ResetColor();
         }
 
-        public void Log(TipoLog tipo, string mensagem)
+        public void Log(TipoLog tipo, string mensagem, string prefixoConfig = null)
         {
             Console.BackgroundColor = ConsoleColor.White;
             Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine($"{RetornaDataAtualParecidoComODSharpPlus()} {Valores.prefixoBot} [Log] [{tipo}] {mensagem}");
+            Console.WriteLine($"{RetornaDataAtualParecidoComODSharpPlus()} {prefixoBotConsole}{(string.IsNullOrWhiteSpace(prefixoConfig) ? string.Empty : $" [{prefixoConfig}]")} [Log] [{tipo}] {mensagem}");
             Console.ResetColor();
         }
 
-        public void Error(TipoErro tipo, string mensagem)
+        public void Error(TipoErro tipo, string mensagem, string prefixoConfig = null)
         {
             Console.BackgroundColor = ConsoleColor.White;
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"{RetornaDataAtualParecidoComODSharpPlus()} {Valores.prefixoBot} [Erro] [{tipo}] {mensagem}");
-            Console.ResetColor();
-        }
-
-        private void Error_(TipoErro tipo, Exception exception)
-        {
-            Console.BackgroundColor = ConsoleColor.White;
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"{RetornaDataAtualParecidoComODSharpPlus()} {Valores.prefixoBot} [Erro] [{tipo}] Exceção: {exception}");
+            Console.WriteLine($"{RetornaDataAtualParecidoComODSharpPlus()} {prefixoBotConsole}{(string.IsNullOrWhiteSpace(prefixoConfig) ? string.Empty : $" [{prefixoConfig}]")} [Erro] [{tipo}] {mensagem}");
             Console.ResetColor();
         }
 
@@ -60,16 +53,19 @@ namespace UBGE_Bot.LogExceptions
             {
                 if (exception.StackTrace.Length > 2000 || exception.Message.Length > 250)
                 {
-                    Error_(tipo, exception);
+                    Console.BackgroundColor = ConsoleColor.White;
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"{RetornaDataAtualParecidoComODSharpPlus()} {prefixoBotConsole} [Erro] [{tipo}] Exceção: {exception}");
+                    Console.ResetColor();
 
                     return;
                 }
 
                 DiscordGuild guildUBGE = await Program.ubgeBot.discordClient.GetGuildAsync(Valores.Guilds.UBGE);
                 DiscordChannel logUBGEBot = guildUBGE.GetChannel(Valores.ChatsUBGE.canalLog);
-                DiscordMember Luiz = await guildUBGE.GetMemberAsync(Valores.Guilds.Membros.luiz);
+                DiscordMember luiz = await guildUBGE.GetMemberAsync(Valores.Guilds.Membros.luiz);
 
-                DiscordEmbedBuilder Embed = new DiscordEmbedBuilder
+                DiscordEmbedBuilder embed = new DiscordEmbedBuilder
                 {
                     Author = new DiscordEmbedBuilder.EmbedAuthor { Name = exception.Message, IconUrl = Valores.logoUBGE },
                     Color = DiscordColor.Red,
@@ -77,9 +73,12 @@ namespace UBGE_Bot.LogExceptions
                     Timestamp = DateTime.Now,
                 };
 
-                Error_(tipo, exception);
-                
-                await logUBGEBot.SendMessageAsync(embed: Embed.Build(), content: Luiz.Mention);
+                Console.BackgroundColor = ConsoleColor.White;
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"{RetornaDataAtualParecidoComODSharpPlus()} {prefixoBotConsole} [Erro] [{tipo}] Exceção: {exception}");
+                Console.ResetColor();
+
+                await logUBGEBot.SendMessageAsync(embed: embed.Build(), content: luiz.Mention);
             }
             catch (Exception) { }
         }

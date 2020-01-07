@@ -1,5 +1,4 @@
-﻿using DSharpPlus.Entities;
-using Google.Apis.Auth.OAuth2;
+﻿using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
 using Google.Apis.Sheets.v4.Data;
@@ -12,28 +11,25 @@ using System.Threading.Tasks;
 
 namespace UBGE_Bot.APIs
 {
-    public sealed class Google_Sheets
+    public sealed class GoogleSheets
     {
-        static string[] Scopes = { SheetsService.Scope.Spreadsheets };
-        static string ApplicationName = "UBGE-Bot";
+        static readonly string[] Scopes = { SheetsService.Scope.Spreadsheets };
+        static readonly string ApplicationName = "UBGE-Bot";
 
-        static UserCredential credential;
+        static UserCredential credential = null;
 
         public class Read
         {
             public async Task<IList<IList<object>>> LerAPlanilha(string spreadsheetID, string range)
             {
-                using (var stream = new FileStream(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\JsonUBGE_Bot\client_secret.json", FileMode.Open, FileAccess.Read))
+                using (FileStream stream = new FileStream(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\JsonUBGE_Bot\client_secret.json", FileMode.Open, FileAccess.Read))
                 {
-                    string credPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
-                    credPath = Path.Combine(credPath, ".credentials/sheets.googleapis.com-dotnet-quickstart.json");
-
                     credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
                         GoogleClientSecrets.Load(stream).Secrets,
                         Scopes,
                         "user",
                         CancellationToken.None,
-                        new FileDataStore(credPath, true));
+                        new FileDataStore(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), ".credentials/sheets.googleapis.com-dotnet-quickstart.json"), true));
                 }
 
                 SheetsService service = new SheetsService(new BaseClientService.Initializer()
@@ -43,7 +39,7 @@ namespace UBGE_Bot.APIs
                 });
 
                 SpreadsheetsResource.ValuesResource.GetRequest request = service.Spreadsheets.Values.Get(spreadsheetID, range);
-                var values = (await request.ExecuteAsync()).Values;
+                IList<IList<object>> values = (await request.ExecuteAsync()).Values;
 
                 if (values != null && values.Count > 0)
                     return values;
@@ -56,17 +52,14 @@ namespace UBGE_Bot.APIs
         {
             public async Task EscrevePlanilhaDoCenso(string spreadsheet, string range, double timestamp, string nomeDiscord, int idade, string estado, string email, string idiomas, string comoChegouAUBGE, string jogosMaisJogados)
             {
-                using (var stream = new FileStream(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\JsonUBGE_Bot\client_secret.json", FileMode.Open, FileAccess.Read))
+                using (FileStream stream = new FileStream(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\JsonUBGE_Bot\client_secret.json", FileMode.Open, FileAccess.Read))
                 {
-                    string credPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
-                    credPath = Path.Combine(credPath, ".credentials/sheets.googleapis.com-dotnet-quickstart.json");
-
                     credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
                         GoogleClientSecrets.Load(stream).Secrets,
                         Scopes,
                         "user",
                         CancellationToken.None,
-                        new FileDataStore(credPath, true));
+                        new FileDataStore(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), ".credentials/sheets.googleapis.com-dotnet-quickstart.json"), true));
                 }
 
                 SheetsService service = new SheetsService(new BaseClientService.Initializer()
@@ -74,9 +67,6 @@ namespace UBGE_Bot.APIs
                     HttpClientInitializer = credential,
                     ApplicationName = ApplicationName,
                 });
-
-                SpreadsheetsResource.ValuesResource.GetRequest request = service.Spreadsheets.Values.Get(spreadsheet, range);
-                var values = (await request.ExecuteAsync()).Values;
 
                 IList<object> obj = new List<object>();
                 obj.Add(timestamp);

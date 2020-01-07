@@ -6,6 +6,7 @@ using DSharpPlus.Interactivity;
 using DSharpPlus.Exceptions;
 using MongoDB.Driver;
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,7 +18,7 @@ using UBGE_Bot.Utilidades;
 
 namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
 {
-    [Group("reactrole"), Aliases("rr"), UBGE_Staff]
+    [Group("reactrole"), Aliases("rr"), UBGE_Staff, BotConectadoAoMongo]
 
     public sealed class StaffControlled : BaseCommandModule
     {
@@ -44,7 +45,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
                         await ctx.RespondAsync(embed: embed.Build());
                         return;
                     }
-                    
+
                     if (string.IsNullOrWhiteSpace(emojiServidor.Url))
                     {
                         embed.WithAuthor("Emoji inválido!", null, Valores.infoLogo)
@@ -57,25 +58,25 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
                         return;
                     }
 
-                    var local = Program.ubgeBot.localDB;
+                    IMongoDatabase local = Program.ubgeBot.localDB;
 
-                    var jogos = local.GetCollection<Jogos>(Valores.Mongo.jogos);
-                    var reacts = local.GetCollection<Reacts>(Valores.Mongo.reacts);
+                    IMongoCollection<Jogos> jogos = local.GetCollection<Jogos>(Valores.Mongo.jogos);
+                    IMongoCollection<Reacts> reacts = local.GetCollection<Reacts>(Valores.Mongo.reacts);
 
-                    var respostaJogos = await (await jogos.FindAsync(Builders<Jogos>.Filter.Eq(x => x.idDoEmoji, emojiServidor.Id))).ToListAsync();
-                    var respostaReacts = await (await reacts.FindAsync(Builders<Reacts>.Filter.Eq(x => x.categoria, categoriaReact))).ToListAsync();
+                    List<Jogos> respostaJogos = await (await jogos.FindAsync(Builders<Jogos>.Filter.Eq(x => x.idDoEmoji, emojiServidor.Id))).ToListAsync();
+                    List<Reacts> respostaReacts = await (await reacts.FindAsync(Builders<Reacts>.Filter.Eq(x => x.categoria, categoriaReact))).ToListAsync();
 
                     if (respostaReacts.Count != 0 && respostaJogos.Count == 0)
                     {
                         DiscordMessage mensagem = await canalReactRole.GetMessageAsync(respostaReacts.LastOrDefault().idDaMensagem);
-                        var embedMensagemReactRole = mensagem.Embeds.LastOrDefault();
+                        DiscordEmbed embedMensagemReactRole = mensagem.Embeds.LastOrDefault();
 
                         DiscordEmbedBuilder builder = new DiscordEmbedBuilder(embedMensagemReactRole);
 
                         if (!embedMensagemReactRole.Description.Contains($"{emojiServidor.ToString()} - {cargoServidor.Name}"))
                         {
-                            var descricaoEmbed = embedMensagemReactRole.Description;
-                            var novaDescricaoEmbed = descricaoEmbed += $"\n{emojiServidor.ToString()} - {cargoServidor.Name}";
+                            string descricaoEmbed = embedMensagemReactRole.Description;
+                            string novaDescricaoEmbed = descricaoEmbed += $"\n{emojiServidor.ToString()} - {cargoServidor.Name}";
 
                             builder.WithDescription(novaDescricaoEmbed);
                             builder.WithAuthor(builder.Author.Name, null, Valores.logoUBGE);
@@ -120,7 +121,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
 
         [Command("cargo.del"), Description("[<Emoji> (:leothinks:) ou em caso de emojis de outro servidor, usa-se (leothinks), sem o :]`\nRemove um jogo.\n\n")]
 
-        public async Task RemoveCargoReactRoleAsync(CommandContext ctx, DiscordChannel canalReactRole = null,  DiscordEmoji emoji = null)
+        public async Task RemoveCargoReactRoleAsync(CommandContext ctx, DiscordChannel canalReactRole = null, DiscordEmoji emoji = null)
         {
             await ctx.TriggerTypingAsync();
 
@@ -154,44 +155,44 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
                         return;
                     }
 
-                    var local = Program.ubgeBot.localDB;
+                    IMongoDatabase local = Program.ubgeBot.localDB;
 
-                    var jogos = local.GetCollection<Jogos>(Valores.Mongo.jogos);
-                    var reacts = local.GetCollection<Reacts>(Valores.Mongo.reacts);
+                    IMongoCollection<Jogos> jogos = local.GetCollection<Jogos>(Valores.Mongo.jogos);
+                    IMongoCollection<Reacts> reacts = local.GetCollection<Reacts>(Valores.Mongo.reacts);
 
-                    var filtroJogos = Builders<Jogos>.Filter.Eq(x => x.idDoEmoji, emoji.Id);
-                    var resultadoJogos = await (await jogos.FindAsync(filtroJogos)).ToListAsync();
+                    FilterDefinition<Jogos> filtroJogos = Builders<Jogos>.Filter.Eq(x => x.idDoEmoji, emoji.Id);
+                    List<Jogos> resultadoJogos = await (await jogos.FindAsync(filtroJogos)).ToListAsync();
 
-                    var ultimoResultadoJogo = resultadoJogos.LastOrDefault();
+                    Jogos ultimoResultadoJogo = resultadoJogos.LastOrDefault();
 
-                    var resultadoReacts = await (await reacts.FindAsync(Builders<Reacts>.Filter.Eq(x => x.categoria, ultimoResultadoJogo.nomeDaCategoria))).ToListAsync();
+                    List<Reacts> resultadoReacts = await (await reacts.FindAsync(Builders<Reacts>.Filter.Eq(x => x.categoria, ultimoResultadoJogo.nomeDaCategoria))).ToListAsync();
 
-                    var ultimoResultadoReact = resultadoReacts.LastOrDefault();
+                    Reacts ultimoResultadoReact = resultadoReacts.LastOrDefault();
 
                     if (resultadoJogos.Count != 0 && resultadoReacts.Count != 0)
                     {
-                        var mensagem = await canalReactRole.GetMessageAsync(ultimoResultadoReact.idDaMensagem);
-                        var embedMensagemReactRole = mensagem.Embeds.LastOrDefault();
+                        DiscordMessage mensagem = await canalReactRole.GetMessageAsync(ultimoResultadoReact.idDaMensagem);
+                        DiscordEmbed embedMensagemReactRole = mensagem.Embeds.LastOrDefault();
 
                         DiscordEmbedBuilder builder = new DiscordEmbedBuilder(embedMensagemReactRole);
 
                         DiscordRole cargoJogoEmbed = ctx.Guild.GetRole(ultimoResultadoJogo.idDoCargo);
 
-                        var MembrosReacoes = await mensagem.GetReactionsAsync(emoji);
+                        IReadOnlyList<DiscordUser> MembrosReacoes = await mensagem.GetReactionsAsync(emoji);
 
                         string linhaMensagemEmbed = $"{emoji.ToString()} - {cargoJogoEmbed.Name}";
 
                         if (embedMensagemReactRole.Description.Contains(linhaMensagemEmbed))
                         {
-                            var descricaoEmbed = embedMensagemReactRole.Description;
+                            string descricaoEmbed = embedMensagemReactRole.Description;
 
-                            var lista = descricaoEmbed.Split('\n').ToList();
+                            List<string> lista = descricaoEmbed.Split('\n').ToList();
                             lista.RemoveAt(lista.FindIndex(linha => linha.Contains(linhaMensagemEmbed)));
-                            
+
                             StringBuilder strEmbedFinal = new StringBuilder();
 
-                            foreach (var linha in lista)                           
-                                strEmbedFinal.Append($"{linha}\n");                      
+                            foreach (string linha in lista)
+                                strEmbedFinal.Append($"{linha}\n");
 
                             builder.WithDescription(strEmbedFinal.ToString());
                             builder.WithAuthor(embedMensagemReactRole.Author.Name, null, Valores.logoUBGE);
@@ -206,7 +207,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
 
                         int i = 0;
 
-                        foreach (var Membro in MembrosReacoes)
+                        foreach (DiscordUser Membro in MembrosReacoes)
                         {
                             try
                             {
@@ -260,12 +261,10 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
             {
                 try
                 {
-                    var emoji = await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(ctx, emojiServidor);
+                    CommandsNextExtension commandsNext = ctx.Client.GetCommandsNext();
 
-                    var commandsNext = ctx.Client.GetCommandsNext();
-
-                    var ProcuraComando = commandsNext.FindCommand($"reactrole cargo.add {canalReactRole.Id} {emoji} {cargoServidor.Mention} {categoriaReact}", out var Args);
-                    var Comando = commandsNext.CreateFakeContext(ctx.Member, ctx.Channel, "", "//", ProcuraComando, Args);
+                    Command ProcuraComando = commandsNext.FindCommand($"reactrole cargo.add {canalReactRole.Id} {await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(ctx, emojiServidor)} {cargoServidor.Mention} {categoriaReact}", out string Args);
+                    CommandContext Comando = commandsNext.CreateFakeContext(ctx.Member, ctx.Channel, "", "//", ProcuraComando, Args);
 
                     await commandsNext.ExecuteCommandAsync(Comando);
                 }
@@ -290,12 +289,10 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
             {
                 try
                 {
-                    var emojiServidor = await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(ctx, emoji);
+                    CommandsNextExtension commandsNext = ctx.Client.GetCommandsNext();
 
-                    var commandsNext = ctx.Client.GetCommandsNext();
-
-                    var ProcuraComando = commandsNext.FindCommand($"reactrole cargo.del {canalReactRole.Id} {emojiServidor}", out var Args);
-                    var Comando = commandsNext.CreateFakeContext(ctx.Member, ctx.Channel, "", "//", ProcuraComando, Args);
+                    Command ProcuraComando = commandsNext.FindCommand($"reactrole cargo.del {canalReactRole.Id} {await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(ctx, emoji)}", out string Args);
+                    CommandContext Comando = commandsNext.CreateFakeContext(ctx.Member, ctx.Channel, "", "//", ProcuraComando, Args);
 
                     await commandsNext.ExecuteCommandAsync(Comando);
                 }
@@ -336,11 +333,11 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
                         return;
                     }
 
-                    var local = Program.ubgeBot.localDB;
-                    var reacts = local.GetCollection<Reacts>(Valores.Mongo.reacts);
-                    var jogos = local.GetCollection<Jogos>(Valores.Mongo.jogos);
+                    IMongoDatabase local = Program.ubgeBot.localDB;
+                    IMongoCollection<Reacts> reacts = local.GetCollection<Reacts>(Valores.Mongo.reacts);
+                    IMongoCollection<Jogos> jogos = local.GetCollection<Jogos>(Valores.Mongo.jogos);
 
-                    var interactivity = ctx.Client.GetInteractivity();
+                    InteractivityExtension interactivity = ctx.Client.GetInteractivity();
 
                     embed.WithAuthor("Deseja colocar como descrição da categoria a frase padrão: \"Clique na reação para obter o cargo. Remova a reação para tirar o cargo.\" ou " +
                         "você deseja digitar a frase?", null, Valores.logoUBGE)
@@ -353,7 +350,7 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
                     await MsgEmbed.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":white_check_mark:"));
                     await MsgEmbed.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":x:"));
 
-                    var Reacao = (await interactivity.WaitForReactionAsync(MsgEmbed, ctx.User, TimeSpan.FromMinutes(30))).Result.Emoji;
+                    DiscordEmoji Reacao = (await interactivity.WaitForReactionAsync(MsgEmbed, ctx.User, TimeSpan.FromMinutes(30))).Result.Emoji;
 
                     if (Reacao == DiscordEmoji.FromName(ctx.Client, ":white_check_mark:"))
                     {
@@ -476,13 +473,13 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
                         return;
                     }
 
-                    var local = Program.ubgeBot.localDB;
-                    var reacts = local.GetCollection<Reacts>(Valores.Mongo.reacts);
-                    var jogos = local.GetCollection<Jogos>(Valores.Mongo.jogos);
+                    IMongoDatabase local = Program.ubgeBot.localDB;
+                    IMongoCollection<Reacts> reacts = local.GetCollection<Reacts>(Valores.Mongo.reacts);
+                    IMongoCollection<Jogos> jogos = local.GetCollection<Jogos>(Valores.Mongo.jogos);
 
-                    var filtroReacts = Builders<Reacts>.Filter.Eq(x => x.categoria, nomeDaCategoriaReactRole);
+                    FilterDefinition<Reacts> filtroReacts = Builders<Reacts>.Filter.Eq(x => x.categoria, nomeDaCategoriaReactRole);
 
-                    var resultadoReacts = await (await reacts.FindAsync(filtroReacts)).ToListAsync();
+                    List<Reacts> resultadoReacts = await (await reacts.FindAsync(filtroReacts)).ToListAsync();
 
                     if (resultadoReacts.Count != 0)
                     {
@@ -492,7 +489,18 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
                         await jogos.DeleteManyAsync(Builders<Jogos>.Filter.Eq(x => x.nomeDaCategoria, nomeDaCategoriaReactRole));
 
                         embed.WithAuthor($"Todos os jogos e a categoria: \"{nomeDaCategoriaReactRole}\" foram apagados!", null, Valores.logoUBGE)
-                            .WithDescription(await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(ctx, ":UBGE:"))
+                            .WithDescription(await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(ctx, "UBGE"))
+                            .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                            .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                            .WithTimestamp(DateTime.Now);
+
+                        await ctx.RespondAsync(embed: embed.Build());
+                    }
+                    else
+                    {
+                        embed.WithAuthor($"Esta categoria não existe!", null, Valores.logoUBGE)
+                            .WithDescription(":thinking:")
                             .WithThumbnailUrl(ctx.Member.AvatarUrl)
                             .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
                             .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
@@ -534,16 +542,16 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
                     return;
                 }
 
-                var Interact = ctx.Client.GetInteractivity();
+                InteractivityExtension Interact = ctx.Client.GetInteractivity();
 
-                var local = Program.ubgeBot.localDB;
-                var reacts = local.GetCollection<Reacts>(Valores.Mongo.reacts);
-                var jogos = local.GetCollection<Jogos>(Valores.Mongo.jogos);
+                IMongoDatabase local = Program.ubgeBot.localDB;
+                IMongoCollection<Reacts> reacts = local.GetCollection<Reacts>(Valores.Mongo.reacts);
+                IMongoCollection<Jogos> jogos = local.GetCollection<Jogos>(Valores.Mongo.jogos);
 
-                var filtroMenu = Builders<Reacts>.Filter.Eq(x => x.categoria, nomeDaCategoria);
-                var filtroJogos = Builders<Jogos>.Filter.Eq(x => x.nomeDaCategoria, nomeDaCategoria);
+                FilterDefinition<Reacts> filtroMenu = Builders<Reacts>.Filter.Eq(x => x.categoria, nomeDaCategoria);
+                FilterDefinition<Jogos> filtroJogos = Builders<Jogos>.Filter.Eq(x => x.nomeDaCategoria, nomeDaCategoria);
 
-                var listaFiltro = await (await reacts.FindAsync(filtroMenu)).ToListAsync();
+                List<Reacts> listaFiltro = await (await reacts.FindAsync(filtroMenu)).ToListAsync();
 
                 if (listaFiltro.Count == 0)
                 {
@@ -558,10 +566,10 @@ namespace UBGE_Bot.Comandos.Staff_da_UBGE.React_Role
                     return;
                 }
 
-                var ultimaRespostaLista = listaFiltro.FirstOrDefault();
+                Reacts ultimaRespostaLista = listaFiltro.FirstOrDefault();
 
-                var mensagemEmbed = await canalReactRole.GetMessageAsync(ultimaRespostaLista.idDaMensagem);
-                var embedJogo = mensagemEmbed.Embeds.FirstOrDefault();
+                DiscordMessage mensagemEmbed = await canalReactRole.GetMessageAsync(ultimaRespostaLista.idDaMensagem);
+                DiscordEmbed embedJogo = mensagemEmbed.Embeds.FirstOrDefault();
 
                 DiscordEmbedBuilder embedNovoReactRole = new DiscordEmbedBuilder(embedJogo);
 

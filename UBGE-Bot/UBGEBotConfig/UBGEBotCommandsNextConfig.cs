@@ -22,7 +22,7 @@ namespace UBGE_Bot.UBGEBotConfig
 
         public CommandsNextConfiguration Build(IServiceProvider iserviceProvider)
         {
-            var jsonConfig = JsonConvert.DeserializeObject<UBGEBotCommandsNextConfig>(File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\JsonUBGE_Bot\CommandsNextConfig.json"));
+            UBGEBotCommandsNextConfig jsonConfig = JsonConvert.DeserializeObject<UBGEBotCommandsNextConfig>(File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\JsonUBGE_Bot\CommandsNextConfig.json"));
 
             return new CommandsNextConfiguration
             {

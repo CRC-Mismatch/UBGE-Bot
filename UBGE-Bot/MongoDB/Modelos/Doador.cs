@@ -8,7 +8,7 @@ namespace UBGE_Bot.MongoDB.Modelos
     {
         [BsonId]
         public ObjectId _id;
-        
+
         [BsonElement, BsonRepresentation(BsonType.String)]
         public ulong idDoMembro { get; set; }
 

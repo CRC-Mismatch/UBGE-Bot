@@ -1,9 +1,9 @@
-﻿using DSharpPlus;
-using DSharpPlus.CommandsNext;
+﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using MongoDB.Driver;
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,7 +16,7 @@ namespace UBGE_Bot.Comandos.Servidores_da_UBGE
 {
     public sealed class MemberControlled : BaseCommandModule
     {
-        [Command("servidores"), Aliases("sv")]
+        [Command("servidores"), Aliases("sv"), BotConectadoAoMongo]
 
         public async Task ServidoresUBGEAsync(CommandContext ctx, [RemainingText] string jogo = null)
         {
@@ -39,22 +39,22 @@ namespace UBGE_Bot.Comandos.Servidores_da_UBGE
                         await ctx.RespondAsync(embed: embed.Build());
                         return;
                     }
-                    
+
                     jogo = jogo.ToLower();
 
-                    var db = Program.ubgeBot.localDB;
-                    var servidoresUBGE = db.GetCollection<ServidoresUBGE>(Valores.Mongo.servidoresUBGE);
+                    IMongoDatabase db = Program.ubgeBot.localDB;
+                    IMongoCollection<ServidoresUBGE> servidoresUBGE = db.GetCollection<ServidoresUBGE>(Valores.Mongo.servidoresUBGE);
 
-                    var filtroServidores = Builders<ServidoresUBGE>.Filter.Eq(x => x.jogo, jogo);
-                    var resultadoServidoresUBGE = await (await servidoresUBGE.FindAsync(filtroServidores)).ToListAsync();
+                    FilterDefinition<ServidoresUBGE> filtroServidores = Builders<ServidoresUBGE>.Filter.Eq(x => x.jogo, jogo);
+                    List<ServidoresUBGE> resultadoServidoresUBGE = await (await servidoresUBGE.FindAsync(filtroServidores)).ToListAsync();
 
                     if (jogo != "list")
                     {
                         if (resultadoServidoresUBGE.Count == 0)
                         {
-                            var jogoSplit = RetornaNomeDoServidorEFoto(jogo).Split(',');
-                            
-                            if (jogo == "pr" || jogo == "ce" || jogo == "dyz" || jogo == "os" || jogo == "cs" || 
+                            string[] jogoSplit = RetornaNomeDoServidorEFoto(jogo).Split(',');
+
+                            if (jogo == "pr" || jogo == "ce" || jogo == "dyz" || jogo == "os" || jogo == "cs" ||
                             jogo == "unturned" || jogo == "mordhau")
                             {
                                 embed.WithDescription($":warning: | A UBGE não possui servidores oficiais no {jogoSplit[0]} e/ou este servidor está offline.\n\n" +
@@ -83,7 +83,7 @@ namespace UBGE_Bot.Comandos.Servidores_da_UBGE
 
                             if (jogo == "pr")
                             {
-                                foreach (var servidorPR in resultadoServidoresUBGE)
+                                foreach (ServidoresUBGE servidorPR in resultadoServidoresUBGE)
                                 {
                                     embed.WithAuthor($"Servidores de {servidorPR.nomeServidorParaComando} da UBGE:", null, servidorPR.fotoDoServidor)
                                         .WithThumbnailUrl(servidorPR.thumbnailDoServidor)
@@ -96,7 +96,7 @@ namespace UBGE_Bot.Comandos.Servidores_da_UBGE
                             }
                             else
                             {
-                                foreach (var servidor in resultadoServidoresUBGE)
+                                foreach (ServidoresUBGE servidor in resultadoServidoresUBGE)
                                 {
                                     embed.WithAuthor($"Servidores de {servidor.nomeServidorParaComando} da UBGE:", null, servidor.fotoDoServidor)
                                         .WithThumbnailUrl(servidor.thumbnailDoServidor)
@@ -120,15 +120,19 @@ namespace UBGE_Bot.Comandos.Servidores_da_UBGE
                     }
                     else
                     {
-                        var filtroDisponivel = Builders<ServidoresUBGE>.Filter.Empty;
-                        var resultadoServidoresUBGENovoFiltro = await (await servidoresUBGE.FindAsync(filtroDisponivel)).ToListAsync();
+                        FilterDefinition<ServidoresUBGE> filtroDisponivel = Builders<ServidoresUBGE>.Filter.Empty;
+                        List<ServidoresUBGE> resultadoServidoresUBGENovoFiltro = await (await servidoresUBGE.FindAsync(filtroDisponivel)).ToListAsync();
 
                         StringBuilder strDisponivel = new StringBuilder();
 
-                        foreach (var servidor in resultadoServidoresUBGENovoFiltro)
+                        foreach (ServidoresUBGE servidor in resultadoServidoresUBGENovoFiltro)
                         {
-                            if (!strDisponivel.ToString().Contains(servidor.servidorDisponivel))
-                                strDisponivel.Append($"{servidor.servidorDisponivel}\n");
+                            string[] servidorSplit = servidor.servidorDisponivel.Split('=');
+
+                            string[] comandoServidor = servidorSplit[1].Split(' ');
+
+                            if (!strDisponivel.ToString().Contains($"{servidorSplit[0]} = `{ctx.Prefix}{comandoServidor[1].Replace(" ", "").Replace("`", "")} {comandoServidor[2].Replace("`", "")}`\n"))
+                                strDisponivel.Append($"{servidorSplit[0]} = `{ctx.Prefix}{comandoServidor[1].Replace(" ", "").Replace("`", "")} {comandoServidor[2].Replace("`", "")}`\n");
                         }
 
                         embed.WithAuthor($"A UBGE possui servidores nos seguintes jogos:", null, Valores.logoUBGE)

@@ -26,5 +26,8 @@ namespace UBGE_Bot.MongoDB.Modelos
 
         [BsonElement("IdSala"), BsonRepresentation(BsonType.String)]
         public ulong idDaSala { get; set; }
+
+        [BsonElement("MembrosNaSala"), BsonRepresentation(BsonType.String)]
+        public ulong membrosNaSala { get; set; }
     }
 }

@@ -4,6 +4,7 @@ using MongoDB.Bson;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using Timer = System.Timers.Timer;
 using System.Threading;
@@ -18,7 +19,7 @@ namespace UBGE_Bot.Sistemas.Servidores
 {
     public sealed class ServidoresUBGE : IAplicavelAoCliente
     {
-        public void AplicarAoBot(DiscordClient discordClient, bool botConectadoAoMongo)
+        public void AplicarAoBot(DiscordClient discordClient, bool botConectadoAoMongo, bool sistemaAtivo)
         {
             Timer timerServidores = new Timer()
             {
@@ -26,7 +27,7 @@ namespace UBGE_Bot.Sistemas.Servidores
             };
             timerServidores.Elapsed += async delegate
             {
-                if (botConectadoAoMongo)
+                if (botConectadoAoMongo && sistemaAtivo)
                 {
                     await BuscaServidoresPR(Program.ubgeBot, Program.httpClient);
                     await BuscaServidoresConanExiles(Program.ubgeBot, Program.httpClient);
@@ -48,35 +49,34 @@ namespace UBGE_Bot.Sistemas.Servidores
             {
                 try
                 {
-                    var linkPRSpy = await httpClient.GetStringAsync("https://www.realitymod.com/prspy/json/serverdata.json");
-                    var resposta = (JObject)JsonConvert.DeserializeObject(linkPRSpy);
-                    var listaResposta = (JArray)resposta.SelectToken("Data");
+                    JObject resposta = (JObject)JsonConvert.DeserializeObject(await httpClient.GetStringAsync("https://www.realitymod.com/prspy/json/serverdata.json"));
+                    JArray listaResposta = (JArray)resposta.SelectToken("Data");
 
-                    var db = ubgeBotClient.localDB;
-                    var servidoresDB = db.GetCollection<ServidoresUBGE_>(Valores.Mongo.servidoresUBGE);
+                    IMongoDatabase db = ubgeBotClient.localDB;
+                    IMongoCollection<ServidoresUBGE_> servidoresDB = db.GetCollection<ServidoresUBGE_>(Valores.Mongo.servidoresUBGE);
 
-                    var Filtro = Builders<ServidoresUBGE_>.Filter.Eq(x => x.jogo, "pr");
-                    var resultadosLista = await (await servidoresDB.FindAsync(Filtro)).ToListAsync();
+                    FilterDefinition<ServidoresUBGE_> Filtro = Builders<ServidoresUBGE_>.Filter.Eq(x => x.jogo, "pr");
+                    List<ServidoresUBGE_> resultadosLista = await (await servidoresDB.FindAsync(Filtro)).ToListAsync();
 
                     if (resultadosLista.Count > 0)
                         await servidoresDB.DeleteManyAsync(Filtro);
 
                     int N = 0;
 
-                    foreach (var server in listaResposta)
+                    foreach (JToken server in listaResposta)
                     {
-                        var ipServidor = server.SelectToken("IPAddress").ToString();
-                        var queryPort = server.SelectToken("QueryPort").ToString();
-                        var paisServidor = server.SelectToken("Country").ToString();
-                        var nomeServidor = server.SelectToken("ServerName").ToString();
-                        var nomeJogo = server.SelectToken("GameName").ToString();
-                        var versaoJogo = server.SelectToken("GameVersion").ToString();
-                        var jogoPorta = server.SelectToken("GamePort").ToString();
-                        var nomeMapa = server.SelectToken("MapName").ToString();
-                        var modoDeJogo = server.SelectToken("GameMode").ToString();
-                        var playersJogando = server.SelectToken("NumPlayers").ToString();
-                        var maxPlayers = server.SelectToken("MaxPlayers").ToString();
-                        var statusJogo = server.SelectToken("GameStatus").ToString();
+                        string ipServidor = server.SelectToken("IPAddress").ToString(),
+                        queryPort = server.SelectToken("QueryPort").ToString(),
+                        paisServidor = server.SelectToken("Country").ToString(),
+                        nomeServidor = server.SelectToken("ServerName").ToString(),
+                        nomeJogo = server.SelectToken("GameName").ToString(),
+                        versaoJogo = server.SelectToken("GameVersion").ToString(),
+                        jogoPorta = server.SelectToken("GamePort").ToString(),
+                        nomeMapa = server.SelectToken("MapName").ToString(),
+                        modoDeJogo = server.SelectToken("GameMode").ToString(),
+                        playersJogando = server.SelectToken("NumPlayers").ToString(),
+                        maxPlayers = server.SelectToken("MaxPlayers").ToString(),
+                        statusJogo = server.SelectToken("GameStatus").ToString();
 
                         if (int.Parse(playersJogando.ToString()) != 0)
                         {
@@ -119,31 +119,31 @@ namespace UBGE_Bot.Sistemas.Servidores
             {
                 try
                 {
-                    var linkBattleMetrics = await httpClient.GetStringAsync("https://api.battlemetrics.com/servers?filter[game]=conanexiles");
-                    var respostaJson = (JObject)JsonConvert.DeserializeObject(linkBattleMetrics);
-                    var listaResposta = (JArray)respostaJson.SelectToken("data");
+                    JObject respostaJson = (JObject)JsonConvert.DeserializeObject(await httpClient.GetStringAsync("https://api.battlemetrics.com/servers?filter[game]=conanexiles"));
+                    JArray listaResposta = (JArray)respostaJson.SelectToken("data");
 
-                    var db = ubgeBotClient.localDB;
-                    var servidoresUBGE = db.GetCollection<ServidoresUBGE_>(Valores.Mongo.servidoresUBGE);
-                    var Filtro = Builders<ServidoresUBGE_>.Filter.Eq(x => x.jogo, "ce");
-                    var resultados = await (await servidoresUBGE.FindAsync(Filtro)).ToListAsync();
+                    IMongoDatabase db = ubgeBotClient.localDB;
+                    IMongoCollection<ServidoresUBGE_> servidoresUBGE = db.GetCollection<ServidoresUBGE_>(Valores.Mongo.servidoresUBGE);
+                    FilterDefinition<ServidoresUBGE_> Filtro = Builders<ServidoresUBGE_>.Filter.Eq(x => x.jogo, "ce");
+                    List<ServidoresUBGE_> resultados = await (await servidoresUBGE.FindAsync(Filtro)).ToListAsync();
 
                     if (resultados.Count > 0)
                         await servidoresUBGE.DeleteManyAsync(Filtro);
 
-                    foreach (var servidor in listaResposta)
+                    foreach (JToken servidor in listaResposta)
                     {
-                        var propServidor = servidor.SelectToken("attributes");
-                        var nomeServidor = propServidor.SelectToken("name").ToString();
-                        var ipServidor = propServidor.SelectToken("ip").ToString();
-                        var portaServidor = propServidor.SelectToken("port").ToString();
-                        var playersJogando = propServidor.SelectToken("players").ToString();
-                        var maxPlayers = propServidor.SelectToken("maxPlayers").ToString();
-                        var statusServidor = propServidor.SelectToken("status").ToString();
-                        var portaQuery = propServidor.SelectToken("portQuery").ToString();
-                        var paisServidor = propServidor.SelectToken("country").ToString();
+                        JToken propServidor = servidor.SelectToken("attributes");
 
-                        foreach (var nomeServidorConan in ubgeBotClient.ubgeBotConfig.ubgeBotServidoresConfig.nomeDoServidorDeConan)
+                        string nomeServidor = propServidor.SelectToken("name").ToString(),
+                        ipServidor = propServidor.SelectToken("ip").ToString(),
+                        portaServidor = propServidor.SelectToken("port").ToString(),
+                        playersJogando = propServidor.SelectToken("players").ToString(),
+                        maxPlayers = propServidor.SelectToken("maxPlayers").ToString(),
+                        statusServidor = propServidor.SelectToken("status").ToString(),
+                        portaQuery = propServidor.SelectToken("portQuery").ToString(),
+                        paisServidor = propServidor.SelectToken("country").ToString();
+
+                        foreach (string nomeServidorConan in ubgeBotClient.ubgeBotConfig.ubgeBotServidoresConfig.nomeDoServidorDeConan)
                         {
                             if (nomeServidor.ToString().ToUpper().Contains(nomeServidorConan.ToUpper()))
                             {
@@ -186,33 +186,34 @@ namespace UBGE_Bot.Sistemas.Servidores
             {
                 try
                 {
-                    var linkBattleMetrics = await httpClient.GetStringAsync("https://api.battlemetrics.com/servers?filter[game]=dayz");
-                    var resposta = (JObject)JsonConvert.DeserializeObject(linkBattleMetrics);
-                    var listaResposta = (JArray)resposta.SelectToken("data");
+                    JObject resposta = (JObject)JsonConvert.DeserializeObject(await httpClient.GetStringAsync("https://api.battlemetrics.com/servers?filter[game]=dayz"));
+                    JArray listaResposta = (JArray)resposta.SelectToken("data");
 
-                    var db = ubgeBotClient.localDB;
-                    var servidoresUBGE = db.GetCollection<ServidoresUBGE_>(Valores.Mongo.servidoresUBGE);
-                    var Filtro = Builders<ServidoresUBGE_>.Filter.Eq(x => x.jogo, "dyz");
-                    var resultados = await (await servidoresUBGE.FindAsync(Filtro)).ToListAsync();
+                    IMongoDatabase db = ubgeBotClient.localDB;
+                    IMongoCollection<ServidoresUBGE_> servidoresUBGE = db.GetCollection<ServidoresUBGE_>(Valores.Mongo.servidoresUBGE);
+                    FilterDefinition<ServidoresUBGE_> Filtro = Builders<ServidoresUBGE_>.Filter.Eq(x => x.jogo, "dyz");
+                    List<ServidoresUBGE_> resultados = await (await servidoresUBGE.FindAsync(Filtro)).ToListAsync();
 
                     if (resultados.Count > 0)
                         await servidoresUBGE.DeleteManyAsync(Filtro);
 
-                    foreach (var servidor in listaResposta)
+                    foreach (JToken servidor in listaResposta)
                     {
-                        var propServidor = servidor.SelectToken("attributes");
-                        var nomeServidor = propServidor.SelectToken("name").ToString();
-                        var ipServidor = propServidor.SelectToken("ip").ToString();
-                        var portaServidor = propServidor.SelectToken("port").ToString();
-                        var playersJogando = propServidor.SelectToken("players").ToString();
-                        var maxPlayers = propServidor.SelectToken("maxPlayers").ToString();
-                        var statusServidor = propServidor.SelectToken("status").ToString();
-                        var portaQuery = propServidor.SelectToken("portQuery").ToString();
-                        var paisServidor = propServidor.SelectToken("country").ToString();
-                        var detalhesServidor = propServidor.SelectToken("details");
-                        var versaoServidor = detalhesServidor.SelectToken("version").ToString();
+                        JToken propServidor = servidor.SelectToken("attributes");
 
-                        foreach (var NomeServidorDayZ in ubgeBotClient.ubgeBotConfig.ubgeBotServidoresConfig.nomeDoServidorDeDayZ)
+                        string nomeServidor = propServidor.SelectToken("name").ToString(),
+                        ipServidor = propServidor.SelectToken("ip").ToString(),
+                        portaServidor = propServidor.SelectToken("port").ToString(),
+                        playersJogando = propServidor.SelectToken("players").ToString(),
+                        maxPlayers = propServidor.SelectToken("maxPlayers").ToString(),
+                        statusServidor = propServidor.SelectToken("status").ToString(),
+                        portaQuery = propServidor.SelectToken("portQuery").ToString(),
+                        paisServidor = propServidor.SelectToken("country").ToString();
+
+                        JToken detalhesServidor = propServidor.SelectToken("details");
+                        string versaoServidor = detalhesServidor.SelectToken("version").ToString();
+
+                        foreach (string NomeServidorDayZ in ubgeBotClient.ubgeBotConfig.ubgeBotServidoresConfig.nomeDoServidorDeDayZ)
                         {
                             if (nomeServidor.ToString().ToUpper().Contains(NomeServidorDayZ.ToUpper()))
                             {
@@ -254,29 +255,29 @@ namespace UBGE_Bot.Sistemas.Servidores
             {
                 try
                 {
-                    var respostaBuildAndShoot = ubgeBotClient.utilidadesGerais.ByteParaString(await (await httpClient.GetAsync($"http://services.buildandshoot.com/serverlist.json")).Content.ReadAsByteArrayAsync());
-                    var jArray = (JArray)JsonConvert.DeserializeObject(respostaBuildAndShoot);
+                    string respostaBuildAndShoot = ubgeBotClient.utilidadesGerais.ByteParaString(await (await httpClient.GetAsync($"http://services.buildandshoot.com/serverlist.json")).Content.ReadAsByteArrayAsync());
+                    JArray jArray = (JArray)JsonConvert.DeserializeObject(respostaBuildAndShoot);
 
-                    var db = ubgeBotClient.localDB;
-                    var servidoresUBGE = db.GetCollection<ServidoresUBGE_>(Valores.Mongo.servidoresUBGE);
-                    var filtro = Builders<ServidoresUBGE_>.Filter.Eq(x => x.jogo, "os");
-                    var resultados = await (await servidoresUBGE.FindAsync(filtro)).ToListAsync();
+                    IMongoDatabase db = ubgeBotClient.localDB;
+                    IMongoCollection<ServidoresUBGE_> servidoresUBGE = db.GetCollection<ServidoresUBGE_>(Valores.Mongo.servidoresUBGE);
+                    FilterDefinition<ServidoresUBGE_> filtro = Builders<ServidoresUBGE_>.Filter.Eq(x => x.jogo, "os");
+                    List<ServidoresUBGE_> resultados = await (await servidoresUBGE.FindAsync(filtro)).ToListAsync();
 
                     if (resultados.Count > 0)
                         await servidoresUBGE.DeleteManyAsync(filtro);
 
-                    foreach (var propServidor in jArray)
+                    foreach (JToken propServidor in jArray)
                     {
-                        var nomeServidor = propServidor.SelectToken("name").ToString();
-                        var ipServidor = propServidor.SelectToken("identifier").ToString();
-                        var mapaServidor = propServidor.SelectToken("map").ToString();
-                        var modoDeJogoServidor = propServidor.SelectToken("game_mode").ToString();
-                        var playersJogando = propServidor.SelectToken("players_current").ToString();
-                        var maxPlayers = propServidor.SelectToken("players_max").ToString();
-                        var versaoJogo = propServidor.SelectToken("game_version").ToString();
-                        var paisServidor = propServidor.SelectToken("country").ToString();
+                        string nomeServidor = propServidor.SelectToken("name").ToString(),
+                        ipServidor = propServidor.SelectToken("identifier").ToString(),
+                        mapaServidor = propServidor.SelectToken("map").ToString(),
+                        modoDeJogoServidor = propServidor.SelectToken("game_mode").ToString(),
+                        playersJogando = propServidor.SelectToken("players_current").ToString(),
+                        maxPlayers = propServidor.SelectToken("players_max").ToString(),
+                        versaoJogo = propServidor.SelectToken("game_version").ToString(),
+                        paisServidor = propServidor.SelectToken("country").ToString();
 
-                        foreach (var nomeServidorOpenSpades in ubgeBotClient.ubgeBotConfig.ubgeBotServidoresConfig.nomeDoServidorDeOpenSpades)
+                        foreach (string nomeServidorOpenSpades in ubgeBotClient.ubgeBotConfig.ubgeBotServidoresConfig.nomeDoServidorDeOpenSpades)
                         {
                             if (nomeServidor.ToUpper().Contains(nomeServidorOpenSpades.ToUpper()))
                             {
@@ -318,33 +319,35 @@ namespace UBGE_Bot.Sistemas.Servidores
             {
                 try
                 {
-                    var respostaBattleMetrics = await httpClient.GetStringAsync("https://api.battlemetrics.com/servers?filter[game]=cs");
-                    var deserializeJson = (JObject)JsonConvert.DeserializeObject(respostaBattleMetrics);
-                    var listaServidores = (JArray)deserializeJson.SelectToken("data");
+                    JObject deserializeJson = (JObject)JsonConvert.DeserializeObject(await httpClient.GetStringAsync("https://api.battlemetrics.com/servers?filter[game]=cs"));
+                    JArray listaServidores = (JArray)deserializeJson.SelectToken("data");
 
-                    var db = ubgeBotClient.localDB;
-                    var servidoresUBGE = db.GetCollection<ServidoresUBGE_>(Valores.Mongo.servidoresUBGE);
-                    var filtro = Builders<ServidoresUBGE_>.Filter.Eq(x => x.jogo, "cs");
-                    var resultados = await (await servidoresUBGE.FindAsync(filtro)).ToListAsync();
+                    IMongoDatabase db = ubgeBotClient.localDB;
+                    IMongoCollection<ServidoresUBGE_> servidoresUBGE = db.GetCollection<ServidoresUBGE_>(Valores.Mongo.servidoresUBGE);
+                    FilterDefinition<ServidoresUBGE_> filtro = Builders<ServidoresUBGE_>.Filter.Eq(x => x.jogo, "cs");
+                    List<ServidoresUBGE_> resultados = await (await servidoresUBGE.FindAsync(filtro)).ToListAsync();
 
                     if (resultados.Count > 0)
                         await servidoresUBGE.DeleteManyAsync(filtro);
 
-                    foreach (var servidor in listaServidores)
+                    foreach (JToken servidor in listaServidores)
                     {
-                        var propServidor = servidor.SelectToken("attributes");
-                        var nomeServidor = propServidor.SelectToken("name").ToString();
-                        var ipServidor = propServidor.SelectToken("ip").ToString();
-                        var portaServidor = propServidor.SelectToken("port").ToString();
-                        var playersJogando = propServidor.SelectToken("players").ToString();
-                        var maxPlayers = propServidor.SelectToken("maxPlayers").ToString();
-                        var statusServidor = propServidor.SelectToken("status").ToString();
-                        var paisServidor = propServidor.SelectToken("country").ToString();
-                        var detalhes = propServidor.SelectToken("details");
-                        var nomeMapa = detalhes.SelectToken("map").ToString();
-                        var versaoJogo = detalhes.SelectToken("version").ToString();
+                        JToken propServidor = servidor.SelectToken("attributes");
 
-                        foreach (var NomeServidorCounterStrike in ubgeBotClient.ubgeBotConfig.ubgeBotServidoresConfig.nomeDoServidorDeCounterStrike)
+                        string nomeServidor = propServidor.SelectToken("name").ToString(),
+                        ipServidor = propServidor.SelectToken("ip").ToString(),
+                        portaServidor = propServidor.SelectToken("port").ToString(),
+                        playersJogando = propServidor.SelectToken("players").ToString(),
+                        maxPlayers = propServidor.SelectToken("maxPlayers").ToString(),
+                        statusServidor = propServidor.SelectToken("status").ToString(),
+                        paisServidor = propServidor.SelectToken("country").ToString();
+
+                        JToken detalhes = propServidor.SelectToken("details");
+
+                        string nomeMapa = detalhes.SelectToken("map").ToString(),
+                        versaoJogo = detalhes.SelectToken("version").ToString();
+
+                        foreach (string NomeServidorCounterStrike in ubgeBotClient.ubgeBotConfig.ubgeBotServidoresConfig.nomeDoServidorDeCounterStrike)
                         {
                             if (nomeServidor.ToString().ToUpper().Contains(NomeServidorCounterStrike.ToUpper()))
                             {
@@ -386,35 +389,37 @@ namespace UBGE_Bot.Sistemas.Servidores
             {
                 try
                 {
-                    var respostaBattleMetrics = await httpClient.GetStringAsync("https://api.battlemetrics.com/servers?filter[game]=unturned");
-                    var deserializeJson = (JObject)JsonConvert.DeserializeObject(respostaBattleMetrics);
-                    var listaServidores = (JArray)deserializeJson.SelectToken("data");
+                    JObject deserializeJson = (JObject)JsonConvert.DeserializeObject(await httpClient.GetStringAsync("https://api.battlemetrics.com/servers?filter[game]=unturned"));
+                    JArray listaServidores = (JArray)deserializeJson.SelectToken("data");
 
-                    var db = ubgeBotClient.localDB;
-                    var servidoresUBGE = db.GetCollection<ServidoresUBGE_>(Valores.Mongo.servidoresUBGE);
-                    var filtro = Builders<ServidoresUBGE_>.Filter.Eq(x => x.jogo, "unturned");
-                    var resultados = await (await servidoresUBGE.FindAsync(filtro)).ToListAsync();
+                    IMongoDatabase db = ubgeBotClient.localDB;
+                    IMongoCollection<ServidoresUBGE_> servidoresUBGE = db.GetCollection<ServidoresUBGE_>(Valores.Mongo.servidoresUBGE);
+                    FilterDefinition<ServidoresUBGE_> filtro = Builders<ServidoresUBGE_>.Filter.Eq(x => x.jogo, "unturned");
+                    List<ServidoresUBGE_> resultados = await (await servidoresUBGE.FindAsync(filtro)).ToListAsync();
 
                     if (resultados.Count > 0)
                         await servidoresUBGE.DeleteManyAsync(filtro);
 
-                    foreach (var Servidor in listaServidores)
+                    foreach (JToken Servidor in listaServidores)
                     {
-                        var propServidor = Servidor.SelectToken("attributes");
-                        var nomeServidor = propServidor.SelectToken("name").ToString();
-                        var ipServidor = propServidor.SelectToken("ip").ToString();
-                        var portaServidor = propServidor.SelectToken("port").ToString();
-                        var playersJogando = propServidor.SelectToken("players").ToString();
-                        var maxPlayers = propServidor.SelectToken("maxPlayers").ToString();
-                        var statusServidor = propServidor.SelectToken("status").ToString();
-                        var portaQuery = propServidor.SelectToken("portQuery").ToString();
-                        var paisServidor = propServidor.SelectToken("country").ToString();
-                        var detalhes = propServidor.SelectToken("details");
-                        var versaoServidor = detalhes.SelectToken("version").ToString();
-                        var modoDeJogo = detalhes.SelectToken("gameMode").ToString();
-                        var mapaServidor = detalhes.SelectToken("map").ToString();
+                        JToken propServidor = Servidor.SelectToken("attributes");
 
-                        foreach (var NomeServidorUnturned in ubgeBotClient.ubgeBotConfig.ubgeBotServidoresConfig.nomeDoServidorDeUnturned)
+                        string nomeServidor = propServidor.SelectToken("name").ToString(),
+                        ipServidor = propServidor.SelectToken("ip").ToString(),
+                        portaServidor = propServidor.SelectToken("port").ToString(),
+                        playersJogando = propServidor.SelectToken("players").ToString(),
+                        maxPlayers = propServidor.SelectToken("maxPlayers").ToString(),
+                        statusServidor = propServidor.SelectToken("status").ToString(),
+                        portaQuery = propServidor.SelectToken("portQuery").ToString(),
+                        paisServidor = propServidor.SelectToken("country").ToString();
+
+                        JToken detalhes = propServidor.SelectToken("details");
+
+                        string versaoServidor = detalhes.SelectToken("version").ToString(),
+                        modoDeJogo = detalhes.SelectToken("gameMode").ToString(),
+                        mapaServidor = detalhes.SelectToken("map").ToString();
+
+                        foreach (string NomeServidorUnturned in ubgeBotClient.ubgeBotConfig.ubgeBotServidoresConfig.nomeDoServidorDeUnturned)
                         {
                             if (nomeServidor.ToString().ToUpper().Contains(NomeServidorUnturned.ToUpper()))
                             {
@@ -457,34 +462,36 @@ namespace UBGE_Bot.Sistemas.Servidores
             {
                 try
                 {
-                    var respostaBattleMetrics = await httpClient.GetStringAsync("https://api.battlemetrics.com/servers?filter[game]=mordhau");
-                    var deserializeJson = (JObject)JsonConvert.DeserializeObject(respostaBattleMetrics);
-                    var listaServidores = (JArray)deserializeJson.SelectToken("data");
+                    JObject deserializeJson = (JObject)JsonConvert.DeserializeObject(await httpClient.GetStringAsync("https://api.battlemetrics.com/servers?filter[game]=mordhau"));
+                    JArray listaServidores = (JArray)deserializeJson.SelectToken("data");
 
-                    var db = ubgeBotClient.localDB;
-                    var servidoresUBGE = db.GetCollection<ServidoresUBGE_>(Valores.Mongo.servidoresUBGE);
-                    var filtro = Builders<ServidoresUBGE_>.Filter.Eq(x => x.jogo, "mordhau");
-                    var resultados = await (await servidoresUBGE.FindAsync(filtro)).ToListAsync();
+                    IMongoDatabase db = ubgeBotClient.localDB;
+                    IMongoCollection<ServidoresUBGE_> servidoresUBGE = db.GetCollection<ServidoresUBGE_>(Valores.Mongo.servidoresUBGE);
+                    FilterDefinition<ServidoresUBGE_> filtro = Builders<ServidoresUBGE_>.Filter.Eq(x => x.jogo, "mordhau");
+                    List<ServidoresUBGE_> resultados = await (await servidoresUBGE.FindAsync(filtro)).ToListAsync();
 
                     if (resultados.Count > 0)
                         await servidoresUBGE.DeleteManyAsync(filtro);
 
-                    foreach (var servidor in listaServidores)
+                    foreach (JToken servidor in listaServidores)
                     {
-                        var propServidor = servidor.SelectToken("attributes");
-                        var nomeServidor = propServidor.SelectToken("name").ToString();
-                        var ipServidor = propServidor.SelectToken("ip").ToString();
-                        var portaServidor = propServidor.SelectToken("port").ToString();
-                        var playersJogando = propServidor.SelectToken("players").ToString();
-                        var maxPlayers = propServidor.SelectToken("maxPlayers").ToString();
-                        var statusServidor = propServidor.SelectToken("status").ToString();
-                        var portaQuery = propServidor.SelectToken("portQuery").ToString();
-                        var paisServidor = propServidor.SelectToken("country").ToString();
-                        var detalhesServidor = propServidor.SelectToken("details");
-                        var mapaServidor = detalhesServidor.SelectToken("map").ToString();
-                        var modoDeJogo = detalhesServidor.SelectToken("gameMode").ToString();
+                        JToken propServidor = servidor.SelectToken("attributes");
 
-                        foreach (var NomeServidorMordhau in ubgeBotClient.ubgeBotConfig.ubgeBotServidoresConfig.nomeDoServidorDeMordhau)
+                        string nomeServidor = propServidor.SelectToken("name").ToString(),
+                        ipServidor = propServidor.SelectToken("ip").ToString(),
+                        portaServidor = propServidor.SelectToken("port").ToString(),
+                        playersJogando = propServidor.SelectToken("players").ToString(),
+                        maxPlayers = propServidor.SelectToken("maxPlayers").ToString(),
+                        statusServidor = propServidor.SelectToken("status").ToString(),
+                        portaQuery = propServidor.SelectToken("portQuery").ToString(),
+                        paisServidor = propServidor.SelectToken("country").ToString();
+
+                        JToken detalhesServidor = propServidor.SelectToken("details");
+
+                        string mapaServidor = detalhesServidor.SelectToken("map").ToString(),
+                        modoDeJogo = detalhesServidor.SelectToken("gameMode").ToString();
+
+                        foreach (string NomeServidorMordhau in ubgeBotClient.ubgeBotConfig.ubgeBotServidoresConfig.nomeDoServidorDeMordhau)
                         {
                             if (nomeServidor.ToString().ToUpper().Contains(NomeServidorMordhau.ToUpper()))
                             {

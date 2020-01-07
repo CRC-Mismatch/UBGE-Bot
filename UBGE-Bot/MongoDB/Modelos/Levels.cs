@@ -10,7 +10,7 @@ namespace UBGE_Bot.MongoDB.Modelos
 
         [BsonElement("IdMembro"), BsonRepresentation(BsonType.String)]
         public ulong idDoMembro { get; set; }
-        
+
         [BsonElement("XP"), BsonRepresentation(BsonType.String)]
         public ulong xpDoMembro { get; set; }
 

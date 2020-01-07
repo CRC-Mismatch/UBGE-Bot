@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UBGE_Bot.Main;
 
 namespace UBGE_Bot.Utilidades
 {
@@ -21,11 +22,15 @@ namespace UBGE_Bot.Utilidades
         /// <returns></returns>
         public TimeSpan ConverterTempo(string tempoParaConverter)
         {
-            if (tempoParaConverter.ToLower().Contains('s')) return TimeSpan.FromSeconds(Convert.ToInt32(tempoParaConverter.Split('s').FirstOrDefault()));
-            if (tempoParaConverter.ToLower().Contains('m')) return TimeSpan.FromMinutes(Convert.ToInt32(tempoParaConverter.Split('m').FirstOrDefault()));
-            if (tempoParaConverter.ToLower().Contains('h')) return TimeSpan.FromHours(Convert.ToInt32(tempoParaConverter.Split('h').FirstOrDefault()));
-            if (tempoParaConverter.ToLower().Contains('d')) return TimeSpan.FromDays(Convert.ToInt32(tempoParaConverter.Split('d').FirstOrDefault()));
-            
+            if (tempoParaConverter.ToLower().Contains('s'))
+                return TimeSpan.FromSeconds(Convert.ToInt32(tempoParaConverter.Split('s').FirstOrDefault()));
+            if (tempoParaConverter.ToLower().Contains('m'))
+                return TimeSpan.FromMinutes(Convert.ToInt32(tempoParaConverter.Split('m').FirstOrDefault()));
+            if (tempoParaConverter.ToLower().Contains('h'))
+                return TimeSpan.FromHours(Convert.ToInt32(tempoParaConverter.Split('h').FirstOrDefault()));
+            if (tempoParaConverter.ToLower().Contains('d'))
+                return TimeSpan.FromDays(Convert.ToInt32(tempoParaConverter.Split('d').FirstOrDefault()));
+
             return TimeSpan.FromSeconds(0);
         }
 
@@ -54,9 +59,7 @@ namespace UBGE_Bot.Utilidades
         /// <param name="CommandContext"></param>
         /// <returns></returns>
         public async Task<DiscordMessage> PegaResposta(InteractivityExtension interactivityExtension, CommandContext commandContext)
-        {
-            return (await interactivityExtension.WaitForMessageAsync(m => m.Author == commandContext.User && m.Channel.Id == commandContext.Channel.Id, TimeSpan.FromMinutes(30))).Result;
-        }
+            => (await interactivityExtension.WaitForMessageAsync(m => m.Author == commandContext.User && m.Channel.Id == commandContext.Channel.Id, TimeSpan.FromMinutes(30))).Result;
 
         /// <summary>
         /// Pega a resposta digitada no privado de um membro do Discord.
@@ -67,7 +70,7 @@ namespace UBGE_Bot.Utilidades
         public async Task<DiscordMessage> PegaRespostaPrivado(InteractivityExtension interactivityExtension, CommandContext commandContext)
         {
             DiscordChannel dm = await commandContext.Member.CreateDmChannelAsync();
-            
+
             return (await interactivityExtension.WaitForMessageAsync(m => m.Author == commandContext.User && m.Channel == dm, TimeSpan.FromMinutes(30))).Result;
         }
 
@@ -78,9 +81,7 @@ namespace UBGE_Bot.Utilidades
         /// <param name="CommandContext"></param>
         /// <returns></returns>
         public async Task<DiscordMessage> PegaRespostaPrivado(InteractivityExtension interactivityExtension, DiscordUser membro, DiscordChannel canal)
-        {
-            return (await interactivityExtension.WaitForMessageAsync(m => m.Author == membro && m.Channel == canal, TimeSpan.FromMinutes(30))).Result;
-        }
+            => (await interactivityExtension.WaitForMessageAsync(m => m.Author == membro && m.Channel == canal, TimeSpan.FromMinutes(30))).Result;
 
         /// <summary>
         /// Procura o emoji que foi especificado na Task. O bot procurará em todos os servidores que ele está.
@@ -92,27 +93,14 @@ namespace UBGE_Bot.Utilidades
         {
             DiscordEmoji de = null;
 
-            if (commandContext.Guild.Emojis.Values.ToList().Find(x => x.Name.ToLower() == nomeDoEmoji.ToLower()) == null)
+            foreach (DiscordGuild servidor in commandContext.Client.Guilds.Values)
             {
-                foreach (var servidor in commandContext.Client.Guilds.Values)
-                {
-                    await Task.Delay(200);
+                await Task.Delay(1);
 
-                    de = servidor.Emojis.Values.ToList().Find(x => x.Name.ToLower() == nomeDoEmoji.ToLower());
+                de = servidor.Emojis.Values.ToList().Find(x => x.Name.ToLower() == nomeDoEmoji.ToLower());
 
-                    if (de != null)
-                        return de;
-                }
-            }
-
-            if (commandContext.Guild.Emojis.Values.ToList().Find(x => x.Name.ToLower() == nomeDoEmoji.ToLower()) != null)
-                return commandContext.Guild.Emojis.Values.ToList().Find(x => x.Name.ToLower() == nomeDoEmoji.ToLower());
-            else
-            {
-                if (nomeDoEmoji.StartsWith(":") && nomeDoEmoji.EndsWith(":"))
-                    de = DiscordEmoji.FromName(commandContext.Client, nomeDoEmoji);
-                else
-                    de = DiscordEmoji.FromName(commandContext.Client, $":{nomeDoEmoji}:");
+                if (de != null)
+                    return de;
             }
 
             return de;
@@ -128,27 +116,14 @@ namespace UBGE_Bot.Utilidades
         {
             DiscordEmoji de = null;
 
-            foreach (var servidor in discordClient.Guilds.Values)
+            foreach (DiscordGuild servidor in discordClient.Guilds.Values)
             {
-                if (servidor.Emojis.Values.ToList().Find(x => x.Name.ToLower() == nomeDoEmoji.ToLower()) == null)
-                {
-                    await Task.Delay(200);
+                await Task.Delay(1);
 
-                    de = servidor.Emojis.Values.ToList().Find(x => x.Name.ToLower() == nomeDoEmoji.ToLower());
+                de = servidor.Emojis.Values.ToList().Find(x => x.Name.ToLower() == nomeDoEmoji.ToLower());
 
-                    if (de != null)
-                        return de;
-                }
-
-                if (servidor.Emojis.Values.ToList().Find(x => x.Name.ToLower() == nomeDoEmoji.ToLower()) != null)
-                    return servidor.Emojis.Values.ToList().Find(x => x.Name.ToLower() == nomeDoEmoji.ToLower());
-                else
-                {
-                        if (nomeDoEmoji.StartsWith(":") && nomeDoEmoji.EndsWith(":"))
-                            de = DiscordEmoji.FromName(discordClient, nomeDoEmoji);
-                        else
-                            de = DiscordEmoji.FromName(discordClient, $":{nomeDoEmoji}:");
-                }
+                if (de != null)
+                    return de;
             }
 
             return de;
@@ -160,9 +135,7 @@ namespace UBGE_Bot.Utilidades
         /// <param name="Texto"></param>
         /// <returns></returns>
         public bool ChecaSeAStringContemNumeros(string texto)
-        {
-            return texto.Where(c => char.IsNumber(c)).Count() > 0;
-        }
+            => texto.Where(c => char.IsNumber(c)).Count() > 0;
 
         /// <summary>
         /// Checa se a string especificada contem letras.
@@ -170,9 +143,7 @@ namespace UBGE_Bot.Utilidades
         /// <param name="Texto"></param>
         /// <returns></returns>
         public bool ChecaSeAStringContemLetras(string texto)
-        {
-            return texto.Where(c => char.IsLetter(c)).Count() > 0;
-        }
+            => texto.Where(c => char.IsLetter(c)).Count() > 0;
 
         /// <summary>
         /// Função que limpa embed e o retorna vazio para ser usado novamente, assim o comando será mais otimizado e rápido, e será só usado 1 embed em todo o comando.
@@ -200,19 +171,8 @@ namespace UBGE_Bot.Utilidades
         /// </summary>
         /// <param name="Membro"></param>
         /// <returns></returns>
-        public string MencaoMembro(DiscordMember membro) 
+        public string MencaoMembro(DiscordMember membro)
             => $"{(!string.IsNullOrWhiteSpace(membro.Nickname) ? $"<@!{membro.Id}>" : $"<@{membro.Id}>")}";
-
-        /// <summary>
-        /// Checa se a string contem mais de 18 números.
-        /// Checagem para comparar se o nick, (ex: "Luiz123"), tem mais de 18 números (Número de caracteres do ID do membro do Discord).
-        /// </summary>
-        /// <param name="Texto"></param>
-        /// <returns></returns>
-        public bool ChecaSeAStringContemMaisOuEIgualA18Numeros(string texto)
-        {
-            return texto.Where(c => char.IsNumber(c)).Count() >= 18;
-        }
 
         /// <summary>
         /// Procura o emoji que corresponde a o status do membro no Discord.
@@ -245,13 +205,13 @@ namespace UBGE_Bot.Utilidades
         /// <returns></returns>
         public string RetornaSegundosMinutosHorasDiasDaPunicao(string texto)
         {
-            if (texto.Contains("s")) 
+            if (texto.Contains("s"))
                 return "s";
-            else if (texto.Contains("m")) 
+            else if (texto.Contains("m"))
                 return "m";
-            else if (texto.Contains("h")) 
+            else if (texto.Contains("h"))
                 return "h";
-            else if (texto.Contains("d")) 
+            else if (texto.Contains("d"))
                 return "d";
 
             return null;
@@ -286,9 +246,7 @@ namespace UBGE_Bot.Utilidades
         /// <param name="byteParaString"></param>
         /// <returns></returns>
         public string ByteParaString(byte[] byteParaString)
-        {
-            return Encoding.UTF8.GetString(byteParaString, 0, byteParaString.Length);
-        }
+            => Encoding.UTF8.GetString(byteParaString, 0, byteParaString.Length);
 
         /// <summary>
         /// Faz o check para retornar o nick correto do membro no Discord.
@@ -304,12 +262,12 @@ namespace UBGE_Bot.Utilidades
         /// <param name="commandContext"></param>
         /// <param name="emojisParaBuscar"></param>
         /// <returns></returns>
-        public async Task<List<DiscordEmoji>> RetornaEmojis(CommandContext commandContext, List<string> emojisParaBuscar) 
+        public async Task<List<DiscordEmoji>> RetornaEmojis(CommandContext commandContext, List<string> emojisParaBuscar)
         {
             List<DiscordEmoji> emojis = new List<DiscordEmoji>();
 
-            foreach (var nomeEmoji in emojisParaBuscar)
-                    emojis.Add(await ProcuraEmoji(commandContext, nomeEmoji));
+            foreach (string nomeEmoji in emojisParaBuscar)
+                emojis.Add(await ProcuraEmoji(commandContext, nomeEmoji));
 
             return emojis;
         }
@@ -320,12 +278,12 @@ namespace UBGE_Bot.Utilidades
         /// <param name="discordClient"></param>
         /// <param name="emojisParaBuscar"></param>
         /// <returns></returns>
-        public async Task<List<DiscordEmoji>> RetornaEmojis(DiscordClient discordClient, List<string> emojisParaBuscar) 
+        public async Task<List<DiscordEmoji>> RetornaEmojis(DiscordClient discordClient, List<string> emojisParaBuscar)
         {
             List<DiscordEmoji> emojis = new List<DiscordEmoji>();
 
-            foreach (var nomeEmoji in emojisParaBuscar)
-                    emojis.Add(await ProcuraEmoji(discordClient, nomeEmoji));
+            foreach (string nomeEmoji in emojisParaBuscar)
+                emojis.Add(await ProcuraEmoji(discordClient, nomeEmoji));
 
             return emojis;
         }
@@ -404,7 +362,7 @@ namespace UBGE_Bot.Utilidades
         /// <returns></returns>
         public async Task ExcluiReacoesDeUmaListaDeMembros(DiscordMessage mensagemEmbedReact, DiscordEmoji emoji, IReadOnlyList<DiscordUser> membrosQueReagiram)
         {
-            foreach (var membroDaReacao in membrosQueReagiram)
+            foreach (DiscordUser membroDaReacao in membrosQueReagiram)
             {
                 try
                 {
@@ -427,55 +385,67 @@ namespace UBGE_Bot.Utilidades
     public sealed class UBGE_E_EtcAttribute : CheckBaseAttribute
     {
         public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
-        {
-            return Task.FromResult(ctx.Guild.Id == Valores.Guilds.UBGE || ctx.Guild.Id == Valores.Guilds.testesDoLuiz || ctx.Guild.Id == Valores.Guilds.CBPR
+            => Task.FromResult(ctx.Guild.Id == Valores.Guilds.UBGE || ctx.Guild.Id == Valores.Guilds.testesDoLuiz || ctx.Guild.Id == Valores.Guilds.CBPR
                 || ctx.Guild.Id == Valores.Guilds.emojos || ctx.Guild.Id == Valores.Guilds.ruinasDeAstapor || ctx.Guild.Id == Valores.Guilds.emoji);
-        }
     }
 
     public sealed class UBGEAttribute : CheckBaseAttribute
     {
         public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
-        {
-            return Task.FromResult(ctx.Guild.Id == Valores.Guilds.UBGE);
-        }
+            => Task.FromResult(ctx.Guild.Id == Valores.Guilds.UBGE);
     }
 
     public sealed class UBGE_StaffAttribute : CheckBaseAttribute
     {
         public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
-        {
-            return Task.FromResult(ctx.Guild.Id == Valores.Guilds.UBGE && ctx.Member.Roles.ToList().FindAll(x => x.Permissions.HasFlag(Permissions.KickMembers)).Count != 0 || Debugger.IsAttached);
-        }
+            => Task.FromResult(ctx.Guild.Id == Valores.Guilds.UBGE && ctx.Member.Roles.ToList().FindAll(x => x.Permissions.HasFlag(Permissions.KickMembers)).Count != 0 || Debugger.IsAttached || ctx.Member.Id == Valores.Guilds.Membros.ubgeBot);
     }
 
     public sealed class RuinasDeAstaporAttribute : CheckBaseAttribute
     {
         public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
-        {
-            return Task.FromResult(ctx.Guild.Id == Valores.Guilds.UBGE || ctx.Guild.Id == Valores.Guilds.ruinasDeAstapor);
-        }
+            => Task.FromResult(ctx.Guild.Id == Valores.Guilds.UBGE || ctx.Guild.Id == Valores.Guilds.ruinasDeAstapor);
     }
 
     public sealed class UBGEAlbionAttribute : CheckBaseAttribute
     {
         public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
-        {
-            return Task.FromResult(ctx.Guild.Id == Valores.Guilds.ubgeAlbion);
-        }
+            => Task.FromResult(ctx.Guild.Id == Valores.Guilds.ubgeAlbion);
     }
 
     public sealed class UBGE_CrieSuaSalaAquiAttribute : CheckBaseAttribute
     {
         public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
+            => Task.FromResult(ctx.Guild.Id == Valores.Guilds.UBGE && ctx.Channel.Id == Valores.ChatsUBGE.canalCrieSuaSalaAqui);
+    }
+
+    public sealed class BotConectadoAoMongo : CheckBaseAttribute
+    {
+        public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
         {
-            return Task.FromResult(ctx.Guild.Id == Valores.Guilds.UBGE && ctx.Channel.Id == Valores.ChatsUBGE.canalCrieSuaSalaAqui);
+            if (!Program.ubgeBot.botConectadoAoMongo)
+            {
+                DiscordEmbedBuilder embed = new DiscordEmbedBuilder
+                {
+                    Author = new DiscordEmbedBuilder.EmbedAuthor { Name = "Erro!", IconUrl = Valores.logoUBGE },
+                    Description = "Não foi possível executar este comando pois o bot não está conectado ao Mongo! :cry:",
+                    ThumbnailUrl = ctx.Member.AvatarUrl,
+                    Footer = new DiscordEmbedBuilder.EmbedFooter { IconUrl = ctx.Member.AvatarUrl, Text = $"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(ctx.Member)}" },
+                    Color = Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed(),
+                };
+
+                ctx.RespondAsync(embed: embed.Build());
+
+                return Task.FromResult(false);
+            }
+
+            return Task.FromResult(true);
         }
     }
 
 
     public interface IAplicavelAoCliente
     {
-        void AplicarAoBot(DiscordClient discordClient, bool botConectadoAoMongo = true);
+        void AplicarAoBot(DiscordClient discordClient, bool botConectadoAoMongo = true, bool sistemaAtivo = true);
     }
 }

@@ -10,6 +10,6 @@
         public UBGEBotGoogleAPIConfig ubgeBotGoogleAPIConfig { get; set; } = new UBGEBotGoogleAPIConfig();
         public UBGEBotServidoresConfig ubgeBotServidoresConfig { get; set; } = new UBGEBotServidoresConfig();
 
-        public UBGEBotValores ubgeBotValoresConfig { get; set; } = new UBGEBotValores();
+        public UBGEBotValoresConfig ubgeBotValoresConfig { get; set; } = new UBGEBotValoresConfig();
     }
 }

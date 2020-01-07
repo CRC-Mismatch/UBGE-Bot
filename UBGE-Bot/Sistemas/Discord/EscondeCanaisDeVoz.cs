@@ -3,6 +3,7 @@ using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using MongoDB.Driver;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +15,7 @@ namespace UBGE_Bot.Sistemas.Discord
 {
     public sealed class EscondeCanaisDeVoz : IAplicavelAoCliente
     {
-        public void AplicarAoBot(DiscordClient discordClient, bool botConectadoAoMongo)
+        public void AplicarAoBot(DiscordClient discordClient, bool botConectadoAoMongo, bool sistemaAtivo)
         {
             //discordClient.VoiceStateUpdated += EscondeCanaisDeVozTask;
         }
@@ -40,7 +41,7 @@ namespace UBGE_Bot.Sistemas.Discord
                     DiscordChannel canalAntes = voiceStateUpdateEventArgs.Before?.Channel;
                     DiscordChannel canalDepois = voiceStateUpdateEventArgs.After?.Channel;
 
-                    var canaisDeVozDaUBGE = UBGE.Channels.Values.Where(x => x.Type == ChannelType.Voice && x.Parent.Id != Valores.ChatsUBGE.Categorias.categoriaUBGE && x.Parent.Id != Valores.ChatsUBGE.Categorias.categoriaCliqueAqui && x.Parent.Id != Valores.ChatsUBGE.Categorias.categoriaConselhoComunitario);
+                    IEnumerable<DiscordChannel> canaisDeVozDaUBGE = UBGE.Channels.Values.Where(x => x.Type == ChannelType.Voice && x.Parent.Id != Valores.ChatsUBGE.Categorias.categoriaUBGE && x.Parent.Id != Valores.ChatsUBGE.Categorias.categoriaCliqueAqui && x.Parent.Id != Valores.ChatsUBGE.Categorias.categoriaConselhoComunitario);
 
                     DiscordOverwriteBuilder permissao = new DiscordOverwriteBuilder
                     {
@@ -48,9 +49,9 @@ namespace UBGE_Bot.Sistemas.Discord
                         Denied = Permissions.AccessChannels | Permissions.UseVoice,
                     };
 
-                    foreach (var canal in canaisDeVozDaUBGE)
+                    foreach (DiscordChannel canal in canaisDeVozDaUBGE)
                     {
-                        var permissoesDoCanal = canal.PermissionOverwrites.ToList();
+                        List<DiscordOverwrite> permissoesDoCanal = canal.PermissionOverwrites.ToList();
 
                         if (canal.Users.Count() == 0 && !permissoesDoCanal.Exists(x => x.Type == OverwriteType.Role && x.Id == everyoneUBGE.Id && x.Denied == permissao.Denied || x.Type == OverwriteType.Role && x.Id == acessoGeral.Id && x.Denied == permissao.Denied))
                         {

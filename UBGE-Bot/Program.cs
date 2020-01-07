@@ -1,10 +1,6 @@
-﻿using Autofac;
-using DSharpPlus.Entities;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Threading.Tasks;
 using System.Net.Http;
-using UBGE_Bot.APIs;
 using UBGE_Bot.Carregamento;
 
 namespace UBGE_Bot.Main
@@ -15,47 +11,22 @@ namespace UBGE_Bot.Main
         public static UBGEBot_ ubgeBot { get; private set; } = new UBGEBot_();
 
         public static HttpClient httpClient { get; set; } = new HttpClient();
-
         public static bool checkDosCanaisFoiIniciado { get; set; }
 
-        public static List<DiscordEmoji> emojisCache = new List<DiscordEmoji>();
-
-        private static async Task Main(string[] args)
+        private static async Task Main()
         {
-            try 
-            {
-                ContainerBuilder containerBuilder = new ContainerBuilder();
-                {
-                    containerBuilder.RegisterType<Google_Sheets.Read>().SingleInstance();
-                    containerBuilder.RegisterType<Google_Sheets.Write>().SingleInstance();
-                }
-                ubgeBot.servicesIContainer = containerBuilder.Build();
+            instanciaMain = new Program();
 
-                instanciaMain = new Program();
-                await instanciaMain.ConectarAoDiscordAsync(ubgeBot);
-            }
-            catch (Exception exception)
-            {
-                ubgeBot.logExceptionsToDiscord.ExceptionToTxt(exception);
-                ShutdownBot();
-            }
+            await instanciaMain.ConectarAoDiscordAsync(ubgeBot);
         }
 
         private async Task ConectarAoDiscordAsync(UBGEBot_ ubgeBotClient)
         {
-            try
-            {
-                await ubgeBotClient.discordClient.ConnectAsync();
-                await Task.Delay(-1);
-            }
-            catch (Exception exception)
-            {
-                ubgeBotClient.logExceptionsToDiscord.ExceptionToTxt(exception);
-                ShutdownBot();
-            }
+            await ubgeBotClient.discordClient.ConnectAsync();
+            await Task.Delay(-1);
         }
 
-        public static void ShutdownBot()
+        public static void DesligarBot()
             => Environment.Exit(1);
     }
 }

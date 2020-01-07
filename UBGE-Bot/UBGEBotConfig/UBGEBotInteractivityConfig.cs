@@ -16,7 +16,7 @@ namespace UBGE_Bot.UBGEBotConfig
 
         public InteractivityConfiguration Build()
         {
-            var jsonConfig = JsonConvert.DeserializeObject<UBGEBotInteractivityConfig>(File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\JsonUBGE_Bot\InteractivityConfig.json"));
+            UBGEBotInteractivityConfig jsonConfig = JsonConvert.DeserializeObject<UBGEBotInteractivityConfig>(File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\JsonUBGE_Bot\InteractivityConfig.json"));
 
             return new InteractivityConfiguration
             {

@@ -24,8 +24,8 @@ namespace UBGE_Bot.MongoDB.Modelos
         public Contato contato { get; set; }
     }
 
-    public sealed class Denuncia 
-    { 
+    public sealed class Denuncia
+    {
         [BsonElement]
         public string denunciaDoMembro { get; set; }
 
@@ -48,7 +48,7 @@ namespace UBGE_Bot.MongoDB.Modelos
         public string diaHoraSugestao { get; set; }
     }
 
-    public sealed class Contato 
+    public sealed class Contato
     {
         [BsonElement]
         public string diaHoraContato { get; set; }

@@ -13,10 +13,8 @@ namespace UBGE_Bot.Sistemas.Discord
 {
     public sealed class MembroAlteradoUBGE : IAplicavelAoCliente
     {
-        public void AplicarAoBot(DiscordClient discordClient, bool botConectadoAoMongo)
-        {
-            discordClient.GuildMemberUpdated += MembroAlterado;
-        }
+        public void AplicarAoBot(DiscordClient discordClient, bool botConectadoAoMongo, bool sistemaAtivo)
+            => discordClient.GuildMemberUpdated += MembroAlterado;
 
         private async Task MembroAlterado(GuildMemberUpdateEventArgs guildMemberUpdateEventArgs)
         {

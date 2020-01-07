@@ -4,6 +4,7 @@ using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
 using MongoDB.Driver;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,9 +17,9 @@ namespace UBGE_Bot.Sistemas.Discord
 {
     public sealed class MensagemCriadaUBGE : IAplicavelAoCliente
     {
-        public void AplicarAoBot(DiscordClient discordClient, bool botConectadoAoMongo)
+        public void AplicarAoBot(DiscordClient discordClient, bool botConectadoAoMongo, bool sistemaAtivo)
         {
-            if (botConectadoAoMongo)
+            if (botConectadoAoMongo && sistemaAtivo)
                 discordClient.MessageCreated += MensagemCriada;
         }
 
@@ -33,7 +34,7 @@ namespace UBGE_Bot.Sistemas.Discord
             {
                 try
                 {
-                    var db = Program.ubgeBot.localDB;
+                    IMongoDatabase db = Program.ubgeBot.localDB;
 
                     DiscordClient clientDiscord = messageCreateEventArgs.Client;
                     DiscordChannel canalMensagem = messageCreateEventArgs.Channel;
@@ -47,7 +48,7 @@ namespace UBGE_Bot.Sistemas.Discord
                     if (UBGE.Members.Keys.Contains(donoMensagem.Id))
                         donoMensagem_ = await UBGE.GetMemberAsync(donoMensagem.Id);
 
-                    var collectionModMail = db.GetCollection<ModMail>(Valores.Mongo.modMail);
+                    IMongoCollection<ModMail> collectionModMail = db.GetCollection<ModMail>(Valores.Mongo.modMail);
 
                     if (!canalMensagem.IsPrivate)
                     {
@@ -56,26 +57,24 @@ namespace UBGE_Bot.Sistemas.Discord
                             if (donoMensagem.IsBot)
                             {
                                 await mensagem.CreateReactionAsync(DiscordEmoji.FromName(clientDiscord, ":white_check_mark:"));
-                                await Task.Delay(200);
                                 await mensagem.CreateReactionAsync(DiscordEmoji.FromName(clientDiscord, ":negative_squared_cross_mark:"));
                             }
                         }
 
                         if (canalMensagem.Id == Valores.ChatsUBGE.canalRecomendacoesPromocoes)
                         {
-                            if (mensagem.Content.Contains("http") || mensagem.Content.Contains("https"))
+                            if (mensagem.Content.ToLower().Contains("http") || mensagem.Content.ToLower().Contains("https"))
                             {
                                 await mensagem.CreateReactionAsync(DiscordEmoji.FromName(clientDiscord, ":thumbsup:"));
-                                await Task.Delay(200);
                                 await mensagem.CreateReactionAsync(DiscordEmoji.FromName(clientDiscord, ":thumbsdown:"));
                             }
                         }
 
-                        var resultadoModMailIdDoCanal = await (await collectionModMail.FindAsync(Builders<ModMail>.Filter.Eq(x => x.idDoCanal, canalMensagem.Id))).ToListAsync();
+                        List<ModMail> resultadoModMailIdDoCanal = await (await collectionModMail.FindAsync(Builders<ModMail>.Filter.Eq(x => x.idDoCanal, canalMensagem.Id))).ToListAsync();
 
                         if (resultadoModMailIdDoCanal.Count != 0 && !donoMensagem.IsBot && (mensagem.Content.ToLower().StartsWith("//responder") || mensagem.Content.ToLower().StartsWith("ubge!responder") || mensagem.Content.ToLower().StartsWith("//r") || mensagem.Content.ToLower().StartsWith("ubge!r")))
                         {
-                            var ultimoResultadoModMailIdDoCanal = resultadoModMailIdDoCanal.LastOrDefault();
+                            ModMail ultimoResultadoModMailIdDoCanal = resultadoModMailIdDoCanal.LastOrDefault();
 
                             bool canalFechadoIdDoCanal = true;
 
@@ -88,29 +87,71 @@ namespace UBGE_Bot.Sistemas.Discord
                             {
                                 DiscordDmChannel pvMembro = await (await UBGE.GetMemberAsync(resultadoModMailIdDoCanal.LastOrDefault().idDoMembro)).CreateDmChannelAsync();
 
-                                var nomeMembroNoDiscordModMail = Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(donoMensagem_);
+                                string nomeMembroNoDiscordModMail = Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(donoMensagem_);
 
-                                var mensagemAnexadas = mensagem.Attachments;
+                                IReadOnlyList<DiscordAttachment> mensagemAnexadas = mensagem.Attachments;
+
+                                DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+
+                                embed.WithAuthor($"Mensagem enviada por: \"{nomeMembroNoDiscordModMail}#{donoMensagem_.Discriminator}\"", null, Valores.logoUBGE)
+                                    .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                                    .WithThumbnailUrl(donoMensagem_.AvatarUrl)
+                                    .WithTimestamp(DateTime.Now);
+
+                                string msg = mensagem.Content.Replace("//r ", "").Replace("//R ", "").Replace("//r", "")
+                                .Replace("//R", "").Replace("ubge!r", "").Replace("UBGE!r", "").Replace("ubge!r ", "")
+                                .Replace("UBGE!R ", "").Replace("//responder", "").Replace("//responder ", "")
+                                .Replace("//RESPONDER", "").Replace("//RESPONDER ", "").Replace("ubge!responder", "")
+                                .Replace("ubge!responder ", "").Replace("UBGE!RESPONDER", "").Replace("UBGE!RESPONDER ", "");
 
                                 if (mensagemAnexadas.Count != 0)
                                 {
-                                    foreach (var arquivos in mensagemAnexadas)
+                                    foreach (DiscordAttachment arquivos in mensagemAnexadas)
                                     {
-                                        if (string.IsNullOrWhiteSpace(mensagem.Content))
+                                        string anexo = string.Empty;
+
+                                        if (string.IsNullOrWhiteSpace(msg))
                                         {
-                                            await pvMembro.SendMessageAsync($"**{nomeMembroNoDiscordModMail}#{donoMensagem_.Discriminator}** - **[{donoMensagem_.Roles.OrderByDescending(x => x.Position).FirstOrDefault().Name}]** → {arquivos.Url}");
+                                            await pvMembro.SendMessageAsync($"**{nomeMembroNoDiscordModMail}#{donoMensagem_.Discriminator}** - **[{donoMensagem_.Roles.OrderByDescending(x => x.Position).FirstOrDefault().Name}]** → *Nenhuma mensagem foi anexada a este link.*\n{arquivos.Url}");
+                                            await mensagem.DeleteAsync();
+
+                                            if (arquivos.Url.ToLower().Contains(".jpg") || arquivos.Url.ToLower().Contains(".png") || arquivos.Url.ToLower().Contains(".gif") || arquivos.Url.ToLower().Contains(".jpeg") || arquivos.Url.ToLower().Contains(".bmp"))
+                                                embed.WithImageUrl(arquivos.Url);
+                                            else
+                                                anexo += $"{arquivos.Url}, ";
+
+                                            embed.WithDescription($"Nenhuma mensagem foi anexada a este link.{(string.IsNullOrWhiteSpace(anexo) ? string.Empty : $"\nLinks que não foram reconhecidos por mim: {(anexo.EndsWith(", ") ? anexo.Remove(anexo.Length - 2) : anexo)}")}");
+
+                                            await canalMensagem.SendMessageAsync(embed: embed.Build());
 
                                             continue;
                                         }
 
-                                        await pvMembro.SendMessageAsync($"**{nomeMembroNoDiscordModMail}#{donoMensagem_.Discriminator}** - **[{donoMensagem_.Roles.OrderByDescending(x => x.Position).FirstOrDefault().Name}]** → {mensagem.Content.Replace("//r ", "").Replace("ubge!r ", "").Replace("//responder ", "").Replace("ubge!responder ", "")}\n\n*Mensagem anexada ao link.*");
+                                        await pvMembro.SendMessageAsync($"**{nomeMembroNoDiscordModMail}#{donoMensagem_.Discriminator}** - **[{donoMensagem_.Roles.OrderByDescending(x => x.Position).FirstOrDefault().Name}]** → {msg}");
                                         await pvMembro.SendMessageAsync(arquivos.Url);
+
+                                        await mensagem.DeleteAsync();
+
+                                        if (arquivos.Url.ToLower().Contains(".jpg") || arquivos.Url.ToLower().Contains(".png") || arquivos.Url.ToLower().Contains(".gif") || arquivos.Url.ToLower().Contains(".jpeg") || arquivos.Url.ToLower().Contains(".bmp"))
+                                            embed.WithImageUrl(arquivos.Url);
+                                        else
+                                            anexo += $"{arquivos.Url}, ";
+
+                                        embed.WithDescription($"{msg}{(string.IsNullOrWhiteSpace(anexo) ? string.Empty : $"\n\nLinks que não foram reconhecidos por mim: {(anexo.EndsWith(", ") ? anexo.Remove(anexo.Length - 2) : anexo)}")}");
+
+                                        await canalMensagem.SendMessageAsync(embed: embed.Build());
                                     }
 
                                     return;
                                 }
 
-                                await pvMembro.SendMessageAsync($"**{nomeMembroNoDiscordModMail}#{donoMensagem_.Discriminator}** - **[{donoMensagem_.Roles.OrderByDescending(x => x.Position).FirstOrDefault().Name}]** → {mensagem.Content.Replace("//r ", "").Replace("ubge!r ", "").Replace("//responder ", "").Replace("ubge!responder ", "")}");
+                                await pvMembro.SendMessageAsync($"**{nomeMembroNoDiscordModMail}#{donoMensagem_.Discriminator}** - **[{donoMensagem_.Roles.OrderByDescending(x => x.Position).FirstOrDefault().Name}]** → {msg}");
+
+                                await mensagem.DeleteAsync();
+
+                                embed.WithDescription(msg);
+
+                                await canalMensagem.SendMessageAsync(embed: embed.Build());
                             }
                         }
 
@@ -118,12 +159,12 @@ namespace UBGE_Bot.Sistemas.Discord
                             canalMensagem.Id != Valores.ChatsUBGE.canalComandosBot || canalMensagem.Id != Valores.ChatsUBGE.canalCrieSuaSalaAqui ||
                             canalMensagem.Id != Valores.ChatsUBGE.canalUBGEBot || !donoMensagem.IsBot)
                         {
-                            var colecao = db.GetCollection<Levels>(Valores.Mongo.levels);
-                            var filtro = Builders<Levels>.Filter.Eq(x => x.idDoMembro, messageCreateEventArgs.Author.Id);
+                            IMongoCollection<Levels> colecao = db.GetCollection<Levels>(Valores.Mongo.levels);
+                            FilterDefinition<Levels> filtro = Builders<Levels>.Filter.Eq(x => x.idDoMembro, messageCreateEventArgs.Author.Id);
 
-                            var lista = await (await colecao.FindAsync(filtro)).ToListAsync();
+                            List<Levels> lista = await (await colecao.FindAsync(filtro)).ToListAsync();
 
-                            var xpAleatorio = ulong.Parse(new Random().Next(1, 20).ToString());
+                            ulong xpAleatorio = ulong.Parse(new Random().Next(1, 20).ToString());
 
                             ulong numeroLevel = 1;
 
@@ -134,7 +175,7 @@ namespace UBGE_Bot.Sistemas.Discord
                                 ulong xpFinal = 0;
                                 ulong xpForeach = 0;
 
-                                foreach (var Level in lista)
+                                foreach (Levels Level in lista)
                                 {
                                     if ((DateTime.Now - Convert.ToDateTime(Level.diaEHora)).TotalMinutes < 1)
                                         return;
@@ -161,10 +202,10 @@ namespace UBGE_Bot.Sistemas.Discord
                     if (donoMensagem.IsBot || !UBGE.Members.Keys.Contains(donoMensagem.Id))
                         return;
 
-                    var resultadoModMail = await (await collectionModMail.FindAsync(Builders<ModMail>.Filter.Eq(x => x.idDoMembro, donoMensagem.Id))).ToListAsync();
-                    var ultimoResultadoModMail = resultadoModMail.LastOrDefault();
+                    List<ModMail> resultadoModMail = await (await collectionModMail.FindAsync(Builders<ModMail>.Filter.Eq(x => x.idDoMembro, donoMensagem.Id))).ToListAsync();
+                    ModMail ultimoResultadoModMail = resultadoModMail.LastOrDefault();
 
-                    var nomeMembroNoDiscord = Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(donoMensagem_);
+                    string nomeMembroNoDiscord = Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(donoMensagem_);
 
                     DiscordRole cargoModeradorDiscord = UBGE.GetRole(Valores.Cargos.cargoModeradorDiscord);
                     DiscordRole cargoComiteComunitario = UBGE.GetRole(Valores.Cargos.cargoComiteComunitario);
@@ -172,7 +213,7 @@ namespace UBGE_Bot.Sistemas.Discord
 
                     DiscordChannel votacoesConselho = UBGE.GetChannel(Valores.ChatsUBGE.canalVotacoesConselho);
 
-                    var modMailUBGE = UBGE.GetChannel(Valores.ChatsUBGE.Categorias.categoriaModMailBot);
+                    DiscordChannel modMailUBGE = UBGE.GetChannel(Valores.ChatsUBGE.Categorias.categoriaModMailBot);
 
                     if (mensagem.Content.ToLower() != "modmail")
                     {
@@ -187,22 +228,38 @@ namespace UBGE_Bot.Sistemas.Discord
 
                             if (!canalFechado)
                             {
-                                var canalModMail = UBGE.GetChannel(ultimoResultadoModMail.idDoCanal);
+                                DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+                                DiscordChannel canalModMail = UBGE.GetChannel(ultimoResultadoModMail.idDoCanal);
 
-                                var mensagensAnexadas = mensagem.Attachments;
+                                IReadOnlyList<DiscordAttachment> mensagensAnexadas = mensagem.Attachments;
+
+                                string anexo = string.Empty;
+
+                                embed.WithAuthor($"Mensagem recebida de: \"{nomeMembroNoDiscord}#{donoMensagem_.Discriminator}\"", null, Valores.logoUBGE)
+                                    .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
+                                    .WithThumbnailUrl(donoMensagem_.AvatarUrl)
+                                    .WithTimestamp(DateTime.Now);
 
                                 if (mensagensAnexadas.Count != 0)
                                 {
-                                    foreach (var arquivos in mensagensAnexadas)
+                                    foreach (DiscordAttachment arquivos in mensagensAnexadas)
                                     {
-                                        await canalModMail.SendMessageAsync($"**{nomeMembroNoDiscord}#{donoMensagem_.Discriminator}** → {(string.IsNullOrWhiteSpace(mensagem.Content) ? string.Empty : $"{mensagem.Content}\n\n*Mensagem anexada com o link.*")}");
-                                        await canalModMail.SendMessageAsync(arquivos.Url);
+                                        if (arquivos.Url.ToLower().Contains(".jpg") || arquivos.Url.ToLower().Contains(".png") || arquivos.Url.ToLower().Contains(".gif") || arquivos.Url.ToLower().Contains(".jpeg") || arquivos.Url.ToLower().Contains(".bmp"))
+                                            embed.WithImageUrl(arquivos.Url);
+                                        else
+                                            anexo += $"{arquivos.Url}, ";
+
+                                        embed.WithDescription(string.IsNullOrWhiteSpace(mensagem.Content) ? $"Não há alguma outra mensagem.{(string.IsNullOrWhiteSpace(anexo) ? string.Empty : $"\n\nLinks que não foram reconhecidos por mim: {(anexo.EndsWith(", ") ? anexo.Remove(anexo.Length - 2) : anexo)}")}" : $"{mensagem.Content}{(string.IsNullOrWhiteSpace(anexo) ? string.Empty : $"\n\nLinks que não foram reconhecidos por mim: {(anexo.EndsWith(", ") ? anexo.Remove(anexo.Length - 2) : anexo)}")}");
+
+                                        await canalModMail.SendMessageAsync(embed: embed.Build());
                                     }
 
                                     return;
                                 }
 
-                                await canalModMail.SendMessageAsync($"**{nomeMembroNoDiscord}#{donoMensagem_.Discriminator}** → {mensagem.Content}");
+                                embed.WithDescription(mensagem.Content);
+
+                                await canalModMail.SendMessageAsync(embed: embed.Build());
 
                                 return;
                             }
@@ -223,7 +280,7 @@ namespace UBGE_Bot.Sistemas.Discord
 
                             DiscordEmoji emojiDenuncia = DiscordEmoji.FromName(clientDiscord, ":oncoming_police_car:");
                             DiscordEmoji emojiSugestao = DiscordEmoji.FromName(clientDiscord, ":star:");
-                            DiscordEmoji emojiContatoStaff = await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(clientDiscord, ":LOGO_UBGE_2:");
+                            DiscordEmoji emojiContatoStaff = await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(clientDiscord, "LOGO_UBGE_2");
 
                             embed.WithAuthor("O que você deseja fazer?", null, Valores.logoUBGE)
                                 .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
@@ -235,17 +292,17 @@ namespace UBGE_Bot.Sistemas.Discord
 
                             DiscordMessage msgEscolhaMembro = await canalMensagem.SendMessageAsync(embed: embed.Build());
                             await msgEscolhaMembro.CreateReactionAsync(emojiDenuncia);
-                            await Task.Delay(200);
                             await msgEscolhaMembro.CreateReactionAsync(emojiSugestao);
-                            await Task.Delay(200);
                             await msgEscolhaMembro.CreateReactionAsync(emojiContatoStaff);
 
-                            var emojiResposta = (await interactivity.WaitForReactionAsync(msgEscolhaMembro, donoMensagem, TimeSpan.FromMinutes(1))).Result.Emoji;
+                            DiscordEmoji emojiResposta = (await interactivity.WaitForReactionAsync(msgEscolhaMembro, donoMensagem, TimeSpan.FromMinutes(1))).Result.Emoji;
 
-                            ModMail modMail = new ModMail();
-                            modMail.idDoMembro = donoMensagem_.Id;
+                            ModMail modMail = new ModMail
+                            {
+                                idDoMembro = donoMensagem_.Id
+                            };
 
-                            var nickMembroNoCanal = nomeMembroNoDiscord.Replace("[", "").Replace("]", "").Replace("'", "").Replace("\"", "").Replace("!", "").Replace("_", "").Replace("-", "").Replace("=", "").Replace("<", "").Replace("<", "").Replace(".", "").Replace(",", "").Replace("`", "").Replace("´", "").Replace("+", "").Replace("/", "").Replace("\\", "").Replace(":", "").Replace(";", "").Replace("{", "").Replace("}", "").Replace("ª", "").Replace("º", "").Replace(" ", "");
+                            string nickMembroNoCanal = nomeMembroNoDiscord.Replace("[", "").Replace("]", "").Replace("'", "").Replace("\"", "").Replace("!", "").Replace("_", "").Replace("-", "").Replace("=", "").Replace("<", "").Replace("<", "").Replace(".", "").Replace(",", "").Replace("`", "").Replace("´", "").Replace("+", "").Replace("/", "").Replace("\\", "").Replace(":", "").Replace(";", "").Replace("{", "").Replace("}", "").Replace("ª", "").Replace("º", "").Replace(" ", "");
 
                             if (emojiResposta == emojiDenuncia)
                             {
@@ -256,7 +313,7 @@ namespace UBGE_Bot.Sistemas.Discord
                                     .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed());
 
                                 DiscordMessage perguntaMotivoDenuncia = await canalMensagem.SendMessageAsync(embed: embed.Build());
-                                var esperaRespostaMotivoDenuncia = await Program.ubgeBot.utilidadesGerais.PegaRespostaPrivado(interactivity, donoMensagem_, canalMensagem);
+                                DiscordMessage esperaRespostaMotivoDenuncia = await Program.ubgeBot.utilidadesGerais.PegaRespostaPrivado(interactivity, donoMensagem_, canalMensagem);
 
                                 Program.ubgeBot.utilidadesGerais.LimpaEmbed(embed);
 
@@ -264,11 +321,11 @@ namespace UBGE_Bot.Sistemas.Discord
                                     .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed());
 
                                 DiscordMessage perguntaDenuncia = await canalMensagem.SendMessageAsync(embed: embed.Build());
-                                var esperaRespostaDenuncia = await Program.ubgeBot.utilidadesGerais.PegaRespostaPrivado(interactivity, donoMensagem_, canalMensagem);
+                                DiscordMessage esperaRespostaDenuncia = await Program.ubgeBot.utilidadesGerais.PegaRespostaPrivado(interactivity, donoMensagem_, canalMensagem);
 
-                                var diaHoraDenunciaDoMembro = DateTime.Now.ToString();
+                                string diaHoraDenunciaDoMembro = DateTime.Now.ToString();
 
-                                var canalMembroDaDenuncia = await UBGE.CreateTextChannelAsync($"{nickMembroNoCanal}-{donoMensagem_.Discriminator}", modMailUBGE);
+                                DiscordChannel canalMembroDaDenuncia = await UBGE.CreateTextChannelAsync($"{nickMembroNoCanal}-{donoMensagem_.Discriminator}", modMailUBGE);
 
                                 await canalMembroDaDenuncia.AddOverwriteAsync(cargoComiteComunitario, Permissions.None, Permissions.AccessChannels | Permissions.SendMessages);
                                 await canalMembroDaDenuncia.AddOverwriteAsync(cargoConselheiro, Permissions.None, Permissions.AccessChannels | Permissions.SendMessages);
@@ -315,9 +372,9 @@ namespace UBGE_Bot.Sistemas.Discord
                                     .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed());
 
                                 DiscordMessage perguntaSugestao = await canalMensagem.SendMessageAsync(embed: embed.Build());
-                                var esperaSugestao = await Program.ubgeBot.utilidadesGerais.PegaRespostaPrivado(interactivity, donoMensagem_, canalMensagem);
+                                DiscordMessage esperaSugestao = await Program.ubgeBot.utilidadesGerais.PegaRespostaPrivado(interactivity, donoMensagem_, canalMensagem);
 
-                                var diaHoraSugestaoDoMembro = DateTime.Now.ToString();
+                                string diaHoraSugestaoDoMembro = DateTime.Now.ToString();
 
                                 modMail.sugestao = new Sugestao
                                 {
@@ -335,16 +392,15 @@ namespace UBGE_Bot.Sistemas.Discord
                                     .WithThumbnailUrl(donoMensagem_.AvatarUrl)
                                     .WithTimestamp(DateTime.Now);
 
-                                var mensagemSugestao = await votacoesConselho.SendMessageAsync(embed: embed.Build(), content: cargoConselheiro.Mention);
+                                DiscordMessage mensagemSugestao = await votacoesConselho.SendMessageAsync(embed: embed.Build(), content: cargoConselheiro.Mention);
                                 await mensagemSugestao.CreateReactionAsync(DiscordEmoji.FromName(clientDiscord, ":white_check_mark:"));
-                                await Task.Delay(200);
                                 await mensagemSugestao.CreateReactionAsync(DiscordEmoji.FromName(clientDiscord, ":negative_squared_cross_mark:"));
 
                                 Program.ubgeBot.utilidadesGerais.LimpaEmbed(embed);
 
                                 embed.WithAuthor("Sua sugestão foi enviada para a staff da UBGE!", null, Valores.logoUBGE)
                                     .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed())
-                                    .WithDescription($"Obrigado por fazer um servidor agradável a todos os membros! {await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(clientDiscord, ":UBGE:")}")
+                                    .WithDescription($"Obrigado por fazer um servidor agradável a todos os membros! {await Program.ubgeBot.utilidadesGerais.ProcuraEmoji(clientDiscord, "UBGE")}")
                                     .WithThumbnailUrl(donoMensagem_.AvatarUrl)
                                     .WithTimestamp(DateTime.Now);
 
@@ -358,11 +414,11 @@ namespace UBGE_Bot.Sistemas.Discord
                                     .WithColor(Program.ubgeBot.utilidadesGerais.CorAleatoriaEmbed());
 
                                 DiscordMessage perguntaMotivoContato = await canalMensagem.SendMessageAsync(embed: embed.Build());
-                                var esperaMotivoContato = await Program.ubgeBot.utilidadesGerais.PegaRespostaPrivado(interactivity, donoMensagem_, canalMensagem);
+                                DiscordMessage esperaMotivoContato = await Program.ubgeBot.utilidadesGerais.PegaRespostaPrivado(interactivity, donoMensagem_, canalMensagem);
 
-                                var diaHoraContatoDoMembro = DateTime.Now.ToString();
+                                string diaHoraContatoDoMembro = DateTime.Now.ToString();
 
-                                var canalMembroContato = await UBGE.CreateTextChannelAsync($"{nickMembroNoCanal}-{donoMensagem_.Discriminator}", modMailUBGE);
+                                DiscordChannel canalMembroContato = await UBGE.CreateTextChannelAsync($"{nickMembroNoCanal}-{donoMensagem_.Discriminator}", modMailUBGE);
 
                                 await canalMembroContato.AddOverwriteAsync(cargoModeradorDiscord, Permissions.None, Permissions.AccessChannels | Permissions.SendMessages);
                                 await canalMembroContato.AddOverwriteAsync(cargoConselheiro, Permissions.None, Permissions.AccessChannels | Permissions.SendMessages);

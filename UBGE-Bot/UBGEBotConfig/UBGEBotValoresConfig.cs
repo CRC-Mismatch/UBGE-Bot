@@ -4,7 +4,7 @@ using System.IO;
 
 namespace UBGE_Bot.UBGEBotConfig
 {
-    public sealed class UBGEBotValores
+    public sealed class UBGEBotValoresConfig
     {
         [JsonProperty("csharpLogo")]
         public string csharpLogo { get; set; }
@@ -48,7 +48,7 @@ namespace UBGE_Bot.UBGEBotConfig
         [JsonProperty("conanExilesRuinasDeAstaporLogo")]
         public string conanExilesLogoRuinasDeAstaporLogo { get; set; }
 
-        
+
 
         [JsonProperty("canalBotUBGE")]
         public ulong canalBotUBGE { get; set; }
@@ -156,11 +156,36 @@ namespace UBGE_Bot.UBGEBotConfig
         [JsonProperty("cargoAdministradorDiscord")]
         public ulong cargoAdministradorDiscord { get; set; }
 
-        public UBGEBotValores Build()
-        {
-            var jsonConfig = JsonConvert.DeserializeObject<UBGEBotValores>(File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\JsonUBGE_Bot\ValoresConfig.json"));
 
-            return new UBGEBotValores
+        [JsonProperty("sistemaModuloBotAberto")]
+        public bool sistemaModuloBotAberto { get; set; }
+
+        [JsonProperty("sistemaVerificaPrisoesQuandoOBotInicia")]
+        public bool sistemaVerificaPrisoesQuandoOBotInicia { get; set; }
+
+        [JsonProperty("sistemaCanalDeVozUBGE")]
+        public bool sistemaCanalDeVozUBGE { get; set; }
+
+        [JsonProperty("sistemaDownloadDosServidoresFoiConcluido")]
+        public bool sistemaDownloadDosServidoresFoiConcluido { get; set; }
+
+        [JsonProperty("sistemaMensagemCriadaUBGE")]
+        public bool sistemaMensagemCriadaUBGE { get; set; }
+
+        [JsonProperty("sistemaReactRoleUBGE")]
+        public bool sistemaReactRoleUBGE { get; set; }
+
+        [JsonProperty("sistemaServidoresUBGE")]
+        public bool sistemaServidoresUBGE { get; set; }
+
+        [JsonProperty("sistemaEnviaDadosDiarios")]
+        public bool sistemaEnviaDadosDiarios { get; set; }
+
+        public UBGEBotValoresConfig Build()
+        {
+            UBGEBotValoresConfig jsonConfig = JsonConvert.DeserializeObject<UBGEBotValoresConfig>(File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\JsonUBGE_Bot\ValoresConfig.json"));
+
+            return new UBGEBotValoresConfig
             {
                 csharpLogo = jsonConfig.csharpLogo,
                 infoLogo = jsonConfig.infoLogo,
@@ -210,6 +235,14 @@ namespace UBGE_Bot.UBGEBotConfig
                 categoriaConselhoComunitario = jsonConfig.categoriaConselhoComunitario,
                 cargoUBGEBot = jsonConfig.cargoUBGEBot,
                 cargoAdministradorDiscord = jsonConfig.cargoAdministradorDiscord,
+                sistemaCanalDeVozUBGE = jsonConfig.sistemaCanalDeVozUBGE,
+                sistemaDownloadDosServidoresFoiConcluido = jsonConfig.sistemaDownloadDosServidoresFoiConcluido,
+                sistemaMensagemCriadaUBGE = jsonConfig.sistemaMensagemCriadaUBGE,
+                sistemaModuloBotAberto = jsonConfig.sistemaModuloBotAberto,
+                sistemaReactRoleUBGE = jsonConfig.sistemaReactRoleUBGE,
+                sistemaVerificaPrisoesQuandoOBotInicia = jsonConfig.sistemaVerificaPrisoesQuandoOBotInicia,
+                sistemaEnviaDadosDiarios = jsonConfig.sistemaEnviaDadosDiarios,
+                sistemaServidoresUBGE = jsonConfig.sistemaServidoresUBGE,
             };
         }
     }

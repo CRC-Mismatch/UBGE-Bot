@@ -2,10 +2,10 @@
 using DSharpPlus.Entities;
 using MongoDB.Driver;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Timer = System.Timers.Timer;
-using System.Threading;
 using System.Threading.Tasks;
 using UBGE_Bot.Carregamento;
 using UBGE_Bot.Main;
@@ -17,7 +17,7 @@ namespace UBGE_Bot.Sistemas.Bot
 {
     public sealed class VerificaPrisoesQuandoOBotInicia : IAplicavelAoCliente
     {
-        public void AplicarAoBot(DiscordClient discordClient, bool botConectadoAoMongo)
+        public void AplicarAoBot(DiscordClient discordClient, bool botConectadoAoMongo, bool sistemaAtivo)
         {
             Timer checaMembrosNaPrisao = new Timer()
             {
@@ -25,7 +25,7 @@ namespace UBGE_Bot.Sistemas.Bot
             };
             checaMembrosNaPrisao.Elapsed += async delegate
             {
-                if (Program.checkDosCanaisFoiIniciado)
+                if (Program.checkDosCanaisFoiIniciado && sistemaAtivo)
                     await VerificaPrisoesQuandoOBotIniciaTask(Program.ubgeBot);
             };
             checaMembrosNaPrisao.Start();
@@ -33,70 +33,65 @@ namespace UBGE_Bot.Sistemas.Bot
 
         private static async Task VerificaPrisoesQuandoOBotIniciaTask(UBGEBot_ ubgeBotClient)
         {
-            await Task.Delay(0);
-
-            new Thread(async () =>
+            try
             {
-                try
+                IMongoDatabase db = ubgeBotClient.localDB;
+                IMongoCollection<Infracao> collectionInfracoes = db.GetCollection<Infracao>(Valores.Mongo.infracoes);
+
+                DiscordGuild UBGE = await ubgeBotClient.discordClient.GetGuildAsync(Valores.Guilds.UBGE);
+
+                DiscordRole prisioneiroCargo = UBGE.GetRole(Valores.Cargos.cargoPrisioneiro), cargosMembroForeach = null;
+
+                DiscordChannel ubgeBot = UBGE.GetChannel(Valores.ChatsUBGE.canalUBGEBot);
+
+                DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+
+                StringBuilder strCargos = new StringBuilder();
+
+                foreach (DiscordMember membroPrisao in UBGE.Members.Values.Where(x => x.Roles.Contains(prisioneiroCargo)))
                 {
-                    var db = ubgeBotClient.localDB;
-                    var collectionInfracoes = db.GetCollection<Infracao>(Valores.Mongo.infracoes);
+                    FilterDefinition<Infracao> filtro = Builders<Infracao>.Filter.Eq(x => x.idInfrator, membroPrisao.Id);
+                    List<Infracao> listaInfracoes = await (await collectionInfracoes.FindAsync(filtro)).ToListAsync();
 
-                    DiscordGuild UBGE = await ubgeBotClient.discordClient.GetGuildAsync(Valores.Guilds.UBGE);
+                    if (listaInfracoes.Count == 0 || !listaInfracoes.LastOrDefault().oMembroFoiPreso)
+                        continue;
 
-                    DiscordRole prisioneiroCargo = UBGE.GetRole(Valores.Cargos.cargoPrisioneiro), cargosMembroForeach = null;
+                    Infracao ultimaPrisao = listaInfracoes.LastOrDefault();
 
-                    DiscordChannel ubgeBot = UBGE.GetChannel(Valores.ChatsUBGE.canalUBGEBot);
+                    DateTime diaHoraInfracao = Convert.ToDateTime(ultimaPrisao.dataInfracao.ToString());
+                    TimeSpan tempoPrisao = ubgeBotClient.utilidadesGerais.ConverterTempo(ultimaPrisao.dadosPrisao.tempoDoMembroNaPrisao);
 
-                    DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-
-                    StringBuilder strCargos = new StringBuilder();
-
-                    foreach (var membroPrisao in UBGE.Members.Values.Where(x => x.Roles.Contains(prisioneiroCargo)))
+                    if (diaHoraInfracao.Add(tempoPrisao) < DateTime.Now)
                     {
-                        var filtro = Builders<Infracao>.Filter.Eq(x => x.idInfrator, membroPrisao.Id);
-                        var listaInfracoes = await (await collectionInfracoes.FindAsync(filtro)).ToListAsync();
+                        await membroPrisao.RevokeRoleAsync(prisioneiroCargo);
 
-                        if (listaInfracoes.Count == 0 || !listaInfracoes.LastOrDefault().oMembroFoiPreso)
-                            continue;
-
-                        var ultimaPrisao = listaInfracoes.LastOrDefault();
-
-                        var diaHoraInfracao = Convert.ToDateTime(ultimaPrisao.dataInfracao.ToString());
-                        var tempoPrisao = ubgeBotClient.utilidadesGerais.ConverterTempo(ultimaPrisao.dadosPrisao.tempoDoMembroNaPrisao);
-
-                        if (diaHoraInfracao.Add(tempoPrisao) < DateTime.Now)
+                        foreach (ulong cargos in ultimaPrisao.dadosPrisao.cargosDoMembro)
                         {
-                            await membroPrisao.RevokeRoleAsync(prisioneiroCargo);
+                            await Task.Delay(200);
 
-                            foreach (var cargos in ultimaPrisao.dadosPrisao.cargosDoMembro)
-                            {
-                                await Task.Delay(200);
+                            cargosMembroForeach = UBGE.GetRole(cargos);
 
-                                cargosMembroForeach = UBGE.GetRole(cargos);
+                            await membroPrisao.GrantRoleAsync(cargosMembroForeach);
 
-                                await membroPrisao.GrantRoleAsync(cargosMembroForeach);
-
-                                strCargos.Append($"{cargosMembroForeach.Mention} | ");
-                            }
-
-                            embed.WithAuthor($"O membro: \"{ubgeBotClient.utilidadesGerais.RetornaNomeDiscord(membroPrisao)}#{membroPrisao.Discriminator}\", saiu da prisão.", null, Valores.logoUBGE)
-                                .WithColor(ubgeBotClient.utilidadesGerais.CorAleatoriaEmbed())
-                                .WithDescription($"Cargos devolvidos: {strCargos.ToString()}")
-                                .WithThumbnailUrl(membroPrisao.AvatarUrl)
-                                .WithTimestamp(DateTime.Now)
-                                .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(membroPrisao)}", iconUrl: membroPrisao.AvatarUrl);
-
-                            ubgeBotClient.logExceptionsToDiscord.Aviso(LogExceptionsToDiscord.TipoAviso.Discord, $"O membro: {ubgeBotClient.utilidadesGerais.RetornaNomeDiscord(membroPrisao)}#{membroPrisao.Discriminator}, saiu da prisão.");
-                            await ubgeBot.SendMessageAsync(embed: embed.Build());
+                            strCargos.Append($"{cargosMembroForeach.Mention} | ");
                         }
+
+                        embed.WithAuthor($"O membro: \"{ubgeBotClient.utilidadesGerais.RetornaNomeDiscord(membroPrisao)}#{membroPrisao.Discriminator}\", saiu da prisão.", null, Valores.logoUBGE)
+                            .WithColor(ubgeBotClient.utilidadesGerais.CorAleatoriaEmbed())
+                            .WithDescription($"Cargos devolvidos: {strCargos.ToString()}")
+                            .WithThumbnailUrl(membroPrisao.AvatarUrl)
+                            .WithTimestamp(DateTime.Now)
+                            .WithFooter($"Comando requisitado pelo: {Program.ubgeBot.utilidadesGerais.RetornaNomeDiscord(membroPrisao)}", iconUrl: membroPrisao.AvatarUrl);
+
+                        ubgeBotClient.logExceptionsToDiscord.Aviso(LogExceptionsToDiscord.TipoAviso.Discord, $"O membro: {ubgeBotClient.utilidadesGerais.RetornaNomeDiscord(membroPrisao)}#{membroPrisao.Discriminator}, saiu da prisão.");
+                        await ubgeBot.SendMessageAsync(embed: embed.Build());
                     }
                 }
-                catch (Exception exception)
-                {
-                    await ubgeBotClient.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Sistemas, exception);
-                }
-            }).Start();
+            }
+            catch (Exception exception)
+            {
+                await ubgeBotClient.logExceptionsToDiscord.Error(LogExceptionsToDiscord.TipoErro.Sistemas, exception);
+            }
         }
     }
 }

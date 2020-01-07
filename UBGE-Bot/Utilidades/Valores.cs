@@ -1,13 +1,11 @@
-﻿using System.Reflection;
-using UBGE_Bot.Main;
+﻿using UBGE_Bot.Main;
 
 namespace UBGE_Bot.Utilidades
 {
     public sealed class Valores
     {
         public static string versao_Bot = Program.ubgeBot.versaoBot;
-        public static string prefixoBot = Program.ubgeBot.prefixoBotConsole;
-        
+
         public static string csharpLogo = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.csharpLogo;
         public static string infoLogo = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.infoLogo;
         public static string logoUBGE = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.logoUBGE;
@@ -43,8 +41,8 @@ namespace UBGE_Bot.Utilidades
             public static ulong canalDeVozCentroDeReabilitacao = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalDeVozCentroDeReabilitacao;
             public static ulong canalRecomendacoesPromocoes = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.canalRecomendacoesPromocoes;
 
-            public sealed class Categorias 
-            { 
+            public sealed class Categorias
+            {
                 public static ulong categoriaCliqueAqui = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.categoriaCanalDeVozPersonalizado;
                 public static ulong categoriaModMailBot = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.categoriaModMailBot;
                 public static ulong categoriaUBGE = Program.ubgeBot.ubgeBotConfig.ubgeBotValoresConfig.categoriaUBGE;

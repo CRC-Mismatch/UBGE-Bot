@@ -19,7 +19,7 @@ namespace UBGE_Bot.UBGEBotConfig
         public string mySQLPorta { get; private set; }
 
         [JsonProperty("MySQLDatabase")]
-        public string mySQLDatabase { get; private set; } 
+        public string mySQLDatabase { get; private set; }
 
         [JsonProperty("MySQLTabela")]
         public string mySQLTabela { get; private set; }
@@ -32,7 +32,7 @@ namespace UBGE_Bot.UBGEBotConfig
 
         public UBGEBotDatabasesConfig Build()
         {
-            var jsonConfig = JsonConvert.DeserializeObject<UBGEBotDatabasesConfig>(File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\JsonUBGE_Bot\DBConnection.json"));
+            UBGEBotDatabasesConfig jsonConfig = JsonConvert.DeserializeObject<UBGEBotDatabasesConfig>(File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\JsonUBGE_Bot\DBConnection.json"));
 
             return new UBGEBotDatabasesConfig
             {
