@@ -147,7 +147,7 @@ namespace UBGE
                 this.DiscordClient.GuildMemberUpdated += this.MemberChanged;
                 this.DiscordClient.GuildMemberAdded += this.MemberAddedOnServer;
                 this.DiscordClient.VoiceStateUpdated += this.CreateYourRoomHere;
-                this.DiscordClient.VoiceStateUpdated += this.HideVoiceChannels;
+                //this.DiscordClient.VoiceStateUpdated += this.HideVoiceChannels;
                 this.DiscordClient.MessageCreated += this.MessageCreated;
                 this.DiscordClient.MessageReactionAdded += this.ReactionAdded;
                 this.DiscordClient.MessageReactionRemoved += this.ReactionRemoved;
@@ -215,7 +215,6 @@ namespace UBGE
                 DiscordRole membroRegistradoCargo = ubgeServidor.GetRole(Values.Roles.roleMembroRegistrado),
                 prisioneiroCargo = ubgeServidor.GetRole(Values.Roles.rolePrisioneiro),
                 botsMusicaisCargo = ubgeServidor.GetRole(Values.Roles.roleBots),
-                acessoGeralCargo = ubgeServidor.GetRole(Values.Roles.roleAcessoGeral),
                 moderadorDiscordCargo = ubgeServidor.GetRole(Values.Roles.roleModeradorDiscord);
 
                 DiscordMember membro = null, membrosForeach = null;
@@ -353,7 +352,6 @@ namespace UBGE
                                 await canalDoMembro.AddOverwriteAsync(ubgeServidor.EveryoneRole, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection);
                                 await canalDoMembro.AddOverwriteAsync(membro, Permissions.AccessChannels | Permissions.Speak | Permissions.UseVoice | Permissions.UseVoiceDetection);
                                 await canalDoMembro.AddOverwriteAsync(botsMusicaisCargo, Permissions.AccessChannels | Permissions.Speak | Permissions.UseVoice | Permissions.UseVoiceDetection);
-                                await canalDoMembro.AddOverwriteAsync(acessoGeralCargo, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection);
                                 await canalDoMembro.AddOverwriteAsync(moderadorDiscordCargo, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection);
                                 await canalDoMembro.AddOverwriteAsync(membroRegistradoCargo, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection);
 
@@ -652,7 +650,7 @@ namespace UBGE
 
                 DiscordChannel canalAntes = e.Before?.Channel, canalDepois = e.After?.Channel;
 
-                var canaisDeVozDaUBGE = UBGE.Channels.Values.Where(x => x.Type == ChannelType.Voice && x.Parent.Id != Values.Chats.Categories.categoryUBGE && x.Parent.Id != Values.Chats.Categories.categoryCliqueAqui && x.Parent.Id != Values.Chats.Categories.categoryConselhoComunitario);
+                var canaisDeVozDaUBGE = UBGE.Channels.Values.Where(x => x.Type == ChannelType.Voice && x.Parent.Id != Values.Chats.Categories.categoryUBGE && x.Parent.Id != Values.Chats.Categories.categoryCliqueAqui && x.Parent.Id != Values.Chats.Categories.categoryConselhoComunitario && x.Parent.Id != Values.Chats.Categories.categoryMundoDaInformatica);
 
                 var permissao = new DiscordOverwriteBuilder
                 {
@@ -662,14 +660,25 @@ namespace UBGE
 
                 foreach (var canal in canaisDeVozDaUBGE)
                 {
-                    var permissoesDoCanal = canal.PermissionOverwrites.ToList();
+                    try
+                    {
+                        var permissoesDoCanal = canal.PermissionOverwrites.ToList();
 
-                    if (canal.Users.Count() == 0 && !permissoesDoCanal.Exists(x => x.Type == OverwriteType.Role && x.Id == everyoneUBGE.Id && x.Denied == permissao.Denied))
-                        await canal.AddOverwriteAsync(everyoneUBGE, Permissions.None, Permissions.AccessChannels | Permissions.UseVoice);
-                    else if (canal.Users.Count() != 0 && permissoesDoCanal.Exists(x => x.Type == OverwriteType.Role && x.Id == everyoneUBGE.Id && x.Denied == permissao.Denied))
-                        await canal.AddOverwriteAsync(everyoneUBGE, Permissions.AccessChannels, Permissions.UseVoice);
-                    else
-                        continue;
+                        if (canal.Users.Count() == 0 && !permissoesDoCanal.Exists(x => x.Type == OverwriteType.Role && x.Id == everyoneUBGE.Id && x.Denied == permissao.Denied))
+                            await canal.AddOverwriteAsync(everyoneUBGE, Permissions.None, Permissions.AccessChannels | Permissions.UseVoice);
+                        else if (canal.Users.Count() != 0 && permissoesDoCanal.Exists(x => x.Type == OverwriteType.Role && x.Id == everyoneUBGE.Id && x.Denied == permissao.Denied))
+                            await canal.AddOverwriteAsync(everyoneUBGE, Permissions.AccessChannels, Permissions.UseVoice);
+                        else
+                            continue;
+                    }
+                    catch (UnauthorizedException)
+                    {
+                        this.Logger.Warning(Log.TypeWarning.Systems, $"Não foi possível modificar o canal: \"{canal.Name}\".", "Esconder Salas");
+                    }
+                    catch (Exception exception)
+                    {
+                        await this.Logger.Error(Log.TypeError.Systems, exception);
+                    }
                 }
             }
             catch (Exception exception)
@@ -704,11 +713,9 @@ namespace UBGE
 
             try
             {
-                var acessoGeralCargo = e.Guild.GetRole(Values.Roles.roleAcessoGeral);
                 var privadoMembro = await e.Member.CreateDmChannelAsync();
                 var comandosBot = e.Guild.GetChannel(Values.Chats.channelComandosBot);
 
-                await e.Member.GrantRoleAsync(acessoGeralCargo);
                 await privadoMembro.SendMessageAsync($"*{e.Member.Mention}, Bem-Vindo a UBGE!*\n\n" +
                 $"Leia a mensagem que o Mee6 lhe enviou no seu privado, ele lhe ajudará a dar os seus primeiros passos na UBGE.\n\n" +
                 $"Para qualquer dúvida sobre mim, digite `//ajuda`.\n\n" +
@@ -1405,7 +1412,5 @@ namespace UBGE
                 Program.RestartBot();
             }
         }
-
-
     }
 }

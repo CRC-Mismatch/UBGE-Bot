@@ -118,10 +118,13 @@ namespace UBGE.Config
         [JsonProperty("categoriaConselhoComunitario")]
         public ulong CategoryConselhoComunitario { get; set; }
 
+        [JsonProperty("categoriaMundoDaInformatica")]
+        public ulong CategoryMundoDaInformatica { get; set; }
 
 
-        [JsonProperty("cargoAcessoGeral")]
-        public ulong RoleAcessoGeral { get; set; }
+
+        [JsonProperty("cargoVerificado")]
+        public ulong RoleVerificado { get; set; }
 
         [JsonProperty("cargoMembroRegistrado")]
         public ulong RoleMembroRegistrado { get; set; }
@@ -179,7 +182,7 @@ namespace UBGE.Config
                 CounterStrikeLogo = jsonConfig.CounterStrikeLogo,
                 MordhauLogo = jsonConfig.MordhauLogo,
                 ChannelBotUBGE = jsonConfig.ChannelBotUBGE,
-                RoleAcessoGeral = jsonConfig.RoleAcessoGeral,
+                RoleVerificado = jsonConfig.RoleVerificado,
                 ChannelFormularioAlerta = jsonConfig.ChannelFormularioAlerta,
                 ChannelCrieSuaSalaAqui = jsonConfig.ChannelCrieSuaSalaAqui,
                 ChannelCentroDeReabilitacao = jsonConfig.ChannelCentroDeReabilitacao,
@@ -214,6 +217,7 @@ namespace UBGE.Config
                 RoleUBGEBot = jsonConfig.RoleUBGEBot,
                 RoleAdministradorDiscord = jsonConfig.RoleAdministradorDiscord,
                 ChannelModeracaoDiscord = jsonConfig.ChannelModeracaoDiscord,
+                CategoryMundoDaInformatica = jsonConfig.CategoryMundoDaInformatica,
             };
         }
     }

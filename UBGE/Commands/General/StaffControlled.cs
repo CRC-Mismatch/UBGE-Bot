@@ -306,6 +306,29 @@ namespace UBGE.Commands.General
 
             await ctx.RespondAsync(embed: embed.Build());
         }
+
+        [Command("fazissaequeoleopediu"), UBGEStaff]
+
+        public async Task IssoMemo(CommandContext ctx)
+        {
+            await ctx.TriggerTypingAsync();
+
+            var msgTa = await ctx.RespondAsync($"{Program.Bot.Utilities.FindEmoji(ctx, "thumbsupp")}");
+
+            var membrosUBGE = await ctx.Guild.GetAllMembersAsync();
+
+            var cargoVerificado = ctx.Guild.GetRole(Values.Roles.roleVerificado);
+
+            foreach (var membro in membrosUBGE)
+            {
+                if (membro.Roles.Contains(cargoVerificado))
+                    continue;
+
+                await membro.GrantRoleAsync(cargoVerificado);
+            }
+
+            await msgTa.ModifyAsync($"Terminei - {Program.Bot.Utilities.FindEmoji(ctx, "UBGE")}");
+        }
     }
 
     [Group("mongo"), Aliases("mongodb", "mtk"), RequireOwner, ConnectedToMongo]

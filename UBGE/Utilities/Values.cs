@@ -46,6 +46,7 @@
                 public static ulong categoryModMailBot = Program.Bot.BotConfig.ValoresConfig.CategoryModMail;
                 public static ulong categoryUBGE = Program.Bot.BotConfig.ValoresConfig.CategoryUBGE;
                 public static ulong categoryConselhoComunitario = Program.Bot.BotConfig.ValoresConfig.CategoryConselhoComunitario;
+                public static ulong categoryMundoDaInformatica = Program.Bot.BotConfig.ValoresConfig.CategoryMundoDaInformatica;
             }
         }
 
@@ -80,7 +81,7 @@
         public sealed class Roles
         {
             public static ulong rolePrisioneiro = Program.Bot.BotConfig.ValoresConfig.RolePrisioneiro;
-            public static ulong roleAcessoGeral = Program.Bot.BotConfig.ValoresConfig.RoleAcessoGeral;
+            public static ulong roleVerificado = Program.Bot.BotConfig.ValoresConfig.RoleVerificado;
             public static ulong roleMembroRegistrado = Program.Bot.BotConfig.ValoresConfig.RoleMembroRegistrado;
             public static ulong roleBotsMusicais = Program.Bot.BotConfig.ValoresConfig.RoleBotsMusicais;
             public static ulong roleBots = Program.Bot.BotConfig.ValoresConfig.RoleBots;

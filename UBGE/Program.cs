@@ -243,7 +243,10 @@ namespace UBGE
 
                     var ultimaPrisao = listaInfracoes.LastOrDefault();
 
-                    if (DateTime.Parse(ultimaPrisao.dataInfracao.ToString()).Add(bot.Utilities.ConvertTime(ultimaPrisao.dadosPrisao.tempoDoMembroNaPrisao)) < DateTime.Now)
+                    if (string.IsNullOrWhiteSpace(ultimaPrisao.dadosPrisao?.tempoDoMembroNaPrisao))
+                        continue;
+
+                    if (DateTime.Parse(ultimaPrisao.dataInfracao.ToString()).Add(bot.Utilities.ConvertTime(ultimaPrisao.dadosPrisao?.tempoDoMembroNaPrisao)) < DateTime.Now)
                     {
                         await membroPrisao.RevokeRoleAsync(prisioneiroCargo);
 

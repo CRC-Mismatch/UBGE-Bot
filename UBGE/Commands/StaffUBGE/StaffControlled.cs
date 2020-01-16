@@ -41,7 +41,7 @@ namespace UBGE.Commands.StaffUBGE
 
                 DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
 
-                DiscordEmoji addMembroRegistrado = DiscordEmoji.FromName(ctx.Client, ":large_blue_circle:"),
+                DiscordEmoji addMembroRegistrado = DiscordEmoji.FromName(ctx.Client, ":blue_circle:"),
                 cancelaEmbed = DiscordEmoji.FromName(ctx.Client, ":red_circle:"),
                 removerMembroRegistrado = DiscordEmoji.FromName(ctx.Client, ":x:");
 

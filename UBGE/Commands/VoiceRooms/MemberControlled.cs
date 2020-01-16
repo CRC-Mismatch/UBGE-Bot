@@ -282,8 +282,7 @@ namespace UBGE.Commands.VoiceRooms
             FilterDefinition<Salas> filtroSalas = Builders<Salas>.Filter.Eq(x => x.idDoDono, ctx.Member.Id);
             List<Salas> resultadoSalas = await (await salasCollection.FindAsync(filtroSalas)).ToListAsync();
 
-            DiscordRole moderadorDiscordCargo = ctx.Guild.GetRole(Values.Roles.roleModeradorDiscord),
-            acessoGeralCargo = ctx.Guild.GetRole(Values.Roles.roleAcessoGeral);
+            DiscordRole moderadorDiscordCargo = ctx.Guild.GetRole(Values.Roles.roleModeradorDiscord);
 
             if (resultadoSalas.Count != 0 && ctx.Guild.GetChannel(resultadoSalas[0].idDaSala) != null)
             {
@@ -311,7 +310,6 @@ namespace UBGE.Commands.VoiceRooms
 
                     await voiceChannel.AddOverwriteAsync(ctx.Guild.EveryoneRole, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak);
                     await voiceChannel.AddOverwriteAsync(moderadorDiscordCargo, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak);
-                    await voiceChannel.AddOverwriteAsync(acessoGeralCargo, Permissions.AccessChannels, Permissions.UseVoice | Permissions.Speak);
 
                     embed.WithAuthor($"✅ - Sala travada!", null, Values.logoUBGE);
                     embed.WithColor(Program.Bot.Utilities.RandomColorEmbed());
@@ -345,8 +343,7 @@ namespace UBGE.Commands.VoiceRooms
             {
                 DiscordChannel voiceChannel = ctx.Guild.GetChannel(resultadoSalas[0].idDaSala);
 
-                DiscordRole moderadorDiscordCargo = ctx.Guild.GetRole(Values.Roles.roleModeradorDiscord),
-                acessoGeralCargo = ctx.Guild.GetRole(Values.Roles.roleAcessoGeral);
+                DiscordRole moderadorDiscordCargo = ctx.Guild.GetRole(Values.Roles.roleModeradorDiscord);
 
                 if (resultadoSalas[0].salaTrancada)
                 {
@@ -354,7 +351,6 @@ namespace UBGE.Commands.VoiceRooms
 
                     await voiceChannel.AddOverwriteAsync(ctx.Guild.EveryoneRole, Permissions.AccessChannels | Permissions.UseVoice | Permissions.Speak);
                     await voiceChannel.AddOverwriteAsync(moderadorDiscordCargo, Permissions.AccessChannels | Permissions.UseVoice | Permissions.Speak);
-                    await voiceChannel.AddOverwriteAsync(acessoGeralCargo, Permissions.AccessChannels | Permissions.UseVoice | Permissions.Speak);
 
                     embed.WithAuthor($"✅ - Sala destravada!", null, Values.logoUBGE);
                     embed.WithColor(Program.Bot.Utilities.RandomColorEmbed());
