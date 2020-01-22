@@ -17,6 +17,7 @@ using Newtonsoft.Json.Linq;
 using UBGE.MongoDB.Models;
 using UBGE.Services.Google;
 using UBGE.Utilities;
+using DSharpPlus;
 
 namespace UBGE
 {
@@ -24,7 +25,7 @@ namespace UBGE
     {
         public static UBGE_Bot Bot { get; private set; } = new UBGE_Bot();
         
-        static async Task Main(string[] e)
+        static async Task Main(string[] args)
         {
             if (!PCIsConnected())
             {
@@ -41,7 +42,8 @@ namespace UBGE
             };
             timerAutoUpdater.Elapsed += async delegate
             {
-                await AutoUpdater(Bot);
+                if (Bot.GuildsDownloadWasCompleted)
+                    await AutoUpdater(Bot);
             };
             timerAutoUpdater.Start();
 
@@ -74,24 +76,47 @@ namespace UBGE
             timerServidores.Elapsed += async delegate
             {
                 if (Bot.ConnectedToMongo)
-                {
                     await SearchServersProjectReality(Bot);
-                    //await BuscaServidoresConanExiles(Program.ubgeBot, Program.httpClient);
-                    //await BuscaServidoresCounterStrike(Program.ubgeBot, Program.httpClient);
-                    //await BuscaServidoresDayZ(Program.ubgeBot, Program.httpClient);
-                    //await BuscaServidoresMordhau(Program.ubgeBot, Program.httpClient);
-                    //await BuscaServidoresOpenSpades(Program.ubgeBot, Program.httpClient);
-                    //await BuscaServidoresUnturned(Program.ubgeBot, Program.httpClient);
-                }
             };
             timerServidores.Start();
 
-            await MongoDownloadFiles(Bot);
+            var timerDownloadFilesForMongo = new Timer()
+            {
+                Interval = TimeSpan.FromMinutes(5).TotalMilliseconds,
+            };
+            timerDownloadFilesForMongo.Elapsed += async delegate
+            {
+                if (Bot.GuildsDownloadWasCompleted)
+                    await MongoDownloadFiles(Bot);
+            };
+            timerDownloadFilesForMongo.Start();
+
+            //var timerCheckIfCanFinishTheVotingOfPresence = new Timer()
+            //{
+            //    Interval = TimeSpan.FromSeconds(30).TotalMilliseconds,
+            //};
+            //timerCheckIfCanFinishTheVotingOfPresence.Elapsed += async delegate
+            //{
+            //    if (Bot.ConnectedToMongo)
+            //        await CheckIfThePollIsFinished(Bot);
+            //};
+            //timerCheckIfCanFinishTheVotingOfPresence.Start();
+         
+            //var timerToCheckTimeOfReunion = new Timer()
+            //{
+            //    Interval = TimeSpan.FromSeconds(30).TotalMilliseconds
+            //};
+            //timerToCheckTimeOfReunion.Elapsed += async delegate
+            //{
+            //    if (Bot.ConnectedToMongo)
+            //        await CheckTimeOfReunion(Bot);
+            //};
+            //timerToCheckTimeOfReunion.Start();
 
             await ConnectDiscordAsync(Bot);
         }
 
-        static async Task CheckInternetAsync(UBGE_Bot Bot)
+        static async Task CheckInternetAsync(UBGE_Bot bot)
         {
             while (true)
             {
@@ -99,28 +124,28 @@ namespace UBGE
                     await Task.Delay(TimeSpan.FromSeconds(5));
                 else
                 {
-                    Bot.Logger.Warning(Log.TypeWarning.PC, "Foi detectado que este computador se conectou a Internet, conectando o bot ao Discord...");
+                    bot.Logger.Warning(Log.TypeWarning.PC, "Foi detectado que este computador se conectou a Internet, conectando o bot ao Discord...");
 
-                    await ConnectDiscordAsync(Bot);
+                    await ConnectDiscordAsync(bot);
 
-                    Bot.Logger.Warning(Log.TypeWarning.PC, "O bot foi conectado com sucesso!");
+                    bot.Logger.Warning(Log.TypeWarning.PC, "O bot foi conectado com sucesso!");
 
                     break;
                 }
             }
         }
 
-        static async Task ConnectDiscordAsync(UBGE_Bot Bot)
+        static async Task ConnectDiscordAsync(UBGE_Bot bot)
         {
-            await Bot.DiscordClient.ConnectAsync();
+            await bot.DiscordClient.ConnectAsync();
+
             await Task.Delay(-1);
         }
 
         [DllImport("wininet.dll")]
         extern static bool InternetGetConnectedState(out int Description, int ReservedValue);
 
-        public static bool PCIsConnected()
-            => InternetGetConnectedState(out _, 0);
+        public static bool PCIsConnected() => InternetGetConnectedState(out int _, 0);
 
         static async Task AutoUpdater(UBGE_Bot bot)
         {
@@ -159,49 +184,53 @@ namespace UBGE
                 ShutdownBot();
             }
         }
-
-        static async Task MongoDownloadFiles(UBGE_Bot bot)
+        
+        public static async Task MongoDownloadFiles(UBGE_Bot bot)
         {
-            string diretorioBot = Directory.GetCurrentDirectory();
-
-            var logger = bot.Logger;
-
-            if (!File.Exists(diretorioBot + @"\mongoimport.exe") || !File.Exists(diretorioBot + @"\mongoexport.exe") || !File.Exists(diretorioBot + @"\libeay32.dll") || !File.Exists(diretorioBot + @"\ssleay32.dll"))
+            try
             {
-                await logger.EmbedLogMessages(Log.TypeEmbed.Warning, "Os arquivos de funcionamento dos comandos do Mongo não foram encontrados, fazendo o download dos mesmos...", bot.Utilities.FindEmoji(bot.DiscordClient, ":UBGE:"));
+                string diretorioBot = Directory.GetCurrentDirectory();
 
-                logger.Warning(Log.TypeWarning.Systems, "Os arquivos de funcionamento dos comandos do Mongo não foram encontrados, fazendo o download dos mesmos...");
-            }
-            else
-                return;
+                var logger = bot.Logger;
 
-            var GoogleDrive = new GoogleDriveService();
-
-            using (var servico = GoogleDrive.ServicoDoDrive(await GoogleDrive.Autenticar()))
-            {
-                string[] ids = await GoogleDrive.ProcurarArquivo(servico, "Mongo.zip", false);
-
-                if (ids != null && ids.Any())
+                if (!File.Exists(diretorioBot + @"\mongoimport.exe") || !File.Exists(diretorioBot + @"\mongoexport.exe") || !File.Exists(diretorioBot + @"\libeay32.dll") || !File.Exists(diretorioBot + @"\ssleay32.dll"))
                 {
-                    using (var stream = new FileStream(diretorioBot + @"\Mongo.zip", FileMode.Create, FileAccess.Write))
-                        await servico.Files.Get(ids.FirstOrDefault()).DownloadAsync(stream);
+                    await logger.EmbedLogMessages(Log.TypeEmbed.Warning, "Os arquivos de funcionamento dos comandos do Mongo não foram encontrados, fazendo o download dos mesmos...", bot.Utilities.FindEmoji(bot.DiscordClient, ":UBGE:"));
+
+                    logger.Warning(Log.TypeWarning.Systems, "Os arquivos de funcionamento dos comandos do Mongo não foram encontrados, fazendo o download dos mesmos...");
                 }
+                else
+                    return;
+
+                var GoogleDrive = new GoogleDriveService();
+
+                using (var servico = GoogleDrive.ServicoDoDrive(await GoogleDrive.Autenticar()))
+                {
+                    string[] ids = await GoogleDrive.ProcurarArquivo(servico, "Mongo.zip", false);
+
+                    if (ids != null && ids.Any())
+                    {
+                        using (var stream = new FileStream(diretorioBot + @"\Mongo.zip", FileMode.Create, FileAccess.Write))
+                            await servico.Files.Get(ids.FirstOrDefault()).DownloadAsync(stream);
+                    }
+                }
+
+                using (var Zip = new ZipFile(diretorioBot + @"\Mongo.zip"))
+                    Zip.ExtractAll(diretorioBot + @"\Mongo", ExtractExistingFileAction.OverwriteSilently);
+
+                File.Move(diretorioBot + @"\Mongo\mongoexport.exe", diretorioBot + @"\mongoexport.exe", true);
+                File.Move(diretorioBot + @"\Mongo\mongoimport.exe", diretorioBot + @"\mongoimport.exe", true);
+                File.Move(diretorioBot + @"\Mongo\libeay32.dll", diretorioBot + @"\libeay32.dll", true);
+                File.Move(diretorioBot + @"\Mongo\ssleay32.dll", diretorioBot + @"\ssleay32.dll", true);
+
+                Directory.Delete(diretorioBot + @"\Mongo");
+                File.Delete(diretorioBot + @"\Mongo.zip");
+
+                await logger.EmbedLogMessages(Log.TypeEmbed.Warning, "Os arquivos foram baixados e extraídos com sucesso!");
+
+                logger.Warning(Log.TypeWarning.Systems, "Os arquivos foram baixados e extraídos com sucesso!");
             }
-
-            using (var Zip = new ZipFile(diretorioBot + @"\Mongo.zip", Encoding.UTF8))
-                Zip.ExtractAll(diretorioBot + @"\Mongo", ExtractExistingFileAction.OverwriteSilently);
-
-            File.Move(diretorioBot + @"\Mongo\mongoexport.exe", diretorioBot + @"\mongoexport.exe", true);
-            File.Move(diretorioBot + @"\Mongo\mongoimport.exe", diretorioBot + @"\mongoimport.exe", true);
-            File.Move(diretorioBot + @"\Mongo\libeay32.dll", diretorioBot + @"\libeay32.dll", true);
-            File.Move(diretorioBot + @"\Mongo\ssleay32.dll", diretorioBot + @"\ssleay32.dll", true);
-
-            Directory.Delete(diretorioBot + @"\Mongo");
-            File.Delete(diretorioBot + @"\Mongo.zip");
-
-            await logger.EmbedLogMessages(Log.TypeEmbed.Warning, "Os arquivos foram baixados e extraídos com sucesso!");
-
-            logger.Warning(Log.TypeWarning.Systems, "Os arquivos foram baixados e extraídos com sucesso!");
+            catch (Exception) { }
         }
 
         static async Task CheckIfTheBotIsOpen(UBGE_Bot bot)
@@ -342,8 +371,55 @@ namespace UBGE
             }
         }
 
-        public static void ShutdownBot()
-            => Environment.Exit(1);
+        static async Task CheckIfThePollIsFinished(UBGE_Bot bot)
+        {
+            var collectionReunion = bot.LocalDB.GetCollection<Reunion>(Values.Mongo.reunion);
+            var filtroReunion = Builders<Reunion>.Filter.Eq(x => x.ReunionIsFinished, false);
+            var respostaReunion = await (await collectionReunion.FindAsync(filtroReunion)).ToListAsync();
+
+            if (respostaReunion.Count == 0)
+                return;
+
+            var ultimaRespostaReunion = respostaReunion.LastOrDefault();
+
+            if (ultimaRespostaReunion.LastDayToMarkThePresenceReaction < DateTime.Now)
+            {
+                await collectionReunion.UpdateOneAsync(filtroReunion, Builders<Reunion>.Update.Set(x => x.ReunionIsFinished, true));
+            }
+        }
+
+        static async Task CheckTimeOfReunion(UBGE_Bot bot)
+        {
+            var collectionReunion = bot.LocalDB.GetCollection<Reunion>(Values.Mongo.reunion);
+            var filtroReunion = Builders<Reunion>.Filter.Eq(x => x.ReunionIsFinished, false);
+            var respostaReunion = await (await collectionReunion.FindAsync(filtroReunion)).ToListAsync();
+
+            if (respostaReunion.Count == 0)
+                return;
+
+            var ultimaRespostaReunion = respostaReunion.LastOrDefault();
+
+            var guildUBGE = await bot.DiscordClient.GetGuildAsync(Values.Guilds.guildUBGE);
+            var channelAnunciosConselho = guildUBGE.GetChannel(Values.Chats.channelAnunciosConselho);
+            var roleConselheiros = guildUBGE.GetRole(Values.Roles.roleConselheiro);
+
+            Uri.TryCreate(ultimaRespostaReunion.LinkOfMessage, UriKind.RelativeOrAbsolute, out var messageUri);
+
+            var subtractReunion = ultimaRespostaReunion.DayOfReunion - DateTime.Now;
+            var hoursReunion = (int)subtractReunion.TotalHours;
+            var minutesReunion = (int)subtractReunion.TotalMinutes;
+
+            if (hoursReunion == 24)
+                await channelAnunciosConselho.SendMessageAsync($"{roleConselheiros.Mention}, atenção! A reunião é daqui a 1 dia! {Formatter.MaskedUrl("Clique aqui", messageUri, "Clique aqui")} para o Discord lhe redirecionar para a mensagem que contêm as pautas desta reunião.");
+            else if (hoursReunion == 1)
+                await channelAnunciosConselho.SendMessageAsync($"{roleConselheiros.Mention}, a reunião começa em 1 hora! {Formatter.MaskedUrl("Clique aqui", messageUri, "Clique aqui")} para ver as pautas da reunião.");
+            else if (minutesReunion == 1)
+                await channelAnunciosConselho.SendMessageAsync($"{roleConselheiros.Mention}, a reunião está começando.");
+            else
+                return;
+        }
+
+        public static void ShutdownBot() => Environment.Exit(1);
 
         public static void RestartBot()
         {

@@ -10,5 +10,7 @@
         public ServersUBGEConfig ServidoresConfig { get; set; } = new ServersUBGEConfig().Build();
 
         public ValoresConfig ValoresConfig { get; set; } = new ValoresConfig().Build();
+
+        public LavalinkConfig LavalinkConfig { get; set; } = new LavalinkConfig().Build();
     }
 }

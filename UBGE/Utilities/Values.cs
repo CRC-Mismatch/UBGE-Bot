@@ -35,7 +35,7 @@
             public static ulong channelListaSecretarias = Program.Bot.BotConfig.ValoresConfig.ChannelListaSecretarias;
             public static ulong channelListaPioneiros = Program.Bot.BotConfig.ValoresConfig.ChannelListaPioneiros;
             public static ulong channelOrganogramaECargosDoAlbion = Program.Bot.BotConfig.ValoresConfig.ChannelOrganogramaECargosDoAlbion;
-            public static ulong channelVotacoesConselho = Program.Bot.BotConfig.ValoresConfig.ChannelVotacoesConselho;
+            public static ulong channelAnunciosConselho = Program.Bot.BotConfig.ValoresConfig.ChannelAnunciosConselho;
             public static ulong channelDeVozCentroDeReabilitacao = Program.Bot.BotConfig.ValoresConfig.ChannelDeVozCentroDeReabilitacao;
             public static ulong channelRecomendacoesPromocoes = Program.Bot.BotConfig.ValoresConfig.ChannelRecomendacoesPromocoes;
             public static ulong channelModeracaoDiscord = Program.Bot.BotConfig.ValoresConfig.ChannelModeracaoDiscord;
@@ -47,6 +47,7 @@
                 public static ulong categoryUBGE = Program.Bot.BotConfig.ValoresConfig.CategoryUBGE;
                 public static ulong categoryConselhoComunitario = Program.Bot.BotConfig.ValoresConfig.CategoryConselhoComunitario;
                 public static ulong categoryMundoDaInformatica = Program.Bot.BotConfig.ValoresConfig.CategoryMundoDaInformatica;
+                public static ulong categoryPrision = Program.Bot.BotConfig.ValoresConfig.CategoryPrision;
             }
         }
 
@@ -76,6 +77,7 @@
             public const string votacaoSecretarioLider = "VotacaoSecretarioLider";
             public const string modMail = "ModMail";
             public const string doador = "Doador";
+            public const string reunion = "ReuniãoStaff";
         }
 
         public sealed class Roles

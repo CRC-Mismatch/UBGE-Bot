@@ -92,8 +92,8 @@ namespace UBGE.Config
         [JsonProperty("canalOrganogramaECargosDoAlbion")]
         public ulong ChannelOrganogramaECargosDoAlbion { get; set; }
 
-        [JsonProperty("canalVotacoesConselho")]
-        public ulong ChannelVotacoesConselho { get; set; }
+        [JsonProperty("canalAnunciosConselho")]
+        public ulong ChannelAnunciosConselho { get; set; }
 
         [JsonProperty("canalDeVozCentroDeReabilitacao")]
         public ulong ChannelDeVozCentroDeReabilitacao { get; set; }
@@ -120,6 +120,9 @@ namespace UBGE.Config
 
         [JsonProperty("categoriaMundoDaInformatica")]
         public ulong CategoryMundoDaInformatica { get; set; }
+
+        [JsonProperty("categoriaPrisao")]
+        public ulong CategoryPrision { get; set; }
 
 
 
@@ -161,6 +164,23 @@ namespace UBGE.Config
 
         [JsonProperty("cargoAdministradorDiscord")]
         public ulong RoleAdministradorDiscord { get; set; }
+
+
+
+        [JsonProperty("iniciaSistemasQueDependemDoMongo")]
+        public bool StartSystemsThatDependOnTheMongo { get; private set; }
+
+        [JsonProperty("sistemaCrieSuaSalaAqui")]
+        public bool SystemCreateYourRoomHere { get; private set; }
+
+        [JsonProperty("sistemaMensagemCriada")]
+        public bool SystemMessageCreated { get; private set; }
+
+        [JsonProperty("sistemaReacaoAdicionada")]
+        public bool SystemReactionAdded { get; private set; }
+
+        [JsonProperty("sistemaReacaoRemovida")]
+        public bool SystemReactionRemoved { get; private set; }
 
         public ValoresConfig Build()
         {
@@ -205,7 +225,7 @@ namespace UBGE.Config
                 ChannelSelecioneSeusCargos = jsonConfig.ChannelSelecioneSeusCargos,
                 ChannelOrganogramaECargosDoAlbion = jsonConfig.ChannelOrganogramaECargosDoAlbion,
                 CategoryModMail = jsonConfig.CategoryModMail,
-                ChannelVotacoesConselho = jsonConfig.ChannelVotacoesConselho,
+                ChannelAnunciosConselho = jsonConfig.ChannelAnunciosConselho,
                 RoleConselheiro = jsonConfig.RoleConselheiro,
                 RoleComiteComunitario = jsonConfig.RoleComiteComunitario,
                 RoleNitroBooster = jsonConfig.RoleNitroBooster,
@@ -218,6 +238,12 @@ namespace UBGE.Config
                 RoleAdministradorDiscord = jsonConfig.RoleAdministradorDiscord,
                 ChannelModeracaoDiscord = jsonConfig.ChannelModeracaoDiscord,
                 CategoryMundoDaInformatica = jsonConfig.CategoryMundoDaInformatica,
+                CategoryPrision = jsonConfig.CategoryPrision,
+                StartSystemsThatDependOnTheMongo = jsonConfig.StartSystemsThatDependOnTheMongo,
+                SystemCreateYourRoomHere = jsonConfig.SystemCreateYourRoomHere,
+                SystemMessageCreated = jsonConfig.SystemMessageCreated,
+                SystemReactionAdded = jsonConfig.SystemReactionAdded,
+                SystemReactionRemoved = jsonConfig.SystemReactionRemoved
             };
         }
     }

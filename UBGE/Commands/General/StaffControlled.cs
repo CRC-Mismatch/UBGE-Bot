@@ -91,7 +91,7 @@ namespace UBGE.Commands.General
             File.Delete(areaDeTrabalho);
         }
 
-        [Command("viewrole"), Aliases("vr", "vercargo"), RequireOwner]
+        [Command("viewrole"), Aliases("vr", "vercargo"), UBGEStaff]
 
         public async Task VerCargoAsync(CommandContext ctx, DiscordRole cargo = null)
         {
@@ -323,6 +323,8 @@ namespace UBGE.Commands.General
             {
                 if (membro.Roles.Contains(cargoVerificado))
                     continue;
+
+                await Task.Delay(1000);
 
                 await membro.GrantRoleAsync(cargoVerificado);
             }

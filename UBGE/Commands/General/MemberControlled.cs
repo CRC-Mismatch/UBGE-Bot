@@ -3,6 +3,7 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
+using DSharpPlus.Lavalink;
 using MongoDB.Driver;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -14,6 +15,8 @@ using System.Threading.Tasks;
 using System.Linq;
 using UBGE;
 using Log = UBGE.Logger.Logger;
+using UBGE.Entities.Music;
+using UBGE.Services;
 using UBGE.Utilities;
 
 namespace UBGE.Commands.General
@@ -779,6 +782,58 @@ namespace UBGE.Commands.General
                 .WithFooter($"Comando requisitado pelo: {Program.Bot.Utilities.DiscordNick(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
 
             await ctx.RespondAsync(embed: embed.Build());
+        }
+    }
+
+    [Group("música"), Aliases("musica", "m"), ModuleLifespan(ModuleLifespan.Transient)]
+
+    public sealed class MemberControlledMusic
+    {
+        public MusicService Service { get; set; }
+
+        [DontInject]
+        public IMusicPlayer Player { get; set; }
+
+        //public override async Task BeforeExecutionAsync(CommandContext ctx)
+        //{
+        //    try
+        //    {
+        //        await this.Service.ValidateNodeConnectionAsync();
+                
+        //        this.Player = this.Service.GetOrCreatePlayerAsync(ctx.Guild);
+        //    }
+        //    catch (Exception)
+        //    {
+        //        await ctx.RespondAsync($"{ctx.User.Mention} :x: O node do lavalink está indisponível no momento.");
+        //    }
+        //}
+
+        [Command("tocar"), Aliases("play", "p", "t")]
+
+        public async Task PlayAsync(CommandContext ctx, [RemainingText] string musica = null)
+        {
+            if (string.IsNullOrWhiteSpace(musica))
+                await ctx.RespondAsync($"Digite uma música para eu procurar!");
+
+            var result = await this.Service.GetTracksAsync(musica);
+
+            if (result.LoadResultType != LavalinkLoadResultType.SearchResult)
+            {
+                if (result.LoadResultType == LavalinkLoadResultType.NoMatches)
+                    await ctx.RespondAsync($"{ctx.User.Mention}, não encontrei resultados para esta música!");
+                else if (result.LoadResultType == LavalinkLoadResultType.LoadFailed)
+                    await ctx.RespondAsync($"{ctx.User.Mention}, não foi possível carregar esta música!");
+                
+                return;
+            }
+
+            var track = result.Tracks.First();
+
+            await ctx.RespondAsync($"{ctx.User.Mention}, a música {Formatter.Sanitize(track.Title)} - {track.Length.ToString(@"m\:ss")} foi adicionada com sucesso a queue.");
+            await this.Player.InitializeAsync(ctx.Member.VoiceState?.Channel);
+
+            this.Player.Enqueue(new TrackInfo(ctx.Channel, ctx.Member, track));
+            this.Player.Play();
         }
     }
 }

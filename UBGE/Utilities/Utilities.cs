@@ -282,32 +282,27 @@ namespace UBGE.Utilities
 
     public sealed class OnlyUBGEAttribute : CheckBaseAttribute
     {
-        public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
-            => Task.FromResult(ctx.Guild.Id == Values.Guilds.guildUBGE);
+        public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help) => Task.FromResult(ctx.Guild.Id == Values.Guilds.guildUBGE);
     }
 
     public sealed class UBGEStaffAttribute : CheckBaseAttribute
     {
-        public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
-            => Task.FromResult(ctx.Guild.Id == Values.Guilds.guildUBGE && ctx.Member.Roles.ToList().FindAll(x => x.Permissions.HasFlag(Permissions.KickMembers)).Count != 0 || Debugger.IsAttached || ctx.Member.Id == Values.Guilds.Members.memberUBGEBot);
+        public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help) => Task.FromResult(ctx.Guild.Id == Values.Guilds.guildUBGE && ctx.Member.Roles.ToList().FindAll(x => x.Permissions.HasFlag(Permissions.KickMembers)).Count != 0 || Debugger.IsAttached || ctx.Member.Id == Values.Guilds.Members.memberUBGEBot);
     }
 
     public sealed class RuinasDeAstaporAndUBGEAttribute : CheckBaseAttribute
     {
-        public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
-            => Task.FromResult(ctx.Guild.Id == Values.Guilds.guildUBGE || ctx.Guild.Id == Values.Guilds.guildRuinasDeAstapor);
+        public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help) => Task.FromResult(ctx.Guild.Id == Values.Guilds.guildUBGE || ctx.Guild.Id == Values.Guilds.guildRuinasDeAstapor);
     }
 
     public sealed class OnlyAlbionAttribute : CheckBaseAttribute
     {
-        public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
-            => Task.FromResult(ctx.Guild.Id == Values.Guilds.guildUBGEAlbion);
+        public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help) => Task.FromResult(ctx.Guild.Id == Values.Guilds.guildUBGEAlbion);
     }
 
     public sealed class CreateYourRoomHereAttribute : CheckBaseAttribute
     {
-        public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
-            => Task.FromResult(ctx.Guild.Id == Values.Guilds.guildUBGE && ctx.Channel.Id == Values.Chats.channelCrieSuaSalaAqui);
+        public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help) => Task.FromResult(ctx.Guild.Id == Values.Guilds.guildUBGE && ctx.Channel.Id == Values.Chats.channelCrieSuaSalaAqui);
     }
 
     public sealed class ConnectedToMongo : CheckBaseAttribute
@@ -334,9 +329,24 @@ namespace UBGE.Utilities
         }
     }
 
-
-    public interface IAplicavelAoCliente
+    public sealed class CommitteeAndCouncil : CheckBaseAttribute
     {
-        void AplicarAoBot(UBGE_Bot bot, DiscordClient discordClient, bool botConectadoAoMongo = true, bool sistemaAtivo = true);
+        public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help) => Task.FromResult(ctx.Member.Roles.Any(x => x.Id == Values.Roles.roleComiteComunitario) || ctx.Member.Roles.Any(x => x.Id == Values.Roles.roleConselheiro));
+    }
+
+    public sealed class OnlyCommittee : CheckBaseAttribute
+    {
+        public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
+        {
+            foreach (var role in ctx.Member.Roles)
+            {
+                if (role.Id != Values.Roles.roleComiteComunitario)
+                    continue;
+
+                return Task.FromResult(true);
+            }
+
+            return Task.FromResult(false);
+        }
     }
 }

@@ -9,9 +9,9 @@ namespace UBGE.Logger
 {
     public sealed class Logger
     {
-        public enum TypeWarning { Commands, Discord, Servers, Systems, Lavalink, Mongo, MySQL, PC, Logger, ReactRole, SAC }
-        public enum TypeLog { Commands, Discord, Servers, Systems, Lavalink, Mongo, MySQL, PC, Logger, ReactRole, SAC }
-        public enum TypeError { Commands, Discord, Servers, Systems, Lavalink, Mongo, MySQL, PC, Logger, ReactRole, SAC }
+        public enum TypeWarning { Commands, Discord, Servers, Systems, Lavalink, Mongo, MySQL, PC, Logger, ReactRole, SAC, Load }
+        public enum TypeLog { Commands, Discord, Servers, Systems, Lavalink, Mongo, MySQL, PC, Logger, ReactRole, SAC, Load }
+        public enum TypeError { Commands, Discord, Servers, Systems, Lavalink, Mongo, MySQL, PC, Logger, ReactRole, SAC, Load }
         public enum TypeEmbed { ReactRole, Warning, SAC, Systems }
 
         private readonly string PREFIX_BOT_CONSOLE = "[UBGE-Bot]";
@@ -61,6 +61,11 @@ namespace UBGE.Logger
                 var luiz = await ubgeServer.GetMemberAsync(Values.Guilds.Members.memberLuiz);
                 var logUBGEBot = ubgeServer.GetChannel(Values.Chats.channelLog);
 
+                this.Error(type, exception.ToString());
+
+                if (Program.Bot.DiscordClient == null)
+                    return;
+
                 var embed = new DiscordEmbedBuilder
                 {
                     Author = new DiscordEmbedBuilder.EmbedAuthor { Name = exception.Message, IconUrl = Values.logoUBGE },
@@ -68,8 +73,6 @@ namespace UBGE.Logger
                     Description = exception.StackTrace,
                     Timestamp = DateTime.Now,
                 };
-
-                this.Error(type, exception.ToString());
 
                 await logUBGEBot.SendMessageAsync(embed: embed.Build(), content: luiz.Mention);
             }

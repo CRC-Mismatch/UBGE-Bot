@@ -16,17 +16,20 @@ using Log = UBGE.Logger.Logger;
 using UBGE.MongoDB.Models;
 using UBGE.Services.Google;
 using UBGE.Utilities;
+using System.Diagnostics;
 
 namespace UBGE.Commands.StaffUBGE
 {
-    [Group("staff"), Aliases("s", "ubge"), UBGEStaff]
+    [Group("staff"), Aliases("s", "ubge")]
 
     public sealed class StaffControlled : BaseCommandModule
     {
         CancellationTokenSource cancellationTokenSource = null;
         GoogleSheetsService googleSheetsRead { get; set; } = new GoogleSheetsService();
 
-        [Command("check"), Aliases("c"), ConnectedToMongo, Description("Membro[ID/Menção]`\nCheca se um membro pode ter o cargo de Membro Registrado e mostra informações extras.\n\n")]
+        public UBGE_Bot Bot { get; set; }
+
+        [Command("check"), Aliases("c"), UBGEStaff, ConnectedToMongo, Description("Membro[ID/Menção]`\nCheca se um membro pode ter o cargo de Membro Registrado e mostra informações extras.\n\n")]
 
         public async Task CheckAsync(CommandContext ctx, DiscordMember membro = null)
         {
@@ -40,7 +43,7 @@ namespace UBGE.Commands.StaffUBGE
                     membro = ctx.Member;
 
                 DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-
+              
                 DiscordEmoji addMembroRegistrado = DiscordEmoji.FromName(ctx.Client, ":blue_circle:"),
                 cancelaEmbed = DiscordEmoji.FromName(ctx.Client, ":red_circle:"),
                 removerMembroRegistrado = DiscordEmoji.FromName(ctx.Client, ":x:");
@@ -320,7 +323,7 @@ namespace UBGE.Commands.StaffUBGE
             }
         }
 
-        [Command("infracoes"), Aliases("i", "infrações"), ConnectedToMongo, Description("Membro[ID] Extra[Add/Log] | Add[Infração]`\nAdd: Prende um membro por tempo indeterminado, Log: Mostra as infrações do membro.\n\n")]
+        [Command("infracoes"), Aliases("i", "infrações"), UBGEStaff, ConnectedToMongo, Description("Membro[ID] Extra[Add/Log] | Add[Infração]`\nAdd: Prende um membro por tempo indeterminado, Log: Mostra as infrações do membro.\n\n")]
 
         public async Task InfracoesAsync(CommandContext ctx, string membroId = null, string addtive = null, [RemainingText] string infracao = null)
         {
@@ -687,7 +690,7 @@ namespace UBGE.Commands.StaffUBGE
             }
         }
 
-        [Command("clear"), Aliases("apagar", "clean", "limpar", "limparchat"), Description("Nº de Mensagens[1/100] Membro[Opcional]`\nApaga as mensagens do chat que foi executado o comando, pode ser de um membro específico ou a quantidade que foi colocada no comando.\n\n")]
+        [Command("clear"), Aliases("apagar", "clean", "limpar", "limparchat"), UBGEStaff, Description("Nº de Mensagens[1/100] Membro[Opcional]`\nApaga as mensagens do chat que foi executado o comando, pode ser de um membro específico ou a quantidade que foi colocada no comando.\n\n")]
 
         public async Task ApagarMessagensAsync(CommandContext ctx, int numeroMensagens, DiscordMember membro = null)
         {
@@ -726,7 +729,7 @@ namespace UBGE.Commands.StaffUBGE
             }
         }
 
-        [Command("apagarinfração"), Aliases("ai", "deletarinfração", "di", "removerinfração", "ri"), ConnectedToMongo, Description("Membro[ID ou Menção] Infração[Motivo]`\nApaga uma determinada infração do membro.\n\n")]
+        [Command("apagarinfração"), Aliases("ai", "deletarinfração", "di", "removerinfração", "ri"), UBGEStaff, ConnectedToMongo, Description("Membro[ID ou Menção] Infração[Motivo]`\nApaga uma determinada infração do membro.\n\n")]
 
         public async Task DeletarInfracoesAsync(CommandContext ctx, DiscordMember membro = null, [RemainingText] string infracao = null)
         {
@@ -789,7 +792,7 @@ namespace UBGE.Commands.StaffUBGE
             }
         }
 
-        [Command("list"), Aliases("check", "lists"), ConnectedToMongo, Description("`\nLista e dá o cargo automaticamente de membro registrado para os membros que tem + de 7 dias na UBGE.\n\n")]
+        [Command("list"), Aliases("check", "lists"), UBGEStaff, ConnectedToMongo, Description("`\nLista e dá o cargo automaticamente de membro registrado para os membros que tem + de 7 dias na UBGE.\n\n")]
 
         public async Task ListAsync(CommandContext ctx)
         {
@@ -921,7 +924,7 @@ namespace UBGE.Commands.StaffUBGE
             }
         }
 
-        [Command("mute"), Aliases("m"), ConnectedToMongo, Description("Tempo[Xs/Xm/Xh/Xd] Membro[ID/Menção] Infração[Motivo]`\nMuta um membro específico por um tempo.\n\n")]
+        [Command("mute"), Aliases("m"), UBGEStaff, ConnectedToMongo, Description("Tempo[Xs/Xm/Xh/Xd] Membro[ID/Menção] Infração[Motivo]`\nMuta um membro específico por um tempo.\n\n")]
 
         public async Task MuteAsync(CommandContext ctx, string tempo = null, DiscordMember membro = null, [RemainingText] string infracao = null)
         {
@@ -1137,7 +1140,7 @@ namespace UBGE.Commands.StaffUBGE
             }).Start();
         }
 
-        [Command("devolvercargos"), Aliases("dc"), ConnectedToMongo, Description("Membro[ID/Menção]`\nDevolve os cargos de um membro que foi preso, caso o bot caia durante a prisão do mesmo. **SÓ EXECUTE ESTE COMANDO CASO O BOT TENHA CAÍDO E FICADO OFFLINE.**\n\n")]
+        [Command("devolvercargos"), Aliases("dc"), UBGEStaff, ConnectedToMongo, Description("Membro[ID/Menção]`\nDevolve os cargos de um membro que foi preso, caso o bot caia durante a prisão do mesmo. **SÓ EXECUTE ESTE COMANDO CASO O BOT TENHA CAÍDO E FICADO OFFLINE.**\n\n")]
 
         public async Task DevolverCargosAsync(CommandContext ctx, DiscordMember membro = null)
         {
@@ -1217,7 +1220,7 @@ namespace UBGE.Commands.StaffUBGE
             }
         }
 
-        [Command("unmute"), Aliases("desmutar"), ConnectedToMongo, Description("Membro[ID/Menção]`\nCancela o mute do membro e devolve os cargos. **SÓ EXECUTE ESTE COMANDO SE O BOT ESTIVER ONLINE DESDE A PRISÃO DO MEMBRO.**\n\n")]
+        [Command("unmute"), Aliases("desmutar"), UBGEStaff, ConnectedToMongo, Description("Membro[ID/Menção]`\nCancela o mute do membro e devolve os cargos. **SÓ EXECUTE ESTE COMANDO SE O BOT ESTIVER ONLINE DESDE A PRISÃO DO MEMBRO.**\n\n")]
 
         public async Task UnmuteAsync(CommandContext ctx, DiscordMember membro = null)
         {
@@ -1338,7 +1341,7 @@ namespace UBGE.Commands.StaffUBGE
             }).Start();
         }
 
-        [Command("prisioneiros"), Aliases("prisioneiro"), Description("`\nMostra todos os membros que estão com o cargo de prisioneiro.\n\n")]
+        [Command("prisioneiros"), Aliases("prisioneiro"), UBGEStaff, Description("`\nMostra todos os membros que estão com o cargo de prisioneiro.\n\n")]
 
         public async Task ListarPrisioneirosAsync(CommandContext ctx)
         {
@@ -1374,7 +1377,7 @@ namespace UBGE.Commands.StaffUBGE
             }
         }
 
-        [Command("transferirinfracoes"), Aliases("ti", "transferirinfrações"), ConnectedToMongo, Description("Membro que tem as infrações[ID/Menção] Membro que vai receber as infrações[ID/Menção]`\nTransfere as infrações de um membro para o outro.\n\n")]
+        [Command("transferirinfracoes"), Aliases("ti", "transferirinfrações"), UBGEStaff, ConnectedToMongo, Description("Membro que tem as infrações[ID/Menção] Membro que vai receber as infrações[ID/Menção]`\nTransfere as infrações de um membro para o outro.\n\n")]
 
         public async Task TransferirInfracoesAsync(CommandContext ctx, string membroIdInfracoes = null, string membroIdQueVaiReceberAsInfracoes = null)
         {
@@ -1454,6 +1457,245 @@ namespace UBGE.Commands.StaffUBGE
             {
                 await Program.Bot.Logger.Error(Log.TypeError.Commands, exception);
             }
+        }
+    
+        [Command("marcarreuniao"), Aliases("mr", "marcareuniao", "marcarreunião", "marcareunião"), ConnectedToMongo, CommitteeAndCouncil]
+
+        public async Task SetupReunionAsync(CommandContext ctx, string dayMonth = null, [RemainingText] string staves = null)
+        {
+            await ctx.TriggerTypingAsync();
+
+            var reunionCollection = this.Bot.LocalDB.GetCollection<Reunion>(Values.Mongo.reunion);
+
+            var embed = new DiscordEmbedBuilder();
+
+            if (string.IsNullOrWhiteSpace(dayMonth))
+            {
+                embed.WithColor(this.Bot.Utilities.HelpCommandsColor())
+                        .WithAuthor("Como executar este comando:", null, Values.infoLogo)
+                        .AddField("PC/Mobile", $"{ctx.Prefix}s mr DiaEMês[Exemplo: 1/1] Pautas[Exemplo: ```Banir o Léo```O texto das pautas deve estar entre ```]")
+                        .WithFooter($"Comando requisitado pelo: {this.Bot.Utilities.DiscordNick(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                        .WithTimestamp(DateTime.Now);
+
+                await ctx.RespondAsync(embed: embed.Build(), content: $"{ctx.Member.Mention}, a data da reunião não pode estar vazia!");
+                return;
+            }
+            else if (string.IsNullOrWhiteSpace(staves))
+            {
+                embed.WithColor(this.Bot.Utilities.HelpCommandsColor())
+                        .WithAuthor("Como executar este comando:", null, Values.infoLogo)
+                        .AddField("PC/Mobile", $"{ctx.Prefix}s mr DiaEMês[Exemplo: 1/1] Pautas[Exemplo: ```Banir o Léo```O texto da pauta deve estrar entre ```]")
+                        .WithFooter($"Comando requisitado pelo: {this.Bot.Utilities.DiscordNick(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                        .WithTimestamp(DateTime.Now);
+
+                await ctx.RespondAsync(embed: embed.Build(), content: $"{ctx.Member.Mention}, a pauta da reunião não pode estar vazia!");
+                return;
+            }
+
+            if (!dayMonth.Contains("/"))
+            {
+                embed.WithColor(this.Bot.Utilities.HelpCommandsColor())
+                        .WithAuthor("Erro!:", null, Values.logoUBGE)
+                        .WithDescription($"Separe a data por `/`!\nExemplo: **{DateTime.Now.Day}/{DateTime.Now.Month}**")
+                        .WithFooter($"Comando requisitado pelo: {this.Bot.Utilities.DiscordNick(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                        .WithTimestamp(DateTime.Now);
+
+                await ctx.RespondAsync(embed: embed.Build());
+                return;
+            }
+
+            string[] dayMonthSplited = dayMonth.Split('/');
+
+            int.TryParse(dayMonthSplited[0], out int convertedDay);
+            int.TryParse(dayMonthSplited[1], out int convertedMonth);
+           
+            if (convertedDay == 0 || convertedMonth == 0)
+            {
+                embed.WithAuthor("Erro!", null, Values.logoUBGE)
+                    .WithColor(this.Bot.Utilities.RandomColorEmbed())
+                    .WithDescription("Digite uma data válida!")
+                    .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                    .WithFooter($"Comando requisitado pelo: {this.Bot.Utilities.DiscordNick(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                    .WithTimestamp(DateTime.Now);
+
+                await ctx.RespondAsync(embed: embed.Build());
+
+                return;
+            }
+
+            int dayOfReunion = 0;
+            var dateOfReunion = DateTime.Now;
+            if (convertedMonth == DateTime.Now.Month)
+                dayOfReunion = convertedDay - DateTime.Now.Day;
+            else
+            {
+                dateOfReunion = dateOfReunion.Subtract(TimeSpan.FromDays(DateTime.Now.Day - 1));
+                dateOfReunion = dateOfReunion.AddMonths(convertedMonth - dateOfReunion.Month);
+                dateOfReunion = dateOfReunion.AddDays(convertedDay - 1);
+            }
+
+            if (dayOfReunion < 0 || (convertedMonth < 0 || convertedMonth > 12))
+            {
+                embed.WithAuthor("Erro!", null, Values.logoUBGE)
+                    .WithColor(this.Bot.Utilities.RandomColorEmbed())
+                    .WithDescription("Digite uma data válida!")
+                    .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                    .WithFooter($"Comando requisitado pelo: {this.Bot.Utilities.DiscordNick(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                    .WithTimestamp(DateTime.Now);
+
+                await ctx.RespondAsync(embed: embed.Build());
+
+                return;
+            }
+
+            dateOfReunion = dateOfReunion.AddDays(dayOfReunion);
+
+            if (dateOfReunion != DateTime.Now)
+            {
+                if (dateOfReunion.Day <= DateTime.Now.Day + 5 && convertedMonth == DateTime.Now.Month)
+                    return;
+
+                string newStave = staves.Replace("```", "");
+                
+                await reunionCollection.InsertOneAsync(new Reunion { DayOfReunion = dateOfReunion, LastDayToMarkThePresenceReaction = dateOfReunion.Subtract(TimeSpan.FromDays(1)), StaveOfReunion = newStave, MemberWhoWillAttend = new List<ulong>(), MemberWhoWillNotAttend = new List<ulong>(), IdOfMessage = 0, ReunionIsFinished = false, LinkOfMessage = null });
+                
+                embed.WithAuthor("Reunião marcada!", null, Values.logoUBGE)
+                    .WithColor(this.Bot.Utilities.RandomColorEmbed())
+                    .WithDescription($"Dia da reunião: **{dateOfReunion.ToString()}**\n\nPautas:\n```.```\n{newStave}\n\n```.```")
+                    .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                    .WithFooter($"Comando requisitado pelo: {this.Bot.Utilities.DiscordNick(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                    .WithTimestamp(DateTime.Now);
+
+                await ctx.RespondAsync(embed: embed.Build());
+
+                this.Bot.Utilities.ClearEmbed(embed);
+
+                var emojiPresenceOnReunion = this.Bot.Utilities.FindEmoji(ctx, ":UBGE:");
+                var emojiNotPresenceOnReunion = DiscordEmoji.FromName(ctx.Client, ":x:");
+
+                embed.WithAuthor($"Reunião no dia: {dateOfReunion.ToString()}", null, Values.logoUBGE)
+                    .WithColor(this.Bot.Utilities.RandomColorEmbed())
+                    .WithDescription($"Pautas desta reunião:\n```.```\n{newStave}\n\n```.```\nClique no {emojiPresenceOnReunion} se você pode comparecer a reunião ou clique no {emojiNotPresenceOnReunion} se não puder comparecer.")
+                    .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                    .WithFooter($"Comando requisitado pelo: {this.Bot.Utilities.DiscordNick(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                    .WithTimestamp(DateTime.Now);
+
+                var msgAdvertisementReunion = await ctx.Guild.GetChannel(Values.Chats.channelAnunciosConselho).SendMessageAsync(embed: embed.Build(), content: ""); //ctx.Guild.GetRole(Values.Roles.roleConselheiro).Mention
+                await msgAdvertisementReunion.CreateReactionAsync(emojiPresenceOnReunion);
+                await msgAdvertisementReunion.CreateReactionAsync(emojiNotPresenceOnReunion);
+
+                await reunionCollection.FindOneAndUpdateAsync(Builders<Reunion>.Filter.Eq(x => x.StaveOfReunion, newStave), Builders<Reunion>.Update.Set(x => x.IdOfMessage, msgAdvertisementReunion.Id).Set(x => x.LinkOfMessage, msgAdvertisementReunion.JumpLink.ToString()));
+
+                return;
+            }
+            else
+            {
+                embed.WithAuthor("Erro!", null, Values.logoUBGE)
+                    .WithColor(this.Bot.Utilities.RandomColorEmbed())
+                    .WithDescription("Você precisa marcar uma reunião com no mínimo **5** dias de antecedência!")
+                    .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                    .WithFooter($"Comando requisitado pelo: {this.Bot.Utilities.DiscordNick(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                    .WithTimestamp(DateTime.Now);
+
+                await ctx.RespondAsync(embed: embed.Build());
+
+                return;
+            }
+        }
+    
+        [Command("remarcarreuniao"), Aliases("rr", "remarcareuniao", "remarcarreunião", "remarcareunião"), ConnectedToMongo, OnlyCommittee]
+
+        public async Task RescheduleMeetingAsync(CommandContext ctx, string dayMonthReunion = null, string discordMessage = null)
+        {
+            await ctx.TriggerTypingAsync();
+
+            var embed = new DiscordEmbedBuilder();
+
+            if (string.IsNullOrWhiteSpace(dayMonthReunion))
+            {
+                embed.WithAuthor("Digite o novo dia da reunião!", string.Empty, Values.logoUBGE)
+                    .WithColor(this.Bot.Utilities.RandomColorEmbed())
+                    .WithDescription(":thinking:")
+                    .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                    .WithTimestamp(DateTime.Now)
+                    .WithFooter($"Comando requisitado pelo: {this.Bot.Utilities.DiscordNick(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
+
+                await ctx.RespondAsync(embed: embed.Build());
+
+                return;
+            }
+            else if (!dayMonthReunion.Contains("/"))
+            {
+                embed.WithColor(this.Bot.Utilities.HelpCommandsColor())
+                        .WithAuthor("Erro!:", null, Values.logoUBGE)
+                        .WithDescription($"Separe a data por `/`!\nExemplo: **{DateTime.Now.Day}/{DateTime.Now.Month}**")
+                        .WithFooter($"Comando requisitado pelo: {this.Bot.Utilities.DiscordNick(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl)
+                        .WithTimestamp(DateTime.Now);
+
+                await ctx.RespondAsync(embed: embed.Build());
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(discordMessage))
+            {
+                embed.WithAuthor("Digite o ID da mensagem!", string.Empty, Values.logoUBGE)
+                    .WithColor(this.Bot.Utilities.RandomColorEmbed())
+                    .WithDescription(":thinking:")
+                    .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                    .WithTimestamp(DateTime.Now)
+                    .WithFooter($"Comando requisitado pelo: {this.Bot.Utilities.DiscordNick(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
+
+                await ctx.RespondAsync(embed: embed.Build());
+
+                return;
+            }
+
+            ulong.TryParse(discordMessage, out ulong newDiscordMessage);
+
+            if (newDiscordMessage == 0)
+            {
+                embed.WithAuthor("Digite um ID de uma mensagem do Discord válido!", string.Empty, Values.logoUBGE)
+                    .WithColor(this.Bot.Utilities.RandomColorEmbed())
+                    .WithDescription(":thinking:")
+                    .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                    .WithTimestamp(DateTime.Now)
+                    .WithFooter($"Comando requisitado pelo: {this.Bot.Utilities.DiscordNick(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
+
+                await ctx.RespondAsync(embed: embed.Build());
+
+                return;
+            }
+
+            var reunionCollection = this.Bot.LocalDB.GetCollection<Reunion>(Values.Mongo.reunion);
+            var filtroReunionCollection = Builders<Reunion>.Filter.Eq(x => x.IdOfMessage, newDiscordMessage);
+            var respostaReunionCollection = await (await reunionCollection.FindAsync(filtroReunionCollection)).ToListAsync();
+
+            if (respostaReunionCollection.Count == 0)
+            {
+                embed.WithAuthor("Digite um ID de uma mensagem do Discord válido!", string.Empty, Values.logoUBGE)
+                    .WithColor(this.Bot.Utilities.RandomColorEmbed())
+                    .WithDescription(":thinking:")
+                    .WithThumbnailUrl(ctx.Member.AvatarUrl)
+                    .WithTimestamp(DateTime.Now)
+                    .WithFooter($"Comando requisitado pelo: {this.Bot.Utilities.DiscordNick(ctx.Member)}", iconUrl: ctx.Member.AvatarUrl);
+
+                await ctx.RespondAsync(embed: embed.Build());
+
+                return;
+            }
+            else
+            {
+
+            }
+        }
+
+        [Command("votação"), Aliases("v", "votacao"), ConnectedToMongo, CommitteeAndCouncil]
+
+        public async Task SetupVotingAsync(CommandContext ctx)
+        {
+            await ctx.TriggerTypingAsync();
+
+
         }
     }
 
